@@ -1,7 +1,7 @@
 import { defineRouting } from "next-intl/routing";
 
 export const routing = defineRouting({
-  locales: ["en", "pt", "bn", "ur"] as const,
+  locales: ["en", "pt", "bn", "ur", "hi"] as const,
   defaultLocale: "en",
   // Always show the locale in the URL (e.g. /en, /pt, /bn, /ur).
   // Auto-detect from Accept-Language on first visit to "/".

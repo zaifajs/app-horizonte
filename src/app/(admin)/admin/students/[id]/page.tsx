@@ -3,10 +3,13 @@ import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { EnrollmentPayments } from "./enrollment-payments";
 import { ActivityStream } from "./activity-stream";
+import { SendMessage } from "./send-message";
 import { loadBatchSequence } from "@/lib/students/batch-seq";
+import { localeForNationality } from "@/lib/messaging/locale-for-nationality";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +28,7 @@ export default async function StudentDetailPage({
         include: {
           batch: {
             select: {
+              id: true,
               code: true,
               startDate: true,
               course: { select: { feeCents: true } },
@@ -134,10 +138,80 @@ export default async function StudentDetailPage({
         </Section>
       ) : null}
 
+      <MessagingSection studentId={student.id} />
+
       <Section title="Activity">
         <ActivityStream studentId={student.id} />
       </Section>
     </div>
+  );
+}
+
+async function MessagingSection({ studentId }: { studentId: string }) {
+  const data = await prisma.student.findUnique({
+    where: { id: studentId },
+    select: {
+      id: true,
+      fullName: true,
+      phone: true,
+      nationality: true,
+      enrollments: {
+        orderBy: { enrolledAt: "desc" },
+        take: 1,
+        select: {
+          id: true,
+          batch: {
+            select: {
+              id: true,
+              code: true,
+              startDate: true,
+              course: { select: { feeCents: true } },
+            },
+          },
+          payments: { select: { amountCents: true } },
+        },
+      },
+    },
+  });
+  if (!data) return null;
+  const loc = localeForNationality(data.nationality);
+
+  const enr = data.enrollments[0] ?? null;
+  let dueAmountStr = "";
+  let startDateStr = "";
+  let scheduleUrl: string | undefined;
+  let batchCode = "—";
+  if (enr) {
+    const paid = enr.payments.reduce((a, p) => a + p.amountCents, 0);
+    const due = Math.max(0, enr.batch.course.feeCents - paid);
+    dueAmountStr = `€${(due / 100).toFixed(2)}`;
+    startDateStr = enr.batch.startDate.toISOString().slice(0, 10);
+    batchCode = enr.batch.code;
+
+    const h = await headers();
+    const proto = h.get("x-forwarded-proto") ?? "https";
+    const host = h.get("host") ?? "stage.nhorizonte.pt";
+    scheduleUrl = `${proto}://${host}/${loc}/turma/${enr.batch.id}`;
+  }
+
+  return (
+    <Section title="Send message">
+      <SendMessage
+        studentId={data.id}
+        studentName={data.fullName}
+        studentPhone={data.phone}
+        locale={loc}
+        nationalityLabel={data.nationality}
+        vars={{
+          name: data.fullName.split(" ")[0],
+          batch: batchCode,
+          startDate: startDateStr,
+          dueAmount: dueAmountStr,
+          nextSessionDate: "tomorrow",
+          scheduleUrl,
+        }}
+      />
+    </Section>
   );
 }
 
