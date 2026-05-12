@@ -48,6 +48,8 @@ export function SessionRow({ session, isToday }: Props) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  const isAutonomous = session.kind === "AUTONOMOUS";
+
   const initialDate = session.scheduledDate.toISOString().slice(0, 10);
   const [date, setDate] = useState(initialDate);
   const [start, setStart] = useState(session.startTime ?? "");
@@ -60,9 +62,10 @@ export function SessionRow({ session, isToday }: Props) {
     startTransition(async () => {
       const result = await updateSessionAction({
         sessionId: session.id,
-        scheduledDate: date,
-        startTime: session.kind === "AUTONOMOUS" ? null : start,
-        endTime: session.kind === "AUTONOMOUS" ? null : end,
+        // For autonomous, keep the existing date — UI never edits it.
+        scheduledDate: isAutonomous ? initialDate : date,
+        startTime: isAutonomous ? null : start,
+        endTime: isAutonomous ? null : end,
         status,
         notes: notes.trim() === "" ? null : notes,
       });
@@ -75,16 +78,28 @@ export function SessionRow({ session, isToday }: Props) {
     });
   }
 
+  const rowClass = isAutonomous
+    ? "bg-zinc-50/60"
+    : isToday
+      ? "bg-amber-50"
+      : "";
+
   return (
-    <tr className={isToday ? "bg-amber-50" : ""}>
+    <tr className={rowClass}>
       <td className="px-3 py-2 text-muted-foreground">
-        {session.sequenceInModule}
+        {isAutonomous ? "—" : session.sequenceInModule}
       </td>
       <td className="px-3 py-2">
-        {format(session.scheduledDate, "EEE, dd MMM yyyy")}
+        {isAutonomous ? (
+          <span className="italic text-muted-foreground">Homework</span>
+        ) : (
+          format(session.scheduledDate, "EEE, dd MMM yyyy")
+        )}
       </td>
       <td className="px-3 py-2">
-        {session.startTime ? `${session.startTime}–${session.endTime}` : "—"}
+        {isAutonomous
+          ? "—"
+          : `${session.startTime}–${session.endTime}`}
       </td>
       <td className="px-3 py-2">{session.hours}h</td>
       <td className="px-3 py-2">
@@ -99,40 +114,44 @@ export function SessionRow({ session, isToday }: Props) {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Edit session</DialogTitle>
+              <DialogTitle>
+                {isAutonomous ? "Edit homework block" : "Edit session"}
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor={`date-${session.id}`}>Date</Label>
-                <Input
-                  id={`date-${session.id}`}
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                />
-              </div>
-              {session.kind === "CLASSROOM" ? (
-                <div className="grid grid-cols-2 gap-3">
+              {isAutonomous ? null : (
+                <>
                   <div className="space-y-1.5">
-                    <Label htmlFor={`start-${session.id}`}>Start time</Label>
+                    <Label htmlFor={`date-${session.id}`}>Date</Label>
                     <Input
-                      id={`start-${session.id}`}
-                      type="time"
-                      value={start}
-                      onChange={(e) => setStart(e.target.value)}
+                      id={`date-${session.id}`}
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor={`end-${session.id}`}>End time</Label>
-                    <Input
-                      id={`end-${session.id}`}
-                      type="time"
-                      value={end}
-                      onChange={(e) => setEnd(e.target.value)}
-                    />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`start-${session.id}`}>Start time</Label>
+                      <Input
+                        id={`start-${session.id}`}
+                        type="time"
+                        value={start}
+                        onChange={(e) => setStart(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`end-${session.id}`}>End time</Label>
+                      <Input
+                        id={`end-${session.id}`}
+                        type="time"
+                        value={end}
+                        onChange={(e) => setEnd(e.target.value)}
+                      />
+                    </div>
                   </div>
-                </div>
-              ) : null}
+                </>
+              )}
               <div className="space-y-1.5">
                 <Label htmlFor={`status-${session.id}`}>Status</Label>
                 <Select
@@ -144,9 +163,13 @@ export function SessionRow({ session, isToday }: Props) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="SCHEDULED">Scheduled</SelectItem>
-                    <SelectItem value="HELD">Held</SelectItem>
+                    <SelectItem value="HELD">
+                      {isAutonomous ? "Completed" : "Held"}
+                    </SelectItem>
                     <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                    <SelectItem value="RESCHEDULED">Rescheduled</SelectItem>
+                    {isAutonomous ? null : (
+                      <SelectItem value="RESCHEDULED">Rescheduled</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -154,7 +177,10 @@ export function SessionRow({ session, isToday }: Props) {
                 <Label htmlFor={`notes-${session.id}`}>
                   Notes
                   {status === "CANCELLED" ? (
-                    <span className="text-destructive"> · required for cancellations</span>
+                    <span className="text-destructive">
+                      {" "}
+                      · required for cancellations
+                    </span>
                   ) : null}
                 </Label>
                 <Textarea
@@ -162,7 +188,11 @@ export function SessionRow({ session, isToday }: Props) {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
-                  placeholder="Optional reason or note for this session."
+                  placeholder={
+                    isAutonomous
+                      ? "Optional note about the homework block."
+                      : "Optional reason or note for this session."
+                  }
                 />
               </div>
               {error ? (
@@ -170,7 +200,11 @@ export function SessionRow({ session, isToday }: Props) {
               ) : null}
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)} disabled={pending}>
+              <Button
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={pending}
+              >
                 Cancel
               </Button>
               <Button onClick={save} disabled={pending}>
@@ -187,10 +221,23 @@ export function SessionRow({ session, isToday }: Props) {
 function SessionStatusBadge({ status }: { status: Status }) {
   const map: Record<Status, { label: string; cls: string }> = {
     SCHEDULED: { label: "Scheduled", cls: "text-muted-foreground" },
-    HELD: { label: "Held", cls: "bg-emerald-50 border-emerald-200 text-emerald-700" },
-    CANCELLED: { label: "Cancelled", cls: "bg-red-50 border-red-200 text-red-700" },
-    RESCHEDULED: { label: "Rescheduled", cls: "bg-blue-50 border-blue-200 text-blue-700" },
+    HELD: {
+      label: "Held",
+      cls: "bg-emerald-50 border-emerald-200 text-emerald-700",
+    },
+    CANCELLED: {
+      label: "Cancelled",
+      cls: "bg-red-50 border-red-200 text-red-700",
+    },
+    RESCHEDULED: {
+      label: "Rescheduled",
+      cls: "bg-blue-50 border-blue-200 text-blue-700",
+    },
   };
   const m = map[status];
-  return <Badge variant="outline" className={m.cls}>{m.label}</Badge>;
+  return (
+    <Badge variant="outline" className={m.cls}>
+      {m.label}
+    </Badge>
+  );
 }
