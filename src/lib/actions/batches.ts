@@ -1,0 +1,132 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import { requireRole } from "@/lib/auth";
+import { logChange } from "@/lib/audit";
+import { batchCreateSchema, type BatchCreateInput } from "@/lib/validators/batch";
+import { generateSessions } from "@/lib/cronograma/generate";
+
+export type CreateBatchResult =
+  | { ok: true; id: string; code: string }
+  | { ok: false; error: string; fieldErrors?: Record<string, string> };
+
+export async function createBatchAction(
+  raw: BatchCreateInput,
+): Promise<CreateBatchResult> {
+  const user = await requireRole(["ADMIN", "STAFF"]);
+
+  const parsed = batchCreateSchema.safeParse(raw);
+  if (!parsed.success) {
+    const fieldErrors: Record<string, string> = {};
+    for (const issue of parsed.error.issues) {
+      const key = issue.path.join(".");
+      fieldErrors[key] ||= issue.message;
+    }
+    return { ok: false, error: "Please fix the highlighted fields.", fieldErrors };
+  }
+  const input = parsed.data;
+
+  // Load the course + its 6 modules so we can pin moduleId on each session row.
+  const course = await prisma.course.findUnique({
+    where: { id: input.courseId },
+    include: { modules: { orderBy: { number: "asc" } } },
+  });
+  if (!course) {
+    return { ok: false, error: "Course not found.", fieldErrors: { courseId: "Course not found." } };
+  }
+
+  // Optional trainer must exist and have role=TEACHER.
+  if (input.trainerId) {
+    const trainer = await prisma.user.findUnique({
+      where: { id: input.trainerId },
+      select: { role: true, isActive: true },
+    });
+    if (!trainer || !trainer.isActive || trainer.role !== "TEACHER") {
+      return {
+        ok: false,
+        error: "Selected trainer is not a teacher.",
+        fieldErrors: { trainerId: "Selected trainer is not a teacher." },
+      };
+    }
+  }
+
+  // Generate 36 session specs from the start date.
+  const specs = generateSessions({
+    startDate: input.startDate,
+    startTime: input.startTime,
+    durationHours: input.durationHours,
+    moduleCount: course.modules.length,
+  });
+
+  // Map module number → module id.
+  const moduleByNumber = new Map(course.modules.map((m) => [m.number, m]));
+
+  try {
+    const created = await prisma.$transaction(async (tx) => {
+      const batch = await tx.batch.create({
+        data: {
+          code: input.code,
+          courseId: input.courseId,
+          trainerId: input.trainerId,
+          startDate: new Date(`${input.startDate}T00:00:00.000Z`),
+          startTime: input.startTime,
+          durationHours: input.durationHours,
+          capacity: input.capacity,
+          status: "UPCOMING",
+        },
+      });
+
+      await tx.batchSession.createMany({
+        data: specs.map((s) => {
+          const mod = moduleByNumber.get(s.moduleNumber);
+          if (!mod) throw new Error(`No module #${s.moduleNumber}`);
+          return {
+            batchId: batch.id,
+            moduleId: mod.id,
+            sequenceInModule: s.sequenceInModule,
+            scheduledDate: s.scheduledDate,
+            startTime: s.startTime,
+            endTime: s.endTime,
+            hours: s.hours,
+            kind: s.kind,
+          };
+        }),
+      });
+
+      await logChange({
+        tx,
+        action: "CREATE",
+        entityType: "Batch",
+        entityId: batch.id,
+        actorUserId: user.id,
+        changes: {
+          code: { from: null, to: batch.code },
+          courseId: { from: null, to: batch.courseId },
+          startDate: { from: null, to: input.startDate },
+          startTime: { from: null, to: batch.startTime },
+          durationHours: { from: null, to: batch.durationHours },
+          trainerId: { from: null, to: batch.trainerId },
+          capacity: { from: null, to: batch.capacity },
+          sessionsGenerated: specs.length,
+        },
+      });
+
+      return batch;
+    });
+
+    revalidatePath("/admin/batches");
+    return { ok: true, id: created.id, code: created.code };
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return {
+        ok: false,
+        error: "A batch with that code already exists.",
+        fieldErrors: { code: "Already in use." },
+      };
+    }
+    console.error("createBatchAction failed:", err);
+    return { ok: false, error: "Something went wrong. Please try again." };
+  }
+}

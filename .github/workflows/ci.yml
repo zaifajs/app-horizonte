@@ -30,6 +30,9 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
+      - name: Test
+        run: npm test
+
       - name: Build
         env:
           # placeholders so Next can build without real Supabase access in CI
