@@ -2,12 +2,8 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 
-// Print-friendly classic cronograma table (matches the existing PDF layout):
-//   Formadores · Módulos · Datas · H. Início
-//
-// Used as a secondary view from /admin/batches/[id]?view=table (or ?print=1
-// for browser print). Plain HTML/CSS — Tailwind classes that the print stylesheet
-// can collapse if needed.
+// Compact month-grouped cronograma. Used as a secondary view from
+// /admin/batches/[id]?view=table (or ?print=1 for browser print).
 
 type Session = {
   id: string;
@@ -24,9 +20,16 @@ type Batch = {
   id: string;
   code: string;
   startDate: Date;
+  durationHours: number;
   course: { name: string; level: string };
   trainer: { name: string } | null;
   sessions: Session[];
+};
+
+type MonthGroup = {
+  key: string; // "2026-04"
+  label: string; // "April 2026"
+  rows: Array<Session & { showModule: boolean; isLastInModule: boolean; autonomousHours: number | null }>;
 };
 
 export function ScheduleTable({
@@ -36,35 +39,63 @@ export function ScheduleTable({
   batch: Batch;
   isPrint: boolean;
 }) {
-  const classroom = batch.sessions.filter((s) => s.kind === "CLASSROOM");
+  const classroom = batch.sessions
+    .filter((s) => s.kind === "CLASSROOM")
+    .sort(
+      (a, b) =>
+        a.scheduledDate.getTime() - b.scheduledDate.getTime() ||
+        a.sequenceInModule - b.sequenceInModule,
+    );
+
+  // Map moduleId → autonomous-hours so we can attach it to the last classroom day.
   const autonomousByModule = new Map(
     batch.sessions
       .filter((s) => s.kind === "AUTONOMOUS")
-      .map((s) => [s.module.id, s]),
+      .map((s) => [s.module.id, s.hours]),
   );
+
+  // Annotate each classroom row.
+  const annotated = classroom.map((s, i) => {
+    const prev = i > 0 ? classroom[i - 1] : null;
+    const next = i < classroom.length - 1 ? classroom[i + 1] : null;
+    const showModule = !prev || prev.module.id !== s.module.id;
+    const isLastInModule = !next || next.module.id !== s.module.id;
+    return {
+      ...s,
+      showModule,
+      isLastInModule,
+      autonomousHours: isLastInModule
+        ? autonomousByModule.get(s.module.id) ?? null
+        : null,
+    };
+  });
+
+  // Group by month.
+  const groups: MonthGroup[] = [];
+  for (const row of annotated) {
+    const d = row.scheduledDate;
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+    const label = format(d, "MMMM yyyy");
+    let g = groups[groups.length - 1];
+    if (!g || g.key !== key) {
+      g = { key, label, rows: [] };
+      groups.push(g);
+    }
+    g.rows.push(row);
+  }
+
   const totalHours =
     classroom.reduce((a, b) => a + b.hours, 0) +
-    Array.from(autonomousByModule.values()).reduce((a, b) => a + b.hours, 0);
-
-  // Group classroom rows by module to compute rowSpans for the Módulos column.
-  const grouped = new Map<string, { module: Session["module"]; rows: Session[] }>();
-  for (const s of classroom) {
-    const g = grouped.get(s.module.id) ?? { module: s.module, rows: [] };
-    g.rows.push(s);
-    grouped.set(s.module.id, g);
-  }
-  const moduleGroups = Array.from(grouped.values()).sort(
-    (a, b) => a.module.number - b.module.number,
-  );
-
-  // Total rows for the trainer column rowSpan (all classroom + all autonomous).
-  const trainerRowSpan = batch.sessions.length;
+    Array.from(autonomousByModule.values()).reduce((a, b) => a + b, 0);
+  const endDate = classroom[classroom.length - 1]?.scheduledDate;
 
   return (
     <div className={isPrint ? "p-6 bg-white text-zinc-900" : "space-y-4"}>
       {!isPrint ? (
         <div className="flex items-center justify-between print:hidden">
-          <h1 className="text-lg font-semibold">Schedule table — {batch.code}</h1>
+          <h1 className="text-lg font-semibold">
+            Schedule — {batch.code}
+          </h1>
           <div className="flex gap-2">
             <Link href={`/admin/batches/${batch.id}?print=1`} target="_blank">
               <Button variant="outline">Print / PDF</Button>
@@ -77,108 +108,88 @@ export function ScheduleTable({
       ) : null}
 
       <div className="rounded-lg border bg-white overflow-hidden print:border-0 print:rounded-none">
-        <div className="text-center border-b py-3 print:py-2">
-          <div className="text-base font-semibold text-blue-700 print:text-black">
-            Cronograma — {batch.course.name}{" "}
+        {/* Header card */}
+        <div className="border-b px-4 py-3 print:py-2 text-center">
+          <div className="text-sm font-semibold text-blue-700 print:text-black">
+            {batch.course.name}{" "}
             <span className="font-normal">· nível {batch.course.level}</span>
           </div>
-          <div className="text-sm">Turma {batch.code}</div>
-          <div className="text-xs text-muted-foreground">
-            Período: {format(batch.startDate, "dd 'de' MMMM 'de' yyyy")} a{" "}
-            {classroom[classroom.length - 1]
-              ? format(classroom[classroom.length - 1].scheduledDate, "dd 'de' MMMM 'de' yyyy")
-              : "—"}
-            {" "}({totalHours} horas)
+          <div className="mt-0.5 text-xs text-muted-foreground">
+            Turma <span className="font-medium text-foreground">{batch.code}</span>
+            {" "}· {format(batch.startDate, "dd MMM yyyy")}
+            {endDate ? ` – ${format(endDate, "dd MMM yyyy")}` : ""}
+            {" "}· {totalHours}h · Formador:{" "}
+            <span className="font-medium text-foreground">
+              {batch.trainer?.name ?? "Unassigned"}
+            </span>
           </div>
         </div>
 
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-xs uppercase tracking-wide">
-            <tr className="border-b">
-              <th className="text-left px-3 py-2 border-r">Formadores/as</th>
-              <th className="text-left px-3 py-2 border-r">Módulos</th>
-              <th className="text-left px-3 py-2 border-r">Datas</th>
-              <th className="text-left px-3 py-2">H. Início</th>
-            </tr>
-          </thead>
-          <tbody>
-            {moduleGroups.map((g, gIdx) => {
-              const auto = autonomousByModule.get(g.module.id);
-              const span = g.rows.length + (auto ? 1 : 0);
-              return (
-                <FragmentRows
-                  key={g.module.id}
-                  trainerName={
-                    gIdx === 0 ? batch.trainer?.name ?? "Unassigned" : null
-                  }
-                  trainerRowSpan={gIdx === 0 ? trainerRowSpan : 0}
-                  moduleName={g.module.name}
-                  moduleRowSpan={span}
-                  classroom={g.rows}
-                  autonomous={auto ?? null}
-                />
-              );
-            })}
-          </tbody>
-        </table>
+        {/* Month sections */}
+        {groups.map((g) => (
+          <div key={g.key} className="border-b last:border-b-0">
+            <div className="bg-zinc-50 px-4 py-1.5 text-[11px] uppercase tracking-wide font-semibold text-muted-foreground">
+              {g.label}
+            </div>
+            <table className="w-full text-[13px]">
+              <tbody>
+                {g.rows.map((row) => {
+                  const date = row.scheduledDate;
+                  const dayNum = format(date, "dd");
+                  const dayName = format(date, "EEE");
+                  return (
+                    <>
+                      <tr key={row.id} className="border-t first:border-t-0">
+                        <td className="px-4 py-1.5 w-16 align-top">
+                          <div className="font-semibold tabular-nums leading-none">
+                            {dayNum}
+                          </div>
+                          <div className="text-[10px] uppercase text-muted-foreground leading-none mt-0.5">
+                            {dayName}
+                          </div>
+                        </td>
+                        <td className="px-2 py-1.5 align-top">
+                          {row.showModule ? (
+                            <>
+                              <div className="text-[10px] uppercase tracking-wide text-muted-foreground leading-none">
+                                Module {row.module.number}
+                              </div>
+                              <div className="font-medium leading-tight mt-0.5">
+                                {row.module.name}
+                              </div>
+                            </>
+                          ) : (
+                            <div className="text-muted-foreground text-xs">
+                              ↳ continued
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-2 py-1.5 w-28 text-right tabular-nums text-muted-foreground align-top">
+                          {row.startTime}–{row.endTime}
+                        </td>
+                        <td className="px-4 py-1.5 w-12 text-right text-muted-foreground align-top">
+                          {row.hours}h
+                        </td>
+                      </tr>
+                      {row.autonomousHours != null ? (
+                        <tr key={`${row.id}-hw`} className="border-t bg-orange-50/60 print:bg-zinc-50">
+                          <td colSpan={2} className="px-4 py-1 text-xs italic text-muted-foreground">
+                            + Homework — {row.autonomousHours}h trabalho autónomo
+                          </td>
+                          <td className="px-2 py-1" />
+                          <td className="px-4 py-1 w-12 text-right text-muted-foreground">
+                            {row.autonomousHours}h
+                          </td>
+                        </tr>
+                      ) : null}
+                    </>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ))}
       </div>
     </div>
-  );
-}
-
-function FragmentRows({
-  trainerName,
-  trainerRowSpan,
-  moduleName,
-  moduleRowSpan,
-  classroom,
-  autonomous,
-}: {
-  trainerName: string | null;
-  trainerRowSpan: number;
-  moduleName: string;
-  moduleRowSpan: number;
-  classroom: Session[];
-  autonomous: Session | null;
-}) {
-  return (
-    <>
-      {classroom.map((s, i) => (
-        <tr key={s.id} className="border-b">
-          {i === 0 && trainerName !== null ? (
-            <td
-              className="text-center px-3 py-2 border-r align-middle font-medium"
-              rowSpan={trainerRowSpan}
-            >
-              {trainerName}
-            </td>
-          ) : null}
-          {i === 0 ? (
-            <td
-              className="text-center px-3 py-2 border-r align-middle font-semibold"
-              rowSpan={moduleRowSpan}
-            >
-              {moduleName}
-            </td>
-          ) : null}
-          <td className="px-3 py-2 border-r">
-            {format(s.scheduledDate, "dd/MM/yyyy")} ({format(s.scheduledDate, "EEE")})
-          </td>
-          <td className="px-3 py-2">
-            {s.startTime}–{s.endTime}
-          </td>
-        </tr>
-      ))}
-      {autonomous ? (
-        <tr className="bg-orange-50 border-b">
-          <td
-            colSpan={2}
-            className="px-3 py-2 text-center italic text-muted-foreground"
-          >
-            {autonomous.hours}h trabalho autónomo
-          </td>
-        </tr>
-      ) : null}
-    </>
   );
 }
