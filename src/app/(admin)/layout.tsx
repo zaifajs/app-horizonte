@@ -10,7 +10,7 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b bg-zinc-50">
+      <header className="border-b bg-zinc-50 print:hidden">
         <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
           <Link href="/admin/today" className="font-semibold tracking-tight">
             Horizonte CRM
@@ -35,7 +35,7 @@ export default async function AdminLayout({
           </nav>
         </div>
       </header>
-      <main className="flex-1 mx-auto w-full max-w-7xl px-4 py-6">
+      <main className="flex-1 mx-auto w-full max-w-7xl px-4 py-6 print:max-w-none print:px-0 print:py-0">
         {children}
       </main>
     </div>
