@@ -127,18 +127,52 @@ export default async function StudentsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Students</h1>
-          <p className="text-sm text-muted-foreground">
-            {sorted.length} of {rows.length} students shown.
-          </p>
+      <div className="rounded-2xl border bg-gradient-to-br from-zinc-50 to-white p-5 md:p-6">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="space-y-1">
+            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">
+              Students
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {sorted.length === rows.length
+                ? `${rows.length} students total`
+                : `${sorted.length} shown of ${rows.length} total`}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <ExportDialog />
+            <Link href="/admin/students/new">
+              <Button>Add student</Button>
+            </Link>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <ExportDialog />
-          <Link href="/admin/students/new">
-            <Button>Add student</Button>
-          </Link>
+
+        <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+          <SummaryCard
+            label="Paid"
+            value={urgencyCounts.paid}
+            cls="bg-emerald-50 border-emerald-200 text-emerald-900"
+          />
+          <SummaryCard
+            label="Partial"
+            value={urgencyCounts.partial}
+            cls="bg-amber-50 border-amber-200 text-amber-900"
+          />
+          <SummaryCard
+            label="Due soon"
+            value={urgencyCounts.due_soon}
+            cls="bg-orange-100 border-orange-300 text-orange-900"
+          />
+          <SummaryCard
+            label="Overdue"
+            value={urgencyCounts.overdue}
+            cls="bg-red-100 border-red-300 text-red-900"
+          />
+          <SummaryCard
+            label="Pre-start"
+            value={urgencyCounts.pre_start}
+            cls="bg-zinc-50 border-zinc-200 text-zinc-700"
+          />
         </div>
       </div>
 
@@ -242,6 +276,25 @@ export default async function StudentsPage({
           </Table>
         </div>
       )}
+    </div>
+  );
+}
+
+function SummaryCard({
+  label,
+  value,
+  cls,
+}: {
+  label: string;
+  value: number;
+  cls: string;
+}) {
+  return (
+    <div className={`rounded-xl border px-3 py-2.5 ${cls}`}>
+      <div className="text-[10px] uppercase tracking-wide opacity-70">
+        {label}
+      </div>
+      <div className="text-xl font-semibold tabular-nums mt-0.5">{value}</div>
     </div>
   );
 }
