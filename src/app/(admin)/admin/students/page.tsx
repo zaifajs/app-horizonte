@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -73,7 +74,27 @@ export default async function StudentsPage() {
                   <TableCell>{s.email}</TableCell>
                   <TableCell className="tabular-nums">{s.phone}</TableCell>
                   <TableCell>{s.city}</TableCell>
-                  <TableCell>{s.enrollments[0]?.batch.code ?? "—"}</TableCell>
+                  <TableCell>
+                    {s.enrollments[0] ? (
+                      <span className="inline-flex items-center gap-1">
+                        {s.enrollments[0].batch.code}
+                        <Badge
+                          variant="outline"
+                          className={
+                            s.enrollments[0].status === "PENDING"
+                              ? "bg-amber-100 text-amber-900 border-amber-300"
+                              : s.enrollments[0].status === "ACTIVE"
+                                ? "bg-emerald-100 text-emerald-900 border-emerald-300"
+                                : ""
+                          }
+                        >
+                          {s.enrollments[0].status.toLowerCase()}
+                        </Badge>
+                      </span>
+                    ) : (
+                      "—"
+                    )}
+                  </TableCell>
                   <TableCell>{format(s.createdAt, "dd MMM yyyy")}</TableCell>
                 </TableRow>
               ))}

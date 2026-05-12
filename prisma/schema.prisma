@@ -54,6 +54,7 @@ enum DocumentKind {
 }
 
 enum EnrollmentStatus {
+  PENDING
   ACTIVE
   WITHDRAWN
   COMPLETED
@@ -239,7 +240,7 @@ model Enrollment {
   studentId  String           @db.Uuid
   batchId    String           @db.Uuid
   enrolledAt DateTime         @default(now())
-  status     EnrollmentStatus @default(ACTIVE)
+  status     EnrollmentStatus @default(PENDING)
 
   student     Student      @relation(fields: [studentId], references: [id])
   batch       Batch        @relation(fields: [batchId], references: [id])

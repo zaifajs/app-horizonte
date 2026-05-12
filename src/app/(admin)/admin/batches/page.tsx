@@ -24,7 +24,7 @@ export default async function BatchesPage() {
     include: {
       course: { select: { code: true, name: true } },
       trainer: { select: { name: true } },
-      _count: { select: { enrollments: true, sessions: true } },
+      enrollments: { select: { status: true } },
     },
   });
 
@@ -60,29 +60,43 @@ export default async function BatchesPage() {
                 <TableHead>Time</TableHead>
                 <TableHead>Trainer</TableHead>
                 <TableHead>Capacity</TableHead>
-                <TableHead>Enrolled</TableHead>
+                <TableHead>Active</TableHead>
+                <TableHead>Pending</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {batches.map((b) => (
-                <TableRow key={b.id}>
-                  <TableCell className="font-medium">
-                    <Link href={`/admin/batches/${b.id}`} className="hover:underline">
-                      {b.code}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{b.course.code}</TableCell>
-                  <TableCell>{format(b.startDate, "dd MMM yyyy")}</TableCell>
-                  <TableCell>{b.startTime}</TableCell>
-                  <TableCell>{b.trainer?.name ?? "—"}</TableCell>
-                  <TableCell>{b.capacity}</TableCell>
-                  <TableCell>{b._count.enrollments}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{b.status.toLowerCase()}</Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {batches.map((b) => {
+                const active = b.enrollments.filter((e) => e.status === "ACTIVE").length;
+                const pendingCount = b.enrollments.filter((e) => e.status === "PENDING").length;
+                return (
+                  <TableRow key={b.id}>
+                    <TableCell className="font-medium">
+                      <Link href={`/admin/batches/${b.id}`} className="hover:underline">
+                        {b.code}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{b.course.code}</TableCell>
+                    <TableCell>{format(b.startDate, "dd MMM yyyy")}</TableCell>
+                    <TableCell>{b.startTime}</TableCell>
+                    <TableCell>{b.trainer?.name ?? "—"}</TableCell>
+                    <TableCell>{b.capacity}</TableCell>
+                    <TableCell className="tabular-nums">{active}</TableCell>
+                    <TableCell className="tabular-nums">
+                      {pendingCount > 0 ? (
+                        <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-900 px-1.5 py-0.5 text-xs font-medium">
+                          {pendingCount}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">0</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{b.status.toLowerCase()}</Badge>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>

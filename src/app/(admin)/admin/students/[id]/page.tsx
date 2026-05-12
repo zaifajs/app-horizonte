@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/db";
+import { PaymentRow } from "./payment-row";
 
 export const dynamic = "force-dynamic";
 
@@ -30,11 +31,16 @@ export default async function StudentDetailPage({
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <header className="flex items-start justify-between">
+      <header className="flex items-start justify-between gap-4 flex-wrap">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {student.fullName}
-          </h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {student.fullName}
+            </h1>
+            {student.enrollments.map((e) => (
+              <EnrollmentStatusBadge key={e.id} status={e.status} batch={e.batch.code} />
+            ))}
+          </div>
           <p className="text-sm text-muted-foreground">
             {student.email} · {student.phone} · {student.city}
           </p>
@@ -83,21 +89,27 @@ export default async function StudentDetailPage({
                   </div>
                   <Badge variant="outline">{e.status.toLowerCase()}</Badge>
                 </div>
-                <div className="mt-2 grid grid-cols-2 gap-2">
+                <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {e.payments.map((p) => (
-                    <div key={p.id} className="rounded border bg-zinc-50/60 p-2 text-xs">
-                      <div className="font-medium">
-                        Installment {p.installment} · €{(p.amountCents / 100).toFixed(2)}
-                      </div>
-                      <div className="text-muted-foreground">
-                        Due {format(p.dueDate, "dd MMM yyyy")}
-                        {p.paidAt
-                          ? ` · paid ${format(p.paidAt, "dd MMM yyyy")}`
-                          : " · unpaid"}
-                      </div>
-                    </div>
+                    <PaymentRow
+                      key={p.id}
+                      payment={{
+                        id: p.id,
+                        installment: p.installment,
+                        amountCents: p.amountCents,
+                        dueDate: p.dueDate,
+                        paidAt: p.paidAt,
+                        method: p.method,
+                      }}
+                    />
                   ))}
                 </div>
+                {e.status === "PENDING" ? (
+                  <p className="mt-2 text-[11px] text-amber-700">
+                    This enrollment is <span className="font-semibold">pending activation</span>.
+                    Mark installment 1 as paid to activate.
+                  </p>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -132,5 +144,25 @@ function Row({ label, value }: { label: string; value: string }) {
       <div className="text-muted-foreground">{label}</div>
       <div className="col-span-2">{value}</div>
     </div>
+  );
+}
+
+function EnrollmentStatusBadge({
+  status,
+  batch,
+}: {
+  status: "PENDING" | "ACTIVE" | "WITHDRAWN" | "COMPLETED";
+  batch: string;
+}) {
+  const styles: Record<string, string> = {
+    PENDING: "bg-amber-100 text-amber-900 border-amber-300",
+    ACTIVE: "bg-emerald-100 text-emerald-900 border-emerald-300",
+    WITHDRAWN: "bg-zinc-100 text-zinc-700 border-zinc-300",
+    COMPLETED: "bg-sky-100 text-sky-900 border-sky-300",
+  };
+  return (
+    <Badge variant="outline" className={styles[status]}>
+      {batch} · {status.toLowerCase()}
+    </Badge>
   );
 }
