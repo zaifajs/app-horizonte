@@ -25,6 +25,7 @@ import {
 import { StudentsFilters } from "./filters";
 import { SavedViews } from "./saved-views";
 import { ExportDialog } from "./export-dialog";
+import { QuickPay } from "./quick-pay";
 import { loadBatchSequence } from "@/lib/students/batch-seq";
 
 export const dynamic = "force-dynamic";
@@ -166,12 +167,12 @@ export default async function StudentsPage({
               <TableRow>
                 <TableHead className="w-12">#</TableHead>
                 <SortableHeader filters={filters} sort="name">Name</SortableHeader>
-                <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
                 <SortableHeader filters={filters} sort="batch">Batch</SortableHeader>
                 <SortableHeader filters={filters} sort="paid" align="right">Paid</SortableHeader>
                 <SortableHeader filters={filters} sort="due" align="right">Due</SortableHeader>
                 <TableHead>Starts</TableHead>
+                <TableHead className="w-20 text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -190,7 +191,6 @@ export default async function StudentsPage({
                       {r.fullName}
                     </Link>
                   </TableCell>
-                  <TableCell>{r.email}</TableCell>
                   <TableCell className="tabular-nums">{r.phone}</TableCell>
                   <TableCell>
                     {r.latestEnrollment ? (
@@ -229,6 +229,19 @@ export default async function StudentsPage({
                     {r.latestEnrollment?.batchStartDate
                       ? format(r.latestEnrollment.batchStartDate, "dd MMM yyyy")
                       : "—"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {r.latestEnrollment && r.dueCents > 0 ? (
+                      <QuickPay
+                        enrollmentId={r.latestEnrollment.id}
+                        studentName={r.fullName}
+                        remainingCents={r.dueCents}
+                        feeCents={r.latestEnrollment.feeCents}
+                        paidCents={r.paidCents}
+                      />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
