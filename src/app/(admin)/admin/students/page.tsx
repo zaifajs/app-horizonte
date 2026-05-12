@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,14 @@ import { StudentsFilters } from "./filters";
 import { ExportDialog } from "./export-dialog";
 import { QuickPay } from "./quick-pay";
 import { ClickableRow } from "./clickable-row";
+import {
+  RowCheckbox,
+  SelectAllCheckbox,
+  SelectionProvider,
+} from "./bulk-actions";
+import type { BulkRow } from "./bulk-whatsapp-queue";
 import { loadBatchSequence } from "@/lib/students/batch-seq";
+import { localeForNationality } from "@/lib/messaging/locale-for-nationality";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +58,7 @@ export default async function StudentsPage({
           include: {
             batch: {
               select: {
+                id: true,
                 code: true,
                 startDate: true,
                 course: { select: { feeCents: true } },
@@ -125,6 +134,36 @@ export default async function StudentsPage({
   const filtered = applyComputedFilters(rows, filters);
   const sorted = sortRows(filtered, filters);
 
+  // Build the bulk-queue lookup map keyed by student id.
+  const h = await headers();
+  const proto = h.get("x-forwarded-proto") ?? "https";
+  const host = h.get("host") ?? "stage.nhorizonte.pt";
+  const queueRows = new Map<string, BulkRow>();
+  for (const s of studentsRaw) {
+    const enr = s.enrollments[0] ?? null;
+    const loc = localeForNationality(s.nationality);
+    const paid = enr?.payments.reduce((a, p) => a + p.amountCents, 0) ?? 0;
+    const fee = enr?.batch.course.feeCents ?? 0;
+    const due = Math.max(0, fee - paid);
+    queueRows.set(s.id, {
+      studentId: s.id,
+      fullName: s.fullName,
+      phone: s.phone,
+      locale: loc,
+      vars: {
+        name: s.fullName.split(" ")[0],
+        batch: enr?.batch.code ?? "—",
+        startDate: enr?.batch.startDate.toISOString().slice(0, 10) ?? "",
+        dueAmount: `€${(due / 100).toFixed(2)}`,
+        nextSessionDate: "tomorrow",
+        scheduleUrl: enr
+          ? `${proto}://${host}/${loc}/turma/${enr.batch.id}`
+          : undefined,
+      },
+    });
+  }
+  const visibleIds = sorted.map((r) => r.id);
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border bg-gradient-to-br from-zinc-50 to-white p-5 md:p-6">
@@ -193,10 +232,14 @@ export default async function StudentsPage({
           No students match these filters.
         </div>
       ) : (
+        <SelectionProvider allIds={visibleIds} rowsForQueue={queueRows}>
         <div className="rounded-lg border bg-white">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-8">
+                  <SelectAllCheckbox rowIds={visibleIds} />
+                </TableHead>
                 <TableHead className="w-12">#</TableHead>
                 <SortableHeader filters={filters} sort="name">Name</SortableHeader>
                 <TableHead>Phone</TableHead>
@@ -215,6 +258,9 @@ export default async function StudentsPage({
                     r.urgency === "withdrawn" ? "opacity-60" : ""
                   }`}
                 >
+                  <TableCell className="w-8">
+                    <RowCheckbox id={r.id} />
+                  </TableCell>
                   <TableCell className="text-muted-foreground tabular-nums">
                     {i + 1}
                   </TableCell>
@@ -275,6 +321,7 @@ export default async function StudentsPage({
             </TableBody>
           </Table>
         </div>
+        </SelectionProvider>
       )}
     </div>
   );

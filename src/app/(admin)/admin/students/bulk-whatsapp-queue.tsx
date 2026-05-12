@@ -1,0 +1,199 @@
+"use client";
+
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Check, ExternalLink } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  TEMPLATE_META,
+  buildWaMeLink,
+  renderTemplate,
+  type TemplateKey,
+  type TemplateVars,
+} from "@/lib/messaging/templates";
+import type { Locale } from "@/i18n/routing";
+import { logMessageSentAction } from "@/lib/actions/messages";
+
+export type BulkRow = {
+  studentId: string;
+  fullName: string;
+  phone: string;
+  locale: Locale;
+  vars: TemplateVars;
+};
+
+export function BulkWhatsAppQueue({
+  open,
+  onOpenChange,
+  rows,
+}: {
+  open: boolean;
+  onOpenChange: (next: boolean) => void;
+  rows: BulkRow[];
+}) {
+  const router = useRouter();
+  const [templateKey, setTemplateKey] = useState<TemplateKey>("payment_reminder");
+  const [sent, setSent] = useState<Set<string>>(new Set());
+  const [pending, startTransition] = useTransition();
+
+  const sendable = useMemo(
+    () =>
+      rows.map((r) => {
+        const body = renderTemplate(templateKey, r.locale, r.vars);
+        const waMeUrl = buildWaMeLink(r.phone, body);
+        return { ...r, body, waMeUrl };
+      }),
+    [rows, templateKey],
+  );
+
+  function markSent(studentId: string, body: string) {
+    setSent((prev) => new Set(prev).add(studentId));
+    startTransition(async () => {
+      await logMessageSentAction({
+        studentId,
+        templateKey,
+        body,
+        channel: "WA_ME",
+      });
+    });
+  }
+
+  function reset() {
+    setSent(new Set());
+  }
+
+  function close() {
+    onOpenChange(false);
+    router.refresh();
+    setTimeout(reset, 300);
+  }
+
+  const sentCount = sent.size;
+  const total = rows.length;
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="!w-full sm:!max-w-none md:!w-1/2 lg:!w-2/5 overflow-y-auto p-6"
+      >
+        <SheetHeader className="sr-only">
+          <SheetTitle>Send WhatsApp to {total} students</SheetTitle>
+          <SheetDescription>Click each link to open WhatsApp.</SheetDescription>
+        </SheetHeader>
+
+        <div className="space-y-4">
+          <header>
+            <h2 className="text-lg font-semibold tracking-tight">
+              Send WhatsApp
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {sentCount} of {total} sent · pick a template, then click each
+              student to open WhatsApp with the message pre-filled.
+            </p>
+          </header>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="bulk-tpl">Template</Label>
+            <Select value={templateKey} onValueChange={(v) => v && (setTemplateKey(v as TemplateKey), reset())}>
+              <SelectTrigger id="bulk-tpl">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(TEMPLATE_META) as TemplateKey[]).map((k) => (
+                  <SelectItem key={k} value={k}>
+                    {TEMPLATE_META[k].label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {TEMPLATE_META[templateKey].hint} · Language picked per student
+              from their nationality.
+            </p>
+          </div>
+
+          <div className="rounded-lg border bg-zinc-50 px-3 py-2 text-xs text-muted-foreground">
+            wa.me only opens one chat at a time — go through the list,
+            clicking each line. Each click is logged to the activity stream.
+          </div>
+
+          <ul className="space-y-2">
+            {sendable.map((r, i) => {
+              const isSent = sent.has(r.studentId);
+              return (
+                <li
+                  key={r.studentId}
+                  className={`rounded-lg border bg-white p-3 transition-colors ${
+                    isSent ? "border-emerald-300 bg-emerald-50" : ""
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                          {i + 1}.
+                        </span>
+                        <span className="font-medium truncate">
+                          {r.fullName}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {r.phone} · {r.locale}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        {r.body}
+                      </p>
+                    </div>
+                    {isSent ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-900 px-2 py-1 text-xs font-medium">
+                        <Check className="h-3 w-3" />
+                        Sent
+                      </span>
+                    ) : (
+                      <a
+                        href={r.waMeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => markSent(r.studentId, r.body)}
+                      >
+                        <Button size="sm" variant="outline">
+                          <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                          Open
+                        </Button>
+                      </a>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div className="flex items-center justify-between pt-2">
+            <p className="text-xs text-muted-foreground">
+              {pending ? "Logging…" : null}
+            </p>
+            <Button onClick={close}>
+              {sentCount === total ? "Done" : "Close"}
+            </Button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
