@@ -8,10 +8,10 @@ Source of truth for what's left. Tick boxes as work completes. Full context in `
 
 ## Phase 1: Foundation (local + deploy infra)
 - [x] 1.1 Upgrade Node 16 → 22 (local) — already on v22.21.1
-- [ ] 1.2 Scaffold Next.js 15 + git + push to GitHub (master + develop branches, master protected)
+- [~] 1.2 Scaffold Next.js 16 + git + push to GitHub — master + develop pushed; **master protection pending** (UI or `gh auth login`)
 - [ ] 1.3 shadcn/ui + base layout
-- [ ] 1.4 Create horizonte-dev + horizonte-prod Supabase projects + Storage buckets + env
-- [ ] 1.5 CloudPanel: create stage.nhorizonte.pt + app.nhorizonte.pt Node sites with SSL + env files
+- [x] 1.4 horizonte-dev + horizonte-prod Supabase projects created (eu-west-1); student-documents bucket created; .env.local wired; stage + prod .env files staged in /tmp
+- [x] 1.5 CloudPanel: stage.nhorizonte.pt + app.nhorizonte.pt Node sites created with SSL (env files still to drop in once Supabase keys exist — Task 1.4)
 - [ ] 1.6 GitHub Actions: CI workflow + deploy workflow (SSH to VPS on push to develop/master)
 - [ ] 1.7 Prisma schema (full v1 data model) + initial migration → auto-applies on deploy
 - [ ] 1.8 Seed: PLA + 6 modules + dev admin (dev only)

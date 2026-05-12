@@ -1,0 +1,85 @@
+name: Deploy
+
+on:
+  push:
+    branches: [develop, master]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve target environment
+        id: target
+        run: |
+          if [ "${GITHUB_REF}" = "refs/heads/master" ]; then
+            echo "site_user=nhorizonte-app"  >> "$GITHUB_OUTPUT"
+            echo "site_path=/home/nhorizonte-app/htdocs/app.nhorizonte.pt" >> "$GITHUB_OUTPUT"
+            echo "pm2_name=horizonte-prod"   >> "$GITHUB_OUTPUT"
+            echo "branch=master"             >> "$GITHUB_OUTPUT"
+            echo "label=PRODUCTION"          >> "$GITHUB_OUTPUT"
+          else
+            echo "site_user=nhorizonte-stage" >> "$GITHUB_OUTPUT"
+            echo "site_path=/home/nhorizonte-stage/htdocs/stage.nhorizonte.pt" >> "$GITHUB_OUTPUT"
+            echo "pm2_name=horizonte-stage"   >> "$GITHUB_OUTPUT"
+            echo "branch=develop"             >> "$GITHUB_OUTPUT"
+            echo "label=STAGING"              >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to ${{ steps.target.outputs.label }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 root@${{ secrets.VPS_HOST }} \
+            "bash -s" \
+            "${{ steps.target.outputs.site_path }}" \
+            "${{ steps.target.outputs.site_user }}" \
+            "${{ steps.target.outputs.pm2_name }}" \
+            "${{ steps.target.outputs.branch }}" \
+            "${{ github.sha }}" \
+          <<'REMOTE'
+          set -euo pipefail
+          SITE_PATH="$1"
+          SITE_USER="$2"
+          PM2_NAME="$3"
+          BRANCH="$4"
+          GIT_SHA="$5"
+
+          # First-time clone (uses VPS-side deploy key configured manually)
+          if [ ! -d "$SITE_PATH/.git" ]; then
+            sudo -u "$SITE_USER" -H git clone -b "$BRANCH" \
+              git@github.com:zaifajs/app-horizonte.git "$SITE_PATH"
+          fi
+
+          # Update code + build + reload PM2 as the site user, with NVM sourced
+          sudo -u "$SITE_USER" -H bash <<INNER
+          set -euo pipefail
+          export NVM_DIR="\$HOME/.nvm"
+          [ -s "\$NVM_DIR/nvm.sh" ] && . "\$NVM_DIR/nvm.sh"
+          nvm use default >/dev/null
+
+          cd "$SITE_PATH"
+          git fetch origin "$BRANCH"
+          git checkout "$BRANCH"
+          git reset --hard "$GIT_SHA"
+
+          npm ci --no-audit --no-fund
+          if [ -d prisma/migrations ]; then npx prisma migrate deploy; fi
+          npm run build
+
+          if pm2 describe "$PM2_NAME" >/dev/null 2>&1; then
+            pm2 reload "$PM2_NAME" --update-env
+          else
+            pm2 start npm --name "$PM2_NAME" -- start
+          fi
+          pm2 save
+          INNER
+          REMOTE
