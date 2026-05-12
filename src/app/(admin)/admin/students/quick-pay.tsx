@@ -14,13 +14,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { addPaymentAction } from "@/lib/actions/payments";
 
 type Method = "BANK" | "CASH";
@@ -118,16 +111,8 @@ export function QuickPay({
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor={`q-method-${enrollmentId}`}>Method</Label>
-            <Select value={method} onValueChange={(v) => v && setMethod(v as Method)}>
-              <SelectTrigger id={`q-method-${enrollmentId}`}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="BANK">Bank transfer</SelectItem>
-                <SelectItem value="CASH">Cash</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label>Method</Label>
+            <MethodPills value={method} onChange={setMethod} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor={`q-proof-${enrollmentId}`}>
@@ -177,5 +162,45 @@ export function QuickPay({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function MethodPills({
+  value,
+  onChange,
+}: {
+  value: "BANK" | "CASH";
+  onChange: (v: "BANK" | "CASH") => void;
+}) {
+  const opts: Array<{ key: "BANK" | "CASH"; label: string }> = [
+    { key: "BANK", label: "Bank transfer" },
+    { key: "CASH", label: "Cash" },
+  ];
+  return (
+    <div className="inline-flex rounded-lg border bg-white p-0.5" role="radiogroup">
+      {opts.map((o) => {
+        const active = value === o.key;
+        return (
+          <button
+            key={o.key}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onChange(o.key);
+            }}
+            className={`text-sm px-3 py-1.5 rounded-md transition ${
+              active
+                ? "bg-zinc-900 text-white"
+                : "text-zinc-700 hover:bg-zinc-100"
+            }`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
