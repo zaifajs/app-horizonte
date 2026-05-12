@@ -31,6 +31,37 @@ export type TemplateVars = {
 
 type Bodies = Record<Locale, string>;
 
+export const EMAIL_SUBJECTS: Record<TemplateKey, Bodies> = {
+  welcome: {
+    en: "Welcome to Novo Horizonte — your batch {{batch}} is confirmed",
+    pt: "Bem-vindo à Novo Horizonte — turma {{batch}} confirmada",
+    bn: "Novo Horizonte-এ স্বাগতম — আপনার {{batch}} ব্যাচ নিশ্চিত",
+    ur: "Novo Horizonte میں خوش آمدید — آپ کا {{batch}} بیچ کنفرم ہے",
+    hi: "Novo Horizonte में स्वागत — आपका {{batch}} बैच पुष्ट",
+  },
+  payment_reminder: {
+    en: "Payment reminder — {{dueAmount}} outstanding for batch {{batch}}",
+    pt: "Lembrete de pagamento — {{dueAmount}} em dívida para a turma {{batch}}",
+    bn: "পেমেন্ট অনুস্মারক — {{batch}} ব্যাচের জন্য {{dueAmount}} বাকি",
+    ur: "ادائیگی کی یاد دہانی — {{batch}} بیچ کے لیے {{dueAmount}} باقی",
+    hi: "भुगतान अनुस्मारक — {{batch}} बैच के लिए {{dueAmount}} बकाया",
+  },
+  class_reminder: {
+    en: "Class reminder — {{batch}} on {{nextSessionDate}}",
+    pt: "Lembrete de aula — {{batch}} em {{nextSessionDate}}",
+    bn: "ক্লাস অনুস্মারক — {{batch}} {{nextSessionDate}}-এ",
+    ur: "کلاس کی یاد دہانی — {{batch}} {{nextSessionDate}} کو",
+    hi: "कक्षा अनुस्मारक — {{batch}} {{nextSessionDate}} को",
+  },
+  cronograma: {
+    en: "Your batch schedule — {{batch}}",
+    pt: "Cronograma da sua turma — {{batch}}",
+    bn: "আপনার ব্যাচের সময়সূচী — {{batch}}",
+    ur: "آپ کا بیچ شیڈول — {{batch}}",
+    hi: "आपके बैच का शेड्यूल — {{batch}}",
+  },
+};
+
 export const TEMPLATES: Record<TemplateKey, Bodies> = {
   welcome: {
     en: "Hello {{name}}, welcome to Novo Horizonte! Your registration for batch {{batch}} is confirmed. First class: {{startDate}} at 14:00. Reply here if you have any question.",
@@ -68,7 +99,20 @@ export function renderTemplate(
   vars: TemplateVars,
 ): string {
   const body = TEMPLATES[key][locale] ?? TEMPLATES[key].en;
-  return body.replace(/\{\{(\w+)\}\}/g, (_m, name: keyof TemplateVars) => {
+  return interpolate(body, vars);
+}
+
+export function renderEmailSubject(
+  key: TemplateKey,
+  locale: Locale,
+  vars: TemplateVars,
+): string {
+  const subject = EMAIL_SUBJECTS[key][locale] ?? EMAIL_SUBJECTS[key].en;
+  return interpolate(subject, vars);
+}
+
+function interpolate(template: string, vars: TemplateVars): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (_m, name: keyof TemplateVars) => {
     const v = vars[name];
     return v == null ? `{{${String(name)}}}` : String(v);
   });

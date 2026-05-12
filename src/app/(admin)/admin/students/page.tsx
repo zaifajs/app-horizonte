@@ -149,6 +149,7 @@ export default async function StudentsPage({
       studentId: s.id,
       fullName: s.fullName,
       phone: s.phone,
+      email: s.email,
       locale: loc,
       vars: {
         name: s.fullName.split(" ")[0],

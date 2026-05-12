@@ -14,19 +14,23 @@ import {
 } from "@/components/ui/select";
 import {
   TEMPLATE_META,
-  TEMPLATES,
   buildWaMeLink,
+  renderEmailSubject,
   renderTemplate,
   type TemplateKey,
   type TemplateVars,
 } from "@/lib/messaging/templates";
 import type { Locale } from "@/i18n/routing";
-import { logMessageSentAction } from "@/lib/actions/messages";
+import {
+  logMessageSentAction,
+  sendEmailToStudentAction,
+} from "@/lib/actions/messages";
 
 type Props = {
   studentId: string;
   studentName: string;
   studentPhone: string;
+  studentEmail: string;
   locale: Locale;
   vars: TemplateVars;
   /** Computed server-side from nationality; can be overridden in the picker. */
@@ -45,6 +49,7 @@ export function SendMessage({
   studentId,
   studentName,
   studentPhone,
+  studentEmail,
   locale,
   vars,
   nationalityLabel,
@@ -54,12 +59,19 @@ export function SendMessage({
   const [templateKey, setTemplateKey] = useState<TemplateKey>("welcome");
   const [chosenLocale, setChosenLocale] = useState<Locale>(locale);
   const [edited, setEdited] = useState<string | null>(null);
+  const [emailFeedback, setEmailFeedback] = useState<
+    { kind: "ok" | "err"; text: string } | null
+  >(null);
 
   const rendered = useMemo(
     () => renderTemplate(templateKey, chosenLocale, vars),
     [templateKey, chosenLocale, vars],
   );
   const body = edited ?? rendered;
+  const emailSubject = useMemo(
+    () => renderEmailSubject(templateKey, chosenLocale, vars),
+    [templateKey, chosenLocale, vars],
+  );
 
   const waMe = useMemo(
     () => buildWaMeLink(studentPhone, body),
@@ -70,7 +82,7 @@ export function SendMessage({
     setEdited(null);
   }
 
-  function onSend() {
+  function onSendWa() {
     startTransition(async () => {
       await logMessageSentAction({
         studentId,
@@ -78,6 +90,25 @@ export function SendMessage({
         body,
         channel: "WA_ME",
       });
+      router.refresh();
+    });
+  }
+
+  function onSendEmail() {
+    setEmailFeedback(null);
+    startTransition(async () => {
+      const result = await sendEmailToStudentAction({
+        studentId,
+        templateKey,
+        bodyOverride: body,
+        subjectOverride: emailSubject,
+        vars,
+      });
+      if (!result.ok) {
+        setEmailFeedback({ kind: "err", text: result.error });
+        return;
+      }
+      setEmailFeedback({ kind: "ok", text: "Email sent." });
       router.refresh();
     });
   }
@@ -156,21 +187,46 @@ export function SendMessage({
         </p>
       ) : null}
 
-      <div className="flex items-center justify-end gap-2 pt-1">
+      <div className="rounded-md border bg-zinc-50 px-3 py-2 text-xs">
+        <div className="text-muted-foreground uppercase tracking-wide">
+          Email subject preview
+        </div>
+        <div className="mt-0.5 font-medium">{emailSubject}</div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+        <Button
+          variant="outline"
+          disabled={pending || !studentEmail}
+          onClick={onSendEmail}
+        >
+          {pending ? "Sending…" : "Send email"}
+        </Button>
         <a
           href={waMe}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={onSend}
+          onClick={onSendWa}
         >
           <Button disabled={pending || !studentPhone}>
             Open WhatsApp & log
           </Button>
         </a>
       </div>
+      {emailFeedback ? (
+        <p
+          className={
+            emailFeedback.kind === "ok"
+              ? "text-xs text-emerald-700"
+              : "text-xs text-destructive"
+          }
+        >
+          {emailFeedback.text}
+        </p>
+      ) : null}
       <p className="text-xs text-muted-foreground">
-        Clicking "Open WhatsApp" launches your chat window with the message pre-filled
-        and logs this attempt to the activity stream. You still need to press Send in WhatsApp.
+        WhatsApp opens your chat window with the message pre-filled — you still
+        press Send. Email goes out immediately via Resend.
       </p>
     </div>
   );

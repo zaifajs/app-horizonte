@@ -159,6 +159,7 @@ async function MessagingSection({ studentId }: { studentId: string }) {
       id: true,
       fullName: true,
       phone: true,
+      email: true,
       nationality: true,
       enrollments: {
         orderBy: { enrolledAt: "desc" },
@@ -205,6 +206,7 @@ async function MessagingSection({ studentId }: { studentId: string }) {
         studentId={data.id}
         studentName={data.fullName}
         studentPhone={data.phone}
+        studentEmail={data.email}
         locale={loc}
         nationalityLabel={data.nationality}
         vars={{

@@ -150,6 +150,7 @@ export default async function InterceptedStudentDetail({
             studentId={student.id}
             studentName={student.fullName}
             studentPhone={student.phone}
+            studentEmail={student.email}
             locale={loc}
             nationalityLabel={student.nationality}
             vars={{
