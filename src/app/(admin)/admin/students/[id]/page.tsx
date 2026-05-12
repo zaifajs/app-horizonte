@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/db";
 import { EnrollmentPayments } from "./enrollment-payments";
+import { ActivityStream } from "./activity-stream";
 
 export const dynamic = "force-dynamic";
 
@@ -126,9 +127,9 @@ export default async function StudentDetailPage({
         </Section>
       ) : null}
 
-      <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-        Audit log activity stream — built in Task 3.4c.
-      </div>
+      <Section title="Activity">
+        <ActivityStream studentId={student.id} />
+      </Section>
     </div>
   );
 }
