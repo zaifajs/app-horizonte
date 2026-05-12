@@ -3,6 +3,20 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { weekdayHolidaysBetween } from "@/lib/cronograma/holidays";
 
+// Tailwind palette cycled per month-of-batch (first month → palette[0], etc.).
+const MONTH_PALETTE = [
+  { bg: "bg-sky-100",     text: "text-sky-900" },
+  { bg: "bg-emerald-100", text: "text-emerald-900" },
+  { bg: "bg-amber-100",   text: "text-amber-900" },
+  { bg: "bg-violet-100",  text: "text-violet-900" },
+  { bg: "bg-rose-100",    text: "text-rose-900" },
+  { bg: "bg-cyan-100",    text: "text-cyan-900" },
+];
+
+function monthKey(d: Date) {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
 // Compact A4-portrait-friendly cronograma. Each module renders in ~3 lines so
 // the full PLA layout fits a single printed page.
 
@@ -72,6 +86,24 @@ export function ScheduleTable({
     Array.from(autonomousByModule.values()).reduce((a, b) => a + b, 0);
   const endDate = classroom[classroom.length - 1]?.scheduledDate;
 
+  // Build month → palette mapping in order of first appearance.
+  const monthOrder: string[] = [];
+  for (const s of classroom) {
+    const k = monthKey(s.scheduledDate);
+    if (!monthOrder.includes(k)) monthOrder.push(k);
+  }
+  const monthColor = new Map<string, (typeof MONTH_PALETTE)[number]>();
+  monthOrder.forEach((k, i) =>
+    monthColor.set(k, MONTH_PALETTE[i % MONTH_PALETTE.length]),
+  );
+  const monthLabel = new Map<string, string>();
+  for (const s of classroom) {
+    const k = monthKey(s.scheduledDate);
+    if (!monthLabel.has(k)) {
+      monthLabel.set(k, format(s.scheduledDate, "MMMM yyyy"));
+    }
+  }
+
   // Assume a single time window for all classroom rows (PLA convention).
   const timeWindow =
     classroom[0]?.startTime && classroom[0]?.endTime
@@ -137,17 +169,23 @@ export function ScheduleTable({
                   </div>
                 </div>
                 <div className="mt-1 flex items-center justify-between gap-3 text-[11px] tabular-nums">
-                  <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                    {g.rows.map((r) => (
-                      <span key={r.id} className="text-zinc-700">
-                        <span className="text-[9px] uppercase text-zinc-500 mr-0.5">
-                          {format(r.scheduledDate, "EEE")}
+                  <div className="flex flex-wrap gap-x-1.5 gap-y-1">
+                    {g.rows.map((r) => {
+                      const c = monthColor.get(monthKey(r.scheduledDate)) ?? MONTH_PALETTE[0];
+                      return (
+                        <span
+                          key={r.id}
+                          className={`inline-flex items-baseline gap-1 rounded-md px-1.5 py-0.5 ${c.bg} ${c.text}`}
+                        >
+                          <span className="text-[9px] uppercase opacity-70">
+                            {format(r.scheduledDate, "EEE")}
+                          </span>
+                          <span className="font-medium">
+                            {format(r.scheduledDate, "dd/MM")}
+                          </span>
                         </span>
-                        <span className="font-medium">
-                          {format(r.scheduledDate, "dd/MM")}
-                        </span>
-                      </span>
-                    ))}
+                      );
+                    })}
                   </div>
                   <div className="text-[10px] text-zinc-600 whitespace-nowrap">
                     {timeWindow}
@@ -158,9 +196,11 @@ export function ScheduleTable({
                 </div>
                 {skipped.length > 0 ? (
                   <div className="mt-1 text-[10px] text-red-700">
-                    <span className="font-semibold mr-1">Skipped holiday{skipped.length > 1 ? "s" : ""}:</span>
+                    <span className="font-semibold mr-1">
+                      Skipped holiday{skipped.length > 1 ? "s" : ""}:
+                    </span>
                     {skipped
-                      .map((h) => `${format(h.date, "dd/MM")} ${h.name}`)
+                      .map((h) => `${format(h.date, "EEE")} ${format(h.date, "dd/MM")} — ${h.name}`)
                       .join(" · ")}
                   </div>
                 ) : null}
@@ -168,6 +208,25 @@ export function ScheduleTable({
             );
           })}
         </div>
+
+        {monthOrder.length > 1 ? (
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] print:mt-2">
+            <span className="text-zinc-500 uppercase tracking-wide font-semibold">
+              Months
+            </span>
+            {monthOrder.map((k) => {
+              const c = monthColor.get(k)!;
+              return (
+                <span
+                  key={k}
+                  className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 ${c.bg} ${c.text}`}
+                >
+                  <span className="font-medium">{monthLabel.get(k)}</span>
+                </span>
+              );
+            })}
+          </div>
+        ) : null}
 
         <footer className="mt-3 text-center text-[9px] text-zinc-500 print:mt-2">
           {batch.course.name} · Turma {batch.code} · gerado por Horizonte CRM
