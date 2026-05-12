@@ -1,0 +1,339 @@
+// Horizonte CRM — v1 data model
+// See docs/ideas/horizonte-crm-v1.md for the spec this implements.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------- enums
+
+enum UserRole {
+  ADMIN
+  STAFF
+  TEACHER
+  STUDENT
+}
+
+enum BatchStatus {
+  UPCOMING
+  ACTIVE
+  FINISHED
+  CANCELLED
+}
+
+enum SessionKind {
+  CLASSROOM
+  AUTONOMOUS
+}
+
+enum SessionStatus {
+  SCHEDULED
+  HELD
+  CANCELLED
+  RESCHEDULED
+}
+
+enum DocType {
+  PASSPORT
+  RESIDENCE_PERMIT
+  ID_CARD
+}
+
+enum DocumentKind {
+  PASSPORT_FRONT
+  PASSPORT_BACK
+  RESIDENCE_PERMIT_FRONT
+  RESIDENCE_PERMIT_BACK
+  ID_CARD_FRONT
+  ID_CARD_BACK
+  OTHER
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  WITHDRAWN
+  COMPLETED
+}
+
+enum PaymentMethod {
+  BANK
+  CASH
+}
+
+enum AttendanceState {
+  PRESENT
+  LATE
+  LEFT_EARLY
+  EXCUSED_ABSENCE
+  UNEXCUSED_ABSENCE
+}
+
+enum MessageChannel {
+  WA_ME
+  WA_CLOUD
+  EMAIL
+}
+
+enum MessageStatus {
+  SENT
+  FAILED
+  BOUNCED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+// ---------------------------------------------------------------- core
+
+// One row per application user. id mirrors the Supabase auth.users.id (UUID).
+// Created via Supabase Auth invite; our row carries the role + display name.
+model User {
+  id        String   @id @db.Uuid
+  email     String   @unique
+  name      String
+  role      UserRole @default(STUDENT)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  studentProfile Student?
+  batchesTaught  Batch[]        @relation("BatchTrainer")
+  sessionsOver   BatchSession[] @relation("SessionTrainer")
+  paymentsTaken  Payment[]      @relation("PaymentCollector")
+  notesAuthored  Note[]         @relation("NoteAuthor")
+  messagesSent   MessageLog[]   @relation("MessageSender")
+  auditEntries   AuditLog[]     @relation("AuditActor")
+
+  @@map("users")
+}
+
+model Course {
+  id         String   @id @default(uuid()) @db.Uuid
+  code       String   @unique
+  name       String
+  level      String
+  totalHours Int
+  createdAt  DateTime @default(now())
+
+  modules Module[]
+  batches Batch[]
+
+  @@map("courses")
+}
+
+model Module {
+  id              String @id @default(uuid()) @db.Uuid
+  courseId        String @db.Uuid
+  number          Int
+  name            String
+  classroomDays   Int    @default(5)
+  hoursPerDay     Int    @default(4)
+  autonomousHours Int    @default(5)
+
+  course   Course         @relation(fields: [courseId], references: [id])
+  sessions BatchSession[]
+
+  @@unique([courseId, number])
+  @@map("modules")
+}
+
+model Batch {
+  id            String      @id @default(uuid()) @db.Uuid
+  code          String      @unique
+  courseId      String      @db.Uuid
+  trainerId     String?     @db.Uuid
+  startDate     DateTime    @db.Date
+  startTime     String
+  durationHours Int         @default(4)
+  capacity      Int         @default(25)
+  status        BatchStatus @default(UPCOMING)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  course      Course         @relation(fields: [courseId], references: [id])
+  trainer     User?          @relation("BatchTrainer", fields: [trainerId], references: [id])
+  sessions    BatchSession[]
+  enrollments Enrollment[]
+
+  @@map("batches")
+}
+
+model BatchSession {
+  id                String        @id @default(uuid()) @db.Uuid
+  batchId           String        @db.Uuid
+  moduleId          String        @db.Uuid
+  sequenceInModule  Int
+  scheduledDate     DateTime      @db.Date
+  startTime         String?
+  endTime           String?
+  hours             Int
+  kind              SessionKind
+  status            SessionStatus @default(SCHEDULED)
+  trainerOverrideId String?       @db.Uuid
+  notes             String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  batch           Batch        @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  module          Module       @relation(fields: [moduleId], references: [id])
+  trainerOverride User?        @relation("SessionTrainer", fields: [trainerOverrideId], references: [id])
+  attendances     Attendance[]
+
+  @@unique([batchId, moduleId, sequenceInModule, kind])
+  @@index([scheduledDate])
+  @@map("batch_sessions")
+}
+
+model Student {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String?  @unique @db.Uuid
+  fullName      String
+  email         String   @unique
+  phone         String
+  docType       DocType
+  docNumber     String
+  dob           DateTime @db.Date
+  docExpiry     DateTime @db.Date
+  nationality   String
+  nif           String
+  niss          String?
+  address       String
+  city          String
+  gdprConsentAt DateTime
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user        User?        @relation(fields: [userId], references: [id])
+  enrollments Enrollment[]
+  documents   Document[]
+  messageLog  MessageLog[]
+  auditLog    AuditLog[]
+  noteEntries Note[]
+
+  @@map("students")
+}
+
+model Document {
+  id          String       @id @default(uuid()) @db.Uuid
+  studentId   String       @db.Uuid
+  kind        DocumentKind
+  storagePath String
+  expiresAt   DateTime?    @db.Date
+  uploadedAt  DateTime     @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}
+
+model Enrollment {
+  id         String           @id @default(uuid()) @db.Uuid
+  studentId  String           @db.Uuid
+  batchId    String           @db.Uuid
+  enrolledAt DateTime         @default(now())
+  status     EnrollmentStatus @default(ACTIVE)
+
+  student     Student      @relation(fields: [studentId], references: [id])
+  batch       Batch        @relation(fields: [batchId], references: [id])
+  payments    Payment[]
+  attendances Attendance[]
+
+  @@unique([studentId, batchId])
+  @@map("enrollments")
+}
+
+model Payment {
+  id               String         @id @default(uuid()) @db.Uuid
+  enrollmentId     String         @db.Uuid
+  installment      Int
+  amountCents      Int
+  currency         String         @default("EUR")
+  dueDate          DateTime       @db.Date
+  paidAt           DateTime?
+  method           PaymentMethod?
+  proofStoragePath String?
+  collectedById    String?        @db.Uuid
+  notes            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  enrollment  Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  collectedBy User?      @relation("PaymentCollector", fields: [collectedById], references: [id])
+
+  @@index([dueDate])
+  @@index([paidAt])
+  @@map("payments")
+}
+
+model Attendance {
+  id           String          @id @default(uuid()) @db.Uuid
+  sessionId    String          @db.Uuid
+  enrollmentId String          @db.Uuid
+  state        AttendanceState
+  notes        String?
+  markedAt     DateTime        @default(now())
+  markedById   String?         @db.Uuid
+
+  session    BatchSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  enrollment Enrollment   @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, enrollmentId])
+  @@map("attendances")
+}
+
+model MessageLog {
+  id           String         @id @default(uuid()) @db.Uuid
+  studentId    String         @db.Uuid
+  templateKey  String
+  body         String
+  sentVia      MessageChannel
+  sentById     String?        @db.Uuid
+  sentAt       DateTime       @default(now())
+  status       MessageStatus  @default(SENT)
+  errorMessage String?
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  sentBy  User?   @relation("MessageSender", fields: [sentById], references: [id])
+
+  @@index([studentId, sentAt(sort: Desc)])
+  @@map("message_logs")
+}
+
+model AuditLog {
+  id          String      @id @default(uuid()) @db.Uuid
+  actorUserId String?     @db.Uuid
+  studentId   String?     @db.Uuid
+  action      AuditAction
+  entityType  String
+  entityId    String      @db.Uuid
+  changes     Json?
+  createdAt   DateTime    @default(now())
+
+  actor   User?    @relation("AuditActor", fields: [actorUserId], references: [id])
+  student Student? @relation(fields: [studentId], references: [id])
+
+  @@index([studentId, createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+model Note {
+  id        String   @id @default(uuid()) @db.Uuid
+  studentId String   @db.Uuid
+  authorId  String?  @db.Uuid
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  author  User?   @relation("NoteAuthor", fields: [authorId], references: [id])
+
+  @@map("notes")
+}

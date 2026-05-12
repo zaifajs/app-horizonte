@@ -1,3 +1,4 @@
+import NextLink from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { LocaleSwitcher } from "@/components/locale-switcher";
@@ -19,9 +20,9 @@ export default async function PublicLayout({
             <Link href="/register" className="hover:underline">
               {t("header.register")}
             </Link>
-            <Link href="/login" className="hover:underline">
+            <NextLink href="/login" className="hover:underline">
               {t("header.login")}
-            </Link>
+            </NextLink>
             <LocaleSwitcher />
           </nav>
         </div>

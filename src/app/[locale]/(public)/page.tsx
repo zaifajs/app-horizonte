@@ -1,3 +1,4 @@
+import NextLink from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
@@ -12,9 +13,9 @@ export default async function HomePage() {
         <Link href="/register">
           <Button>{t("ctaRegister")}</Button>
         </Link>
-        <Link href="/login">
+        <NextLink href="/login">
           <Button variant="outline">{t("ctaLogin")}</Button>
-        </Link>
+        </NextLink>
       </div>
     </section>
   );

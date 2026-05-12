@@ -1,12 +1,13 @@
 import Link from "next/link";
+import { requireRole } from "@/lib/auth";
 
-// Auth gate is wired in Task 1.9 (Supabase middleware).
-// For now this is a layout shell only.
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const user = await requireRole(["ADMIN", "STAFF"]);
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b bg-zinc-50">
@@ -16,14 +17,21 @@ export default function AdminLayout({
           </Link>
           <nav className="flex items-center gap-4 text-sm">
             <Link href="/admin/today" className="hover:underline">
-              Hoje
+              Today
             </Link>
             <Link href="/admin/students" className="hover:underline">
-              Estudantes
+              Students
             </Link>
             <Link href="/admin/batches" className="hover:underline">
-              Turmas
+              Batches
             </Link>
+            <span className="text-muted-foreground">·</span>
+            <span className="text-muted-foreground">
+              {user.name} ({user.role.toLowerCase()})
+            </span>
+            <a href="/logout" className="hover:underline">
+              Sign out
+            </a>
           </nav>
         </div>
       </header>
