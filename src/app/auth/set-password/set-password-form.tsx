@@ -17,9 +17,9 @@ export function SetPasswordForm() {
   // null = still resolving, true = signed in, false = no session after timeout
   const [hasSession, setHasSession] = useState<boolean | null>(null);
 
-  // The invite link arrives as ...#access_token=...&type=invite. The browser
-  // Supabase client parses that hash asynchronously, so we listen for the
-  // SIGNED_IN event instead of bouncing on first getUser() check.
+  // @supabase/ssr uses PKCE: Supabase redirects to this page with ?code=<auth_code>.
+  // We must exchange that code for a session before the SDK has anything to report.
+  // Fallback: also handle the legacy implicit flow where the hash carries access_token.
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     let resolved = false;
@@ -31,21 +31,30 @@ export function SetPasswordForm() {
       setHasSession(true);
     }
 
-    // 1) Listen for the auth event (fired when the SDK ingests the hash).
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => handle(session),
     );
 
-    // 2) Cover the case where the session was set before we subscribed.
-    supabase.auth.getSession().then(({ data }) => handle(data.session));
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
 
-    // 3) Safety net: if nothing's happened after a few seconds, the link is
-    //    bad / expired / already used — send the user to login.
+    if (code) {
+      // PKCE flow: exchange the auth code for a session. onAuthStateChange fires after.
+      supabase.auth.exchangeCodeForSession(code).then(({ data }) => {
+        handle(data.session);
+        // Clean the code out of the URL so a refresh doesn't re-attempt the exchange.
+        const clean = new URL(window.location.href);
+        clean.searchParams.delete("code");
+        window.history.replaceState(null, "", clean.toString());
+      });
+    } else {
+      // Implicit flow or already-active session: getSession() is enough.
+      supabase.auth.getSession().then(({ data }) => handle(data.session));
+    }
+
     const timer = setTimeout(() => {
-      if (!resolved) {
-        setHasSession(false);
-      }
-    }, 4000);
+      if (!resolved) setHasSession(false);
+    }, 6000);
 
     return () => {
       subscription.unsubscribe();
