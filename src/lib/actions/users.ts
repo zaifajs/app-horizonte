@@ -48,7 +48,7 @@ export async function inviteUserAction(
   const supabase = supabaseAdmin();
   const redirectTo =
     process.env.NEXT_PUBLIC_APP_URL
-      ? `${process.env.NEXT_PUBLIC_APP_URL}/login`
+      ? `${process.env.NEXT_PUBLIC_APP_URL}/auth/set-password`
       : undefined;
   const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
     data: { name: input.name, role: input.role },
@@ -133,6 +133,81 @@ export async function setUserActiveAction(
       actorUserId: actor.id,
       changes: {
         isActive: { from: before.isActive, to: parsed.data.isActive },
+      },
+    });
+  });
+
+  revalidatePath("/admin/users");
+  return { ok: true };
+}
+
+// ------------------------------ delete
+
+const deleteSchema = z.object({ userId: z.string().uuid() });
+
+export async function deleteUserAction(
+  raw: z.input<typeof deleteSchema>,
+): Promise<{ ok: boolean; error?: string }> {
+  const actor = await requireRole(["ADMIN"]);
+  const parsed = deleteSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid input." };
+  if (parsed.data.userId === actor.id) {
+    return { ok: false, error: "You can't delete your own account." };
+  }
+
+  const target = await prisma.user.findUnique({
+    where: { id: parsed.data.userId },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      _count: {
+        select: {
+          batchesTaught: true,
+          paymentsTaken: true,
+          messagesSent: true,
+          auditEntries: true,
+          notesAuthored: true,
+        },
+      },
+    },
+  });
+  if (!target) return { ok: false, error: "User not found." };
+
+  // Block delete if any reference would be lost. Most relations are
+  // ON DELETE SET NULL by Prisma default, so payments/audit etc. are safe.
+  // batchesTaught uses set null too. We just warn on hard cascades.
+  if (target._count.batchesTaught > 0) {
+    return {
+      ok: false,
+      error:
+        "User is assigned as trainer on one or more batches. Reassign the trainer first, then delete.",
+    };
+  }
+
+  // Best-effort: delete the Supabase Auth user too. If that fails, we still
+  // proceed — the row in our DB will be removed and the orphan Auth user
+  // won't be able to do anything (no User row, no role).
+  try {
+    const supabase = supabaseAdmin();
+    await supabase.auth.admin.deleteUser(parsed.data.userId);
+  } catch (e) {
+    console.warn("Supabase auth.admin.deleteUser failed:", e);
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.delete({ where: { id: parsed.data.userId } });
+    await logChange({
+      tx,
+      action: "DELETE",
+      entityType: "User",
+      entityId: target.id,
+      actorUserId: actor.id,
+      changes: {
+        email: target.email,
+        name: target.name,
+        role: target.role,
       },
     });
   });

@@ -11,6 +11,7 @@ const NON_LOCALE_PATHS = [
   "/login",
   "/logout",
   "/forbidden",
+  "/auth",
 ];
 
 export default async function middleware(request: NextRequest) {
