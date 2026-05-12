@@ -1,6 +1,7 @@
 // Single source of truth for what can land in the CSV export.
 
 export type ExportColumnKey =
+  | "batchSeq"
   | "name"
   | "email"
   | "phone"
@@ -26,6 +27,7 @@ export type ExportColumn = {
 };
 
 export const EXPORT_COLUMNS: ExportColumn[] = [
+  { key: "batchSeq", label: "# in batch" },
   { key: "name", label: "Name" },
   { key: "email", label: "Email" },
   { key: "phone", label: "Phone" },
@@ -47,6 +49,7 @@ export const EXPORT_COLUMNS: ExportColumn[] = [
 ];
 
 export const DEFAULT_EXPORT_COLUMNS: ExportColumnKey[] = [
+  "batchSeq",
   "name",
   "email",
   "phone",

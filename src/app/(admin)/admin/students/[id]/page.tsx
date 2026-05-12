@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/db";
 import { EnrollmentPayments } from "./enrollment-payments";
 import { ActivityStream } from "./activity-stream";
+import { loadBatchSequence } from "@/lib/students/batch-seq";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export default async function StudentDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const batchSeq = await loadBatchSequence();
   const student = await prisma.student.findUnique({
     where: { id },
     include: {
@@ -44,9 +46,13 @@ export default async function StudentDetailPage({
             <h1 className="text-2xl font-semibold tracking-tight">
               {student.fullName}
             </h1>
-            {student.enrollments.map((e) => (
-              <EnrollmentStatusBadge key={e.id} status={e.status} batch={e.batch.code} />
-            ))}
+            {student.enrollments.map((e) => {
+              const seq = batchSeq.get(e.id);
+              const label = seq ? `${e.batch.code} #${seq}` : e.batch.code;
+              return (
+                <EnrollmentStatusBadge key={e.id} status={e.status} batch={label} />
+              );
+            })}
           </div>
           <p className="text-sm text-muted-foreground">
             {student.email} · {student.phone} · {student.city}

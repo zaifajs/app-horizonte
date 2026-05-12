@@ -13,6 +13,7 @@ import {
   parseColsParam,
   type ExportColumnKey,
 } from "@/lib/students/export-columns";
+import { loadBatchSequence } from "@/lib/students/batch-seq";
 
 function csvCell(v: unknown): string {
   if (v === null || v === undefined) return "";
@@ -31,22 +32,25 @@ export async function GET(request: Request) {
   const cols = parseColsParam(url.searchParams.get("cols"));
   const where = buildStudentWhere(filters);
 
-  const students = await prisma.student.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    include: {
-      enrollments: {
-        include: {
-          batch: {
-            select: { code: true, course: { select: { feeCents: true } } },
+  const [students, batchSeq] = await Promise.all([
+    prisma.student.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      include: {
+        enrollments: {
+          include: {
+            batch: {
+              select: { code: true, course: { select: { feeCents: true } } },
+            },
+            payments: { select: { amountCents: true, paidAt: true } },
           },
-          payments: { select: { amountCents: true, paidAt: true } },
+          orderBy: { enrolledAt: "desc" },
         },
-        orderBy: { enrolledAt: "desc" },
       },
-    },
-    take: 5000,
-  });
+      take: 5000,
+    }),
+    loadBatchSequence(),
+  ]);
 
   const rows: StudentRow[] = students.map((s) => {
     const enr = s.enrollments[0] ?? null;
@@ -71,6 +75,7 @@ export async function GET(request: Request) {
             id: enr.id,
             status: enr.status,
             batchCode: enr.batch.code,
+            batchSeq: batchSeq.get(enr.id) ?? null,
             feeCents: fee,
           }
         : null,
@@ -89,6 +94,7 @@ export async function GET(request: Request) {
     const s = idToStudent.get(id)!;
     const r = sorted.find((x) => x.id === id)!;
     return {
+      batchSeq: r.latestEnrollment?.batchSeq != null ? String(r.latestEnrollment.batchSeq) : "",
       name: s.fullName,
       email: s.email,
       phone: s.phone,

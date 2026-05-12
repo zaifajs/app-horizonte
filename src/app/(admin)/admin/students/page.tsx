@@ -23,6 +23,7 @@ import {
 import { StudentsFilters } from "./filters";
 import { SavedViews } from "./saved-views";
 import { ExportDialog } from "./export-dialog";
+import { loadBatchSequence } from "@/lib/students/batch-seq";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,7 @@ export default async function StudentsPage({
   const filters = parseFilters(sp);
   const where = buildStudentWhere(filters);
 
-  const [studentsRaw, batches] = await Promise.all([
+  const [studentsRaw, batches, batchSeq] = await Promise.all([
     prisma.student.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -58,6 +59,7 @@ export default async function StudentsPage({
       take: 500,
     }),
     prisma.batch.findMany({ orderBy: { startDate: "desc" }, select: { code: true } }),
+    loadBatchSequence(),
   ]);
 
   // Build rows + compute paid/due/lastPaid.
@@ -83,6 +85,7 @@ export default async function StudentsPage({
             id: enr.id,
             status: enr.status,
             batchCode: enr.batch.code,
+            batchSeq: batchSeq.get(enr.id) ?? null,
             feeCents: fee,
           }
         : null,
@@ -135,6 +138,7 @@ export default async function StudentsPage({
           <Table>
             <TableHeader>
               <TableRow>
+                <SortableHeader filters={filters} sort="batchSeq">#</SortableHeader>
                 <SortableHeader filters={filters} sort="name">Name</SortableHeader>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
@@ -148,6 +152,9 @@ export default async function StudentsPage({
             <TableBody>
               {sorted.map((r) => (
                 <TableRow key={r.id}>
+                  <TableCell className="text-muted-foreground tabular-nums">
+                    {r.latestEnrollment?.batchSeq ?? "—"}
+                  </TableCell>
                   <TableCell className="font-medium">
                     <Link href={`/admin/students/${r.id}`} className="hover:underline">
                       {r.fullName}
@@ -209,7 +216,14 @@ function SortableHeader({
   children,
 }: {
   filters: ReturnType<typeof parseFilters>;
-  sort: "name" | "batch" | "paid" | "due" | "lastPaid" | "registered";
+  sort:
+    | "name"
+    | "batch"
+    | "batchSeq"
+    | "paid"
+    | "due"
+    | "lastPaid"
+    | "registered";
   align?: "left" | "right";
   children: React.ReactNode;
 }) {

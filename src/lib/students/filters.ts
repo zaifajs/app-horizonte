@@ -19,6 +19,7 @@ export type StudentFilters = {
     | "registered"
     | "name"
     | "batch"
+    | "batchSeq"
     | "paid"
     | "due"
     | "lastPaid";
@@ -36,7 +37,7 @@ export const defaultFilters: StudentFilters = {
   dir: "desc",
 };
 
-const SORT_VALUES = ["registered", "name", "batch", "paid", "due", "lastPaid"] as const;
+const SORT_VALUES = ["registered", "name", "batch", "batchSeq", "paid", "due", "lastPaid"] as const;
 const STATUS_VALUES: EnrollmentStatus[] = ["PENDING", "ACTIVE", "WITHDRAWN", "COMPLETED"];
 const PROGRESS_VALUES: PaymentProgress[] = ["unpaid", "partial", "full"];
 
@@ -112,6 +113,7 @@ export type StudentRow = {
     id: string;
     status: EnrollmentStatus;
     batchCode: string;
+    batchSeq: number | null;
     feeCents: number;
   } | null;
   paidCents: number;
@@ -163,6 +165,9 @@ export function sortRows(rows: StudentRow[], f: StudentFilters): StudentRow[] {
       break;
     case "batch":
       out.sort((a, b) => dir * cmp(a.latestEnrollment?.batchCode ?? null, b.latestEnrollment?.batchCode ?? null));
+      break;
+    case "batchSeq":
+      out.sort((a, b) => dir * cmp(a.latestEnrollment?.batchSeq ?? null, b.latestEnrollment?.batchSeq ?? null));
       break;
     case "paid":
       out.sort((a, b) => dir * cmp(a.paidCents, b.paidCents));
