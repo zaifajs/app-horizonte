@@ -23,7 +23,6 @@ import {
   type Urgency,
 } from "@/lib/students/filters";
 import { StudentsFilters } from "./filters";
-import { SavedViews } from "./saved-views";
 import { ExportDialog } from "./export-dialog";
 import { QuickPay } from "./quick-pay";
 import { ClickableRow } from "./clickable-row";
@@ -143,8 +142,6 @@ export default async function StudentsPage({
         </div>
       </div>
 
-      <UrgencyBar counts={urgencyCounts} current={filters.urgency} />
-      <SavedViews />
       <StudentsFilters
         batches={batches}
         initial={{
