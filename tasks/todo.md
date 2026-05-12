@@ -19,13 +19,13 @@ Source of truth for what's left. Tick boxes as work completes. Full context in `
 - [x] **Checkpoint: Foundation complete — push to develop deploys to stage.nhorizonte.pt with working login**
 
 ## Phase 2: Batch lifecycle
-- [ ] 2.1 BatchSession generator (pure fn + unit tests, holiday-aware)
-- [ ] 2.2 Create-batch form (admin + staff)
-- [ ] 2.3a Cronograma journey grid (6 module cards)
-- [ ] 2.3b Today card (floating, when a session is today)
-- [ ] 2.3c Module drill-in (sessions + attendance placeholder)
-- [ ] 2.4 Schedule-table view + print export
-- [ ] 2.5 Per-session reschedule (single date edit, no cascade)
+- [x] 2.1 BatchSession generator (pure fn + 9 unit tests, holiday-aware; PT calendar by default, injectable for tests)
+- [x] 2.2 Create-batch form (admin + staff) — /admin/batches list + /admin/batches/new form; creates Batch + 36 BatchSessions + audit log
+- [x] 2.3a Cronograma journey grid (6 module cards w/ status, dates, hours)
+- [x] 2.3b Today card (floating dark card when a session is today)
+- [x] 2.3c Module drill-in (per-module session table below cards)
+- [x] 2.4 Schedule-table view (?view=table) + print export (?print=1)
+- [x] 2.5 Per-session reschedule (Edit dialog, audit-logged, cancel requires note)
 - [ ] **Checkpoint: Batch lifecycle — human review**
 
 ## Phase 3: Student lifecycle
