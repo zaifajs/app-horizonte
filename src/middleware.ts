@@ -5,7 +5,13 @@ import { updateSupabaseSession } from "@/lib/supabase/middleware";
 
 const intl = createIntlMiddleware(routing);
 
-const NON_LOCALE_PATHS = ["/admin", "/teacher", "/login", "/logout", "/forbidden"];
+const NON_LOCALE_PATHS = [
+  "/admin",
+  "/teacher",
+  "/login",
+  "/logout",
+  "/forbidden",
+];
 
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
