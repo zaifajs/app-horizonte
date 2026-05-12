@@ -164,9 +164,7 @@ export default async function StudentsPage({
           <Table>
             <TableHeader>
               <TableRow>
-                {filters.batch ? (
-                  <SortableHeader filters={filters} sort="batchSeq">#</SortableHeader>
-                ) : null}
+                <TableHead className="w-12">#</TableHead>
                 <SortableHeader filters={filters} sort="name">Name</SortableHeader>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
@@ -177,18 +175,16 @@ export default async function StudentsPage({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sorted.map((r) => (
+              {sorted.map((r, i) => (
                 <TableRow
                   key={r.id}
                   className={`${URGENCY_ROW_BG[r.urgency]} ${
                     r.urgency === "withdrawn" ? "opacity-60" : ""
                   }`}
                 >
-                  {filters.batch ? (
-                    <TableCell className="text-muted-foreground tabular-nums">
-                      {r.latestEnrollment?.batchSeq ?? "—"}
-                    </TableCell>
-                  ) : null}
+                  <TableCell className="text-muted-foreground tabular-nums">
+                    {i + 1}
+                  </TableCell>
                   <TableCell className="font-medium">
                     <Link href={`/admin/students/${r.id}`} className="hover:underline">
                       {r.fullName}
