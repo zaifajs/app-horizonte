@@ -26,6 +26,7 @@ import { StudentsFilters } from "./filters";
 import { SavedViews } from "./saved-views";
 import { ExportDialog } from "./export-dialog";
 import { QuickPay } from "./quick-pay";
+import { ClickableRow } from "./clickable-row";
 import { loadBatchSequence } from "@/lib/students/batch-seq";
 
 export const dynamic = "force-dynamic";
@@ -177,8 +178,9 @@ export default async function StudentsPage({
             </TableHeader>
             <TableBody>
               {sorted.map((r, i) => (
-                <TableRow
+                <ClickableRow
                   key={r.id}
+                  href={`/admin/students/${r.id}`}
                   className={`${URGENCY_ROW_BG[r.urgency]} ${
                     r.urgency === "withdrawn" ? "opacity-60" : ""
                   }`}
@@ -243,7 +245,7 @@ export default async function StudentsPage({
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </TableCell>
-                </TableRow>
+                </ClickableRow>
               ))}
             </TableBody>
           </Table>
@@ -258,7 +260,7 @@ const URGENCY_ROW_BG: Record<Urgency, string> = {
   partial: "bg-yellow-50 hover:bg-yellow-100/60",
   due_soon: "bg-orange-100 hover:bg-orange-200/60",
   overdue: "bg-red-50 hover:bg-red-100/60",
-  pre_start: "",
+  pre_start: "bg-stone-100 hover:bg-stone-200/60",
   withdrawn: "bg-zinc-50",
 };
 

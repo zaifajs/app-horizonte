@@ -85,7 +85,7 @@ export function QuickPay({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger>
         <Button size="sm" variant="outline">
-          Pay
+          Record payment
         </Button>
       </DialogTrigger>
       <DialogContent>

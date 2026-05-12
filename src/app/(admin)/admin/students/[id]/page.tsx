@@ -62,9 +62,14 @@ export default async function StudentDetailPage({
             {student.email} · {student.phone} · {student.city}
           </p>
         </div>
-        <Link href="/admin/students">
-          <Button variant="outline">Back</Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href={`/admin/students/${student.id}/edit`}>
+            <Button variant="outline">Edit</Button>
+          </Link>
+          <Link href="/admin/students">
+            <Button variant="outline">Back</Button>
+          </Link>
+        </div>
       </header>
 
       <Section title="Personal">

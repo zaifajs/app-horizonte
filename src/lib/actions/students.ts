@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { Prisma, type DocumentKind, type DocType } from "@prisma/client";
+import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireRole, getCurrentUser } from "@/lib/auth";
 import { logChange } from "@/lib/audit";
@@ -185,4 +186,116 @@ export async function createStudentAction(
     console.error("createStudentAction failed:", err);
     return { ok: false, error: "Something went wrong. Please try again." };
   }
+}
+
+// ---------------------------------------------------------------- update
+
+const updateSchema = studentCoreSchema
+  .omit({ batchId: true, gdprConsent: true })
+  .extend({ id: z.string().uuid() });
+
+export type UpdateStudentInput = z.input<typeof updateSchema>;
+
+export type UpdateStudentResult =
+  | { ok: true }
+  | { ok: false; error: string; fieldErrors?: Record<string, string> };
+
+/** Staff-side edit of student personal info. Audit-logs every changed field. */
+export async function updateStudentAction(
+  raw: UpdateStudentInput,
+): Promise<UpdateStudentResult> {
+  const user = await requireRole(["ADMIN", "STAFF"]);
+
+  const parsed = updateSchema.safeParse(raw);
+  if (!parsed.success) {
+    const fieldErrors: Record<string, string> = {};
+    for (const issue of parsed.error.issues) {
+      const key = issue.path.join(".");
+      fieldErrors[key] ||= issue.message;
+    }
+    return { ok: false, error: "Please fix the highlighted fields.", fieldErrors };
+  }
+  const input = parsed.data;
+
+  const before = await prisma.student.findUnique({ where: { id: input.id } });
+  if (!before) return { ok: false, error: "Student not found." };
+
+  const changed: Record<string, { from: unknown; to: unknown }> = {};
+  function diff(field: string, fromVal: unknown, toVal: unknown) {
+    if (fromVal === toVal) return;
+    if (fromVal instanceof Date && toVal instanceof Date && fromVal.getTime() === toVal.getTime()) return;
+    changed[field] = { from: fromVal, to: toVal };
+  }
+
+  const next = {
+    fullName: input.fullName,
+    email: input.email.toLowerCase(),
+    phone: input.phone,
+    docType: input.docType as DocType,
+    docNumber: input.docNumber,
+    dob: new Date(`${input.dob}T00:00:00Z`),
+    docExpiry: new Date(`${input.docExpiry}T00:00:00Z`),
+    nationality: input.nationality,
+    nif: input.nif,
+    niss: input.niss,
+    address: input.address,
+    city: input.city,
+    notes: input.notes,
+  };
+
+  diff("fullName", before.fullName, next.fullName);
+  diff("email", before.email, next.email);
+  diff("phone", before.phone, next.phone);
+  diff("docType", before.docType, next.docType);
+  diff("docNumber", before.docNumber, next.docNumber);
+  diff("dob", before.dob, next.dob);
+  diff("docExpiry", before.docExpiry, next.docExpiry);
+  diff("nationality", before.nationality, next.nationality);
+  diff("nif", before.nif, next.nif);
+  diff("niss", before.niss, next.niss);
+  diff("address", before.address, next.address);
+  diff("city", before.city, next.city);
+  diff("notes", before.notes, next.notes);
+
+  if (Object.keys(changed).length === 0) {
+    return { ok: true };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.student.update({ where: { id: input.id }, data: next });
+      const changesForAudit = Object.fromEntries(
+        Object.entries(changed).map(([k, v]) => [
+          k,
+          {
+            from: v.from instanceof Date ? v.from.toISOString().slice(0, 10) : v.from,
+            to: v.to instanceof Date ? v.to.toISOString().slice(0, 10) : v.to,
+          },
+        ]),
+      );
+      await logChange({
+        tx,
+        action: "UPDATE",
+        entityType: "Student",
+        entityId: input.id,
+        actorUserId: user.id,
+        studentId: input.id,
+        changes: changesForAudit as Prisma.InputJsonValue,
+      });
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return {
+        ok: false,
+        error: "That email is already used by another student.",
+        fieldErrors: { email: "Already in use." },
+      };
+    }
+    console.error("updateStudentAction failed:", err);
+    return { ok: false, error: "Something went wrong. Please try again." };
+  }
+
+  revalidatePath(`/admin/students/${input.id}`);
+  revalidatePath("/admin/students");
+  return { ok: true };
 }
