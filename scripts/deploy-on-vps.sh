@@ -29,6 +29,9 @@ git fetch origin "$BRANCH"
 git checkout -B "$BRANCH" "origin/$BRANCH"
 git reset --hard "$GIT_SHA"
 
+# Wipe node_modules first — postinstall scripts sometimes lose +x on the
+# VPS filesystem between deploys and cause silent permission-denied failures.
+rm -rf node_modules
 npm ci --no-audit --no-fund
 
 # Prisma migrations apply once we have a schema (Task 1.7)

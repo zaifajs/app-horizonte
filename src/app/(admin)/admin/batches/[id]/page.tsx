@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { prisma } from "@/lib/db";
 import { ScheduleTable } from "./schedule-table";
+import { ScheduleCalendar } from "./schedule-calendar";
 import { SessionRow } from "./session-row";
 
 export const dynamic = "force-dynamic";
@@ -43,16 +44,12 @@ export default async function BatchDetailPage({
     (s) => s.kind === "CLASSROOM" && isSameDay(s.scheduledDate, today),
   );
 
-  const isTableView = view === "table" || print === "1";
   const isPrint = print === "1";
-
-  if (isTableView) {
-    return (
-      <ScheduleTable
-        batch={batch}
-        isPrint={isPrint}
-      />
-    );
+  if (view === "calendar") {
+    return <ScheduleCalendar batch={batch} isPrint={isPrint} />;
+  }
+  if (view === "table") {
+    return <ScheduleTable batch={batch} isPrint={isPrint} />;
   }
 
   // Default: journey view
@@ -95,9 +92,12 @@ export default async function BatchDetailPage({
             {batch.course.code} — {batch.course.name} · level {batch.course.level}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Link href={`/admin/batches/${batch.id}?view=table`}>
-            <Button variant="outline">Schedule table</Button>
+            <Button variant="outline">Compact</Button>
+          </Link>
+          <Link href={`/admin/batches/${batch.id}?view=calendar`}>
+            <Button variant="outline">Calendar</Button>
           </Link>
           <Link href="/admin/batches">
             <Button variant="outline">Back</Button>

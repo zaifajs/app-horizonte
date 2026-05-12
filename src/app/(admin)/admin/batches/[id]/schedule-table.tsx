@@ -82,9 +82,12 @@ export function ScheduleTable({
       {!isPrint ? (
         <div className="flex items-center justify-between print:hidden">
           <h1 className="text-lg font-semibold">Schedule — {batch.code}</h1>
-          <div className="flex gap-2">
-            <Link href={`/admin/batches/${batch.id}?print=1`} target="_blank">
+          <div className="flex flex-wrap gap-2">
+            <Link href={`/admin/batches/${batch.id}?view=table&print=1`} target="_blank">
               <Button variant="outline">Print / PDF</Button>
+            </Link>
+            <Link href={`/admin/batches/${batch.id}?view=calendar`}>
+              <Button variant="outline">Calendar</Button>
             </Link>
             <Link href={`/admin/batches/${batch.id}`}>
               <Button variant="outline">Journey view</Button>
