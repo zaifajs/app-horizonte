@@ -1,0 +1,23 @@
+{
+  "header": {
+    "siteName": "Novo Horizonte",
+    "register": "Sign up",
+    "login": "Sign in"
+  },
+  "home": {
+    "title": "Portuguese as a Welcoming Language",
+    "subtitle": "A1 and A2 lessons · 6 modules · 150 hours. Enrolment open for upcoming batches in Porto.",
+    "ctaRegister": "Sign me up",
+    "ctaLogin": "Sign in"
+  },
+  "footer": {
+    "tagline": "Novo Horizonte · Portuguese as a Welcoming Language"
+  },
+  "localeSwitcher": {
+    "label": "Language",
+    "en": "English",
+    "pt": "Português",
+    "bn": "বাংলা",
+    "ur": "اردو"
+  }
+}

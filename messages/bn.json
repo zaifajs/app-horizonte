@@ -1,0 +1,23 @@
+{
+  "header": {
+    "siteName": "Novo Horizonte",
+    "register": "নিবন্ধন",
+    "login": "প্রবেশ"
+  },
+  "home": {
+    "title": "পর্তুগিজ ভাষা স্বাগত পাঠ",
+    "subtitle": "A1 এবং A2 ক্লাস · ৬টি মডিউল · ১৫০ ঘণ্টা। পোর্তোতে আসন্ন ব্যাচের জন্য নিবন্ধন চলছে।",
+    "ctaRegister": "আমাকে নিবন্ধন করুন",
+    "ctaLogin": "প্রবেশ"
+  },
+  "footer": {
+    "tagline": "Novo Horizonte · পর্তুগিজ ভাষা স্বাগত পাঠ"
+  },
+  "localeSwitcher": {
+    "label": "ভাষা",
+    "en": "English",
+    "pt": "Português",
+    "bn": "বাংলা",
+    "ur": "اردو"
+  }
+}

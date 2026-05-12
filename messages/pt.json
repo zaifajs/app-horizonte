@@ -1,0 +1,23 @@
+{
+  "header": {
+    "siteName": "Novo Horizonte",
+    "register": "Inscrever",
+    "login": "Entrar"
+  },
+  "home": {
+    "title": "Português Língua de Acolhimento",
+    "subtitle": "Aulas A1 e A2 · 6 módulos · 150 horas. Inscrições abertas para as próximas turmas em Porto.",
+    "ctaRegister": "Inscrever-me",
+    "ctaLogin": "Entrar"
+  },
+  "footer": {
+    "tagline": "Novo Horizonte · Português Língua de Acolhimento"
+  },
+  "localeSwitcher": {
+    "label": "Idioma",
+    "en": "English",
+    "pt": "Português",
+    "bn": "বাংলা",
+    "ur": "اردو"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "header": {
+    "siteName": "Novo Horizonte",
+    "register": "اندراج",
+    "login": "لاگ ان"
+  },
+  "home": {
+    "title": "پرتگالی زبان خوش آمدید کورس",
+    "subtitle": "A1 اور A2 کلاسیں · ۶ ماڈیولز · ۱۵۰ گھنٹے۔ پورتو میں آنے والے بیچوں کے لیے اندراج کھلا ہے۔",
+    "ctaRegister": "اندراج کریں",
+    "ctaLogin": "لاگ ان"
+  },
+  "footer": {
+    "tagline": "Novo Horizonte · پرتگالی زبان خوش آمدید کورس"
+  },
+  "localeSwitcher": {
+    "label": "زبان",
+    "en": "English",
+    "pt": "Português",
+    "bn": "বাংলা",
+    "ur": "اردو"
+  }
+}
