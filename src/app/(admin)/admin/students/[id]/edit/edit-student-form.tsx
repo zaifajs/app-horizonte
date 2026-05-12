@@ -32,9 +32,20 @@ type Initial = {
   address: string;
   city: string;
   notes: string;
+  batchId: string;
 };
 
-export function EditStudentForm({ initial }: { initial: Initial }) {
+const KEEP_BATCH = "__keep__";
+
+export function EditStudentForm({
+  initial,
+  batches,
+  currentBatchCode,
+}: {
+  initial: Initial;
+  batches: Array<{ id: string; label: string }>;
+  currentBatchCode: string | null;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +64,7 @@ export function EditStudentForm({ initial }: { initial: Initial }) {
   const [address, setAddress] = useState(initial.address);
   const [city, setCity] = useState(initial.city);
   const [notes, setNotes] = useState(initial.notes);
+  const [batchId, setBatchId] = useState<string>(initial.batchId || KEEP_BATCH);
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -74,6 +86,7 @@ export function EditStudentForm({ initial }: { initial: Initial }) {
         address,
         city,
         notes: notes || null,
+        batchId: batchId === KEEP_BATCH ? null : batchId,
       });
       if (!result.ok) {
         setError(result.error);
@@ -145,6 +158,33 @@ export function EditStudentForm({ initial }: { initial: Initial }) {
         </Field>
         <Field label="City / town" htmlFor="city" error={fieldErrors.city}>
           <Input id="city" required value={city} onChange={(e) => setCity(e.target.value)} />
+        </Field>
+      </Section>
+
+      <Section title="Batch">
+        <Field
+          label="Move to batch"
+          htmlFor="batchId"
+          error={fieldErrors.batchId}
+        >
+          <Select value={batchId} onValueChange={(v) => v && setBatchId(v)}>
+            <SelectTrigger id="batchId">
+              <SelectValue placeholder="No batch" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={KEEP_BATCH}>
+                {currentBatchCode ? `Keep current — ${currentBatchCode}` : "No batch"}
+              </SelectItem>
+              {batches.map((b) => (
+                <SelectItem key={b.id} value={b.id}>
+                  {b.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Selecting a different batch moves the student there. Existing payments stay attached.
+          </p>
         </Field>
       </Section>
 

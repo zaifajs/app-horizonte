@@ -14,8 +14,25 @@ export default async function EditStudentPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const student = await prisma.student.findUnique({ where: { id } });
+  const [student, batches] = await Promise.all([
+    prisma.student.findUnique({
+      where: { id },
+      include: {
+        enrollments: {
+          orderBy: { enrolledAt: "desc" },
+          take: 1,
+          select: { batchId: true, batch: { select: { code: true } } },
+        },
+      },
+    }),
+    prisma.batch.findMany({
+      where: { status: { in: ["UPCOMING", "ACTIVE"] } },
+      orderBy: { startDate: "desc" },
+      select: { id: true, code: true, startDate: true, status: true },
+    }),
+  ]);
   if (!student) notFound();
+  const currentBatch = student.enrollments[0] ?? null;
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -49,7 +66,13 @@ export default async function EditStudentPage({
           address: student.address,
           city: student.city,
           notes: student.notes ?? "",
+          batchId: currentBatch?.batchId ?? "",
         }}
+        batches={batches.map((b) => ({
+          id: b.id,
+          label: `${b.code} · starts ${b.startDate.toISOString().slice(0, 10)} · ${b.status.toLowerCase()}`,
+        }))}
+        currentBatchCode={currentBatch?.batch.code ?? null}
       />
     </div>
   );

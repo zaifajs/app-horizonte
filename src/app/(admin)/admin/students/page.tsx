@@ -251,12 +251,12 @@ export default async function StudentsPage({
 
 const URGENCY_ROW_BG: Record<Urgency, string> = {
   paid: "bg-emerald-50 hover:bg-emerald-100/60",
-  // Pre-start AND partial-but-not-urgent both read as "owes money,
-  // not yet a problem" → same calm brown.
-  partial: "bg-stone-100 hover:bg-stone-200/60",
+  // Partial-paid bg matches the amber-700 "due" amount colour cue.
+  partial: "bg-amber-50 hover:bg-amber-100/60",
   due_soon: "bg-orange-100 hover:bg-orange-200/60",
   overdue: "bg-red-50 hover:bg-red-100/60",
-  pre_start: "bg-stone-100 hover:bg-stone-200/60",
+  // Pre-start: no tint — class hasn't started, nothing actionable yet.
+  pre_start: "",
   withdrawn: "bg-zinc-50",
 };
 

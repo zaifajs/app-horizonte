@@ -191,7 +191,7 @@ export async function createStudentAction(
 // ---------------------------------------------------------------- update
 
 const updateSchema = studentCoreSchema
-  .omit({ batchId: true, gdprConsent: true })
+  .omit({ gdprConsent: true })
   .extend({ id: z.string().uuid() });
 
 export type UpdateStudentInput = z.input<typeof updateSchema>;
@@ -257,31 +257,85 @@ export async function updateStudentAction(
   diff("city", before.city, next.city);
   diff("notes", before.notes, next.notes);
 
-  if (Object.keys(changed).length === 0) {
+  // Optional: move student to a different batch (or assign for the first time).
+  // The latest enrollment row keeps its payments — only batchId changes.
+  const currentEnrollment = await prisma.enrollment.findFirst({
+    where: { studentId: input.id },
+    orderBy: { enrolledAt: "desc" },
+    select: { id: true, batchId: true },
+  });
+  let batchChange:
+    | { kind: "create" | "move"; fromBatchId: string | null; toBatchId: string }
+    | null = null;
+  if (input.batchId && input.batchId !== currentEnrollment?.batchId) {
+    batchChange = {
+      kind: currentEnrollment ? "move" : "create",
+      fromBatchId: currentEnrollment?.batchId ?? null,
+      toBatchId: input.batchId,
+    };
+  }
+
+  if (Object.keys(changed).length === 0 && !batchChange) {
     return { ok: true };
   }
 
   try {
     await prisma.$transaction(async (tx) => {
-      await tx.student.update({ where: { id: input.id }, data: next });
-      const changesForAudit = Object.fromEntries(
-        Object.entries(changed).map(([k, v]) => [
-          k,
-          {
-            from: v.from instanceof Date ? v.from.toISOString().slice(0, 10) : v.from,
-            to: v.to instanceof Date ? v.to.toISOString().slice(0, 10) : v.to,
-          },
-        ]),
-      );
-      await logChange({
-        tx,
-        action: "UPDATE",
-        entityType: "Student",
-        entityId: input.id,
-        actorUserId: user.id,
-        studentId: input.id,
-        changes: changesForAudit as Prisma.InputJsonValue,
-      });
+      if (Object.keys(changed).length > 0) {
+        await tx.student.update({ where: { id: input.id }, data: next });
+        const changesForAudit = Object.fromEntries(
+          Object.entries(changed).map(([k, v]) => [
+            k,
+            {
+              from: v.from instanceof Date ? v.from.toISOString().slice(0, 10) : v.from,
+              to: v.to instanceof Date ? v.to.toISOString().slice(0, 10) : v.to,
+            },
+          ]),
+        );
+        await logChange({
+          tx,
+          action: "UPDATE",
+          entityType: "Student",
+          entityId: input.id,
+          actorUserId: user.id,
+          studentId: input.id,
+          changes: changesForAudit as Prisma.InputJsonValue,
+        });
+      }
+
+      if (batchChange) {
+        if (batchChange.kind === "move" && currentEnrollment) {
+          await tx.enrollment.update({
+            where: { id: currentEnrollment.id },
+            data: { batchId: batchChange.toBatchId },
+          });
+          await logChange({
+            tx,
+            action: "UPDATE",
+            entityType: "Enrollment",
+            entityId: currentEnrollment.id,
+            actorUserId: user.id,
+            studentId: input.id,
+            changes: {
+              batchId: { from: batchChange.fromBatchId, to: batchChange.toBatchId },
+              reason: "Student moved to a different batch.",
+            } as Prisma.InputJsonValue,
+          });
+        } else {
+          const created = await tx.enrollment.create({
+            data: { studentId: input.id, batchId: batchChange.toBatchId },
+          });
+          await logChange({
+            tx,
+            action: "CREATE",
+            entityType: "Enrollment",
+            entityId: created.id,
+            actorUserId: user.id,
+            studentId: input.id,
+            changes: { batchId: { from: null, to: batchChange.toBatchId } } as Prisma.InputJsonValue,
+          });
+        }
+      }
     });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
