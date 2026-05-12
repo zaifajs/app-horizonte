@@ -5,13 +5,11 @@
 
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
-import Link from "next/link";
 import { headers } from "next/headers";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/db";
 import { EnrollmentPayments } from "../../[id]/enrollment-payments";
-import { ActivityStream } from "../../[id]/activity-stream";
 import { SendMessage } from "../../[id]/send-message";
 import { loadBatchSequence } from "@/lib/students/batch-seq";
 import { localeForNationality } from "@/lib/messaging/locale-for-nationality";
@@ -103,14 +101,9 @@ export default async function InterceptedStudentDetail({
           {/* Hard <a> so it escapes the drawer-intercept and loads the real page. */}
           <a href={`/admin/students/${student.id}`}>
             <Button variant="outline" size="sm">
-              Open full page
+              View full details
             </Button>
           </a>
-          <Link href={`/admin/students/${student.id}/edit`}>
-            <Button variant="outline" size="sm">
-              Edit
-            </Button>
-          </Link>
         </div>
       </header>
 
@@ -171,12 +164,6 @@ export default async function InterceptedStudentDetail({
         </div>
       </section>
 
-      <section className="space-y-3">
-        <h3 className="text-base font-semibold tracking-tight">Activity</h3>
-        <div className="rounded-lg border bg-white p-4">
-          <ActivityStream studentId={student.id} />
-        </div>
-      </section>
     </StudentDrawerShell>
   );
 }
