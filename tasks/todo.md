@@ -29,14 +29,17 @@ Source of truth for what's left. Tick boxes as work completes. Full context in `
 - [ ] **Checkpoint: Batch lifecycle — human review**
 
 ## Phase 3: Student lifecycle
-- [ ] 3.1 Document upload helper (Supabase Storage, signed URLs)
-- [ ] 3.2a Public registration form UI + Zod validation
-- [ ] 3.2b Public registration server action (create Student + dormant User + Enrollment + 2 Payments)
-- [ ] 3.3 Staff "Add student" page
-- [ ] 3.4a Student detail page layout (info, docs, enrollments, payments, messages, notes)
-- [ ] 3.4b logChange() helper + wire into mutations
-- [ ] 3.4c Audit log activity stream UI
-- [ ] **Checkpoint: Student lifecycle — human review**
+- [x] 3.1 Document upload helper (Supabase Storage, signed URLs)
+- [x] 3.2a Public registration form UI + Zod validation (bilingual, all 4 locales)
+- [x] 3.2b Public registration server action — creates Student + Enrollment (PENDING). No prefilled Payments — staff records them ad-hoc.
+- [x] 3.3 Staff "Add student" page
+- [x] 3.4a Student detail page layout (info, docs, enrollments, payments, notes)
+- [x] 3.4b logChange() helper wired into every mutation
+- [x] 3.4c Audit log activity stream UI
+- [x] **Bonus:** PENDING enrollment status + auto-activate on first payment
+- [x] **Bonus:** Simplified payment model (no fixed installments; partial payments via N Payment rows under one Enrollment; Course.feeCents = total target)
+- [x] **Bonus:** Paid/Due columns in students list
+- [x] **Checkpoint: Student lifecycle — human review**
 
 ## Phase 4: Master table + payment flow
 - [ ] 4.1 Master student table (TanStack, sortable, paginated server-side)
