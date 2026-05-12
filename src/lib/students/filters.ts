@@ -33,7 +33,7 @@ export const defaultFilters: StudentFilters = {
   q: null,
   paidFrom: null,
   paidTo: null,
-  sort: "registered",
+  sort: "batch",
   dir: "desc",
 };
 
@@ -49,7 +49,7 @@ export function parseFilters(
     if (Array.isArray(v)) return v[0] ?? null;
     return v ?? null;
   };
-  const sort = (get("sort") ?? "registered") as StudentFilters["sort"];
+  const sort = (get("sort") ?? "batch") as StudentFilters["sort"];
   const dir = (get("dir") ?? "desc") as StudentFilters["dir"];
   const enrollmentStatus = get("status") as EnrollmentStatus | null;
   const paymentProgress = get("paid") as PaymentProgress | null;
@@ -113,7 +113,9 @@ export type StudentRow = {
     id: string;
     status: EnrollmentStatus;
     batchCode: string;
+    batchStartDate: Date | null;
     batchSeq: number | null;
+    enrolledAt: Date;
     feeCents: number;
   } | null;
   paidCents: number;
@@ -164,7 +166,15 @@ export function sortRows(rows: StudentRow[], f: StudentFilters): StudentRow[] {
       out.sort((a, b) => dir * cmp(a.fullName, b.fullName));
       break;
     case "batch":
-      out.sort((a, b) => dir * cmp(a.latestEnrollment?.batchCode ?? null, b.latestEnrollment?.batchCode ?? null));
+      // Primary: batch start date. Secondary (same batch): enrolledAt asc so
+      // the registration sequence within a batch reads top→bottom naturally.
+      out.sort((a, b) => {
+        const aDate = a.latestEnrollment?.batchStartDate?.getTime() ?? null;
+        const bDate = b.latestEnrollment?.batchStartDate?.getTime() ?? null;
+        const primary = dir * cmp(aDate, bDate);
+        if (primary !== 0) return primary;
+        return cmp(a.latestEnrollment?.enrolledAt.getTime() ?? null, b.latestEnrollment?.enrolledAt.getTime() ?? null);
+      });
       break;
     case "batchSeq":
       out.sort((a, b) => dir * cmp(a.latestEnrollment?.batchSeq ?? null, b.latestEnrollment?.batchSeq ?? null));
@@ -203,7 +213,7 @@ export function filtersToSearchString(
   add("paidTo", patch.paidTo !== undefined ? patch.paidTo : current.paidTo);
   const sort = patch.sort !== undefined ? patch.sort : current.sort;
   const dir = patch.dir !== undefined ? patch.dir : current.dir;
-  if (sort && sort !== "registered") add("sort", sort);
+  if (sort && sort !== "batch") add("sort", sort);
   if (dir && dir !== "desc") add("dir", dir);
   const params = new URLSearchParams(merged);
   const s = params.toString();

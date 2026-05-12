@@ -48,6 +48,7 @@ export default async function StudentsPage({
             batch: {
               select: {
                 code: true,
+                startDate: true,
                 course: { select: { feeCents: true } },
               },
             },
@@ -85,7 +86,9 @@ export default async function StudentsPage({
             id: enr.id,
             status: enr.status,
             batchCode: enr.batch.code,
+            batchStartDate: enr.batch.startDate ?? null,
             batchSeq: batchSeq.get(enr.id) ?? null,
+            enrolledAt: enr.enrolledAt,
             feeCents: fee,
           }
         : null,
@@ -138,7 +141,9 @@ export default async function StudentsPage({
           <Table>
             <TableHeader>
               <TableRow>
-                <SortableHeader filters={filters} sort="batchSeq">#</SortableHeader>
+                {filters.batch ? (
+                  <SortableHeader filters={filters} sort="batchSeq">#</SortableHeader>
+                ) : null}
                 <SortableHeader filters={filters} sort="name">Name</SortableHeader>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
@@ -152,9 +157,11 @@ export default async function StudentsPage({
             <TableBody>
               {sorted.map((r) => (
                 <TableRow key={r.id}>
-                  <TableCell className="text-muted-foreground tabular-nums">
-                    {r.latestEnrollment?.batchSeq ?? "—"}
-                  </TableCell>
+                  {filters.batch ? (
+                    <TableCell className="text-muted-foreground tabular-nums">
+                      {r.latestEnrollment?.batchSeq ?? "—"}
+                    </TableCell>
+                  ) : null}
                   <TableCell className="font-medium">
                     <Link href={`/admin/students/${r.id}`} className="hover:underline">
                       {r.fullName}

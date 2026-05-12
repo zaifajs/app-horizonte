@@ -14,6 +14,7 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:admin": "tsx prisma/seed-dev-admin.ts",
+    "db:seed:fake": "tsx prisma/seed-fake-students.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {
