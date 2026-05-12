@@ -22,6 +22,7 @@ import {
 } from "@/lib/students/filters";
 import { StudentsFilters } from "./filters";
 import { SavedViews } from "./saved-views";
+import { ExportDialog } from "./export-dialog";
 
 export const dynamic = "force-dynamic";
 
@@ -105,7 +106,7 @@ export default async function StudentsPage({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <ExportCsvLink filters={filters} />
+          <ExportDialog />
           <Link href="/admin/students/new">
             <Button>Add student</Button>
           </Link>
@@ -198,15 +199,6 @@ export default async function StudentsPage({
         </div>
       )}
     </div>
-  );
-}
-
-function ExportCsvLink({ filters }: { filters: ReturnType<typeof parseFilters> }) {
-  const qs = filtersToSearchString(filters, {});
-  return (
-    <Link href={`/api/students/export${qs}`}>
-      <Button variant="outline">Export CSV</Button>
-    </Link>
   );
 }
 

@@ -8,27 +8,11 @@ import {
   sortRows,
   type StudentRow,
 } from "@/lib/students/filters";
-
-const HEADERS = [
-  "Name",
-  "Email",
-  "Phone",
-  "Doc type",
-  "Doc number",
-  "DOB",
-  "Nationality",
-  "NIF",
-  "NISS",
-  "Address",
-  "City",
-  "Batch",
-  "Enrollment status",
-  "Course fee (EUR)",
-  "Paid (EUR)",
-  "Due (EUR)",
-  "Last payment",
-  "Registered",
-];
+import {
+  EXPORT_COLUMNS,
+  parseColsParam,
+  type ExportColumnKey,
+} from "@/lib/students/export-columns";
 
 function csvCell(v: unknown): string {
   if (v === null || v === undefined) return "";
@@ -44,6 +28,7 @@ export async function GET(request: Request) {
   const sp: Record<string, string> = {};
   url.searchParams.forEach((v, k) => (sp[k] = v));
   const filters = parseFilters(sp);
+  const cols = parseColsParam(url.searchParams.get("cols"));
   const where = buildStudentWhere(filters);
 
   const students = await prisma.student.findMany({
@@ -98,44 +83,43 @@ export async function GET(request: Request) {
 
   const filtered = applyComputedFilters(rows, filters);
   const sorted = sortRows(filtered, filters);
+  const idToStudent = new Map(students.map((s) => [s.id, s]));
 
-  // Re-fetch the extra fields we want in CSV (not on the in-memory rows).
-  const idsInOrder = sorted.map((r) => r.id);
-  const idToData = new Map(students.map((s) => [s.id, s]));
+  const cellsFor = (id: string): Record<ExportColumnKey, string> => {
+    const s = idToStudent.get(id)!;
+    const r = sorted.find((x) => x.id === id)!;
+    return {
+      name: s.fullName,
+      email: s.email,
+      phone: s.phone,
+      docType: s.docType.replace("_", " ").toLowerCase(),
+      docNumber: s.docNumber,
+      dob: s.dob.toISOString().slice(0, 10),
+      nationality: s.nationality,
+      nif: s.nif,
+      niss: s.niss ?? "",
+      address: s.address,
+      city: s.city,
+      batch: r.latestEnrollment?.batchCode ?? "",
+      status: r.latestEnrollment?.status ?? "",
+      fee: String((r.latestEnrollment?.feeCents ?? 0) / 100),
+      paid: String(r.paidCents / 100),
+      due: String(r.dueCents / 100),
+      lastPayment: r.lastPaidAt ? r.lastPaidAt.toISOString().slice(0, 10) : "",
+      registered: s.createdAt.toISOString().slice(0, 10),
+    };
+  };
 
+  const labelByKey = new Map(EXPORT_COLUMNS.map((c) => [c.key, c.label]));
   const lines: string[] = [];
-  lines.push(HEADERS.join(","));
-  for (const id of idsInOrder) {
-    const s = idToData.get(id);
-    const r = sorted.find((x) => x.id === id);
-    if (!s || !r) continue;
-    lines.push(
-      [
-        csvCell(s.fullName),
-        csvCell(s.email),
-        csvCell(s.phone),
-        csvCell(s.docType.replace("_", " ").toLowerCase()),
-        csvCell(s.docNumber),
-        csvCell(s.dob.toISOString().slice(0, 10)),
-        csvCell(s.nationality),
-        csvCell(s.nif),
-        csvCell(s.niss ?? ""),
-        csvCell(s.address),
-        csvCell(s.city),
-        csvCell(r.latestEnrollment?.batchCode ?? ""),
-        csvCell(r.latestEnrollment?.status ?? ""),
-        csvCell((r.latestEnrollment?.feeCents ?? 0) / 100),
-        csvCell(r.paidCents / 100),
-        csvCell(r.dueCents / 100),
-        csvCell(r.lastPaidAt ? r.lastPaidAt.toISOString().slice(0, 10) : ""),
-        csvCell(s.createdAt.toISOString().slice(0, 10)),
-      ].join(","),
-    );
+  lines.push(cols.map((c) => csvCell(labelByKey.get(c) ?? c)).join(","));
+  for (const r of sorted) {
+    const cells = cellsFor(r.id);
+    lines.push(cols.map((c) => csvCell(cells[c])).join(","));
   }
 
-  const csv = "﻿" + lines.join("\n"); // BOM for Excel UTF-8
+  const csv = "﻿" + lines.join("\n");
   const filename = `students-${new Date().toISOString().slice(0, 10)}.csv`;
-
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
