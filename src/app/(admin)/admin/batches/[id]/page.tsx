@@ -93,6 +93,16 @@ export default async function BatchDetailPage({
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <Link
+            href={`/api/students/export?batch=${encodeURIComponent(batch.code)}&status=ACTIVE&sort=name&dir=asc`}
+          >
+            <Button variant="outline">Export active students</Button>
+          </Link>
+          <Link
+            href={`/admin/students?batch=${encodeURIComponent(batch.code)}`}
+          >
+            <Button variant="outline">Roster</Button>
+          </Link>
           <Link href={`/admin/batches/${batch.id}?view=table`}>
             <Button variant="outline">Compact</Button>
           </Link>
