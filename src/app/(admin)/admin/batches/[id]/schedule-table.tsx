@@ -2,8 +2,8 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 
-// Compact month-grouped cronograma. Used as a secondary view from
-// /admin/batches/[id]?view=table (or ?print=1 for browser print).
+// Compact A4-portrait-friendly cronograma. Each module renders in ~3 lines so
+// the full PLA layout fits a single printed page.
 
 type Session = {
   id: string;
@@ -26,12 +26,6 @@ type Batch = {
   sessions: Session[];
 };
 
-type MonthGroup = {
-  key: string; // "2026-04"
-  label: string; // "April 2026"
-  rows: Array<Session & { showModule: boolean; isLastInModule: boolean; autonomousHours: number | null }>;
-};
-
 export function ScheduleTable({
   batch,
   isPrint,
@@ -47,41 +41,29 @@ export function ScheduleTable({
         a.sequenceInModule - b.sequenceInModule,
     );
 
-  // Map moduleId → autonomous-hours so we can attach it to the last classroom day.
   const autonomousByModule = new Map(
     batch.sessions
       .filter((s) => s.kind === "AUTONOMOUS")
       .map((s) => [s.module.id, s.hours]),
   );
 
-  // Annotate each classroom row.
-  const annotated = classroom.map((s, i) => {
-    const prev = i > 0 ? classroom[i - 1] : null;
-    const next = i < classroom.length - 1 ? classroom[i + 1] : null;
-    const showModule = !prev || prev.module.id !== s.module.id;
-    const isLastInModule = !next || next.module.id !== s.module.id;
-    return {
-      ...s,
-      showModule,
-      isLastInModule,
-      autonomousHours: isLastInModule
-        ? autonomousByModule.get(s.module.id) ?? null
-        : null,
-    };
-  });
-
-  // Group by month.
-  const groups: MonthGroup[] = [];
-  for (const row of annotated) {
-    const d = row.scheduledDate;
-    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
-    const label = format(d, "MMMM yyyy");
-    let g = groups[groups.length - 1];
-    if (!g || g.key !== key) {
-      g = { key, label, rows: [] };
-      groups.push(g);
+  // Group classroom rows by module.
+  const modules: Array<{
+    module: Session["module"];
+    rows: Session[];
+    homeworkHours: number | null;
+  }> = [];
+  for (const s of classroom) {
+    let g = modules[modules.length - 1];
+    if (!g || g.module.id !== s.module.id) {
+      g = {
+        module: s.module,
+        rows: [],
+        homeworkHours: autonomousByModule.get(s.module.id) ?? null,
+      };
+      modules.push(g);
     }
-    g.rows.push(row);
+    g.rows.push(s);
   }
 
   const totalHours =
@@ -89,13 +71,17 @@ export function ScheduleTable({
     Array.from(autonomousByModule.values()).reduce((a, b) => a + b, 0);
   const endDate = classroom[classroom.length - 1]?.scheduledDate;
 
+  // Assume a single time window for all classroom rows (PLA convention).
+  const timeWindow =
+    classroom[0]?.startTime && classroom[0]?.endTime
+      ? `${classroom[0].startTime}–${classroom[0].endTime}`
+      : "";
+
   return (
-    <div className={isPrint ? "p-6 bg-white text-zinc-900" : "space-y-4"}>
+    <div className={isPrint ? "p-0 bg-white text-zinc-900" : "space-y-4"}>
       {!isPrint ? (
         <div className="flex items-center justify-between print:hidden">
-          <h1 className="text-lg font-semibold">
-            Schedule — {batch.code}
-          </h1>
+          <h1 className="text-lg font-semibold">Schedule — {batch.code}</h1>
           <div className="flex gap-2">
             <Link href={`/admin/batches/${batch.id}?print=1`} target="_blank">
               <Button variant="outline">Print / PDF</Button>
@@ -107,89 +93,87 @@ export function ScheduleTable({
         </div>
       ) : null}
 
-      <div className="rounded-lg border bg-white overflow-hidden print:border-0 print:rounded-none">
-        {/* Header card */}
-        <div className="border-b px-4 py-3 print:py-2 text-center">
-          <div className="text-sm font-semibold text-blue-700 print:text-black">
-            {batch.course.name}{" "}
-            <span className="font-normal">· nível {batch.course.level}</span>
+      <article className="cronograma-sheet mx-auto bg-white">
+        {/* Title */}
+        <header className="text-center mb-3 print:mb-2">
+          <div className="text-[15px] font-semibold leading-tight">
+            Cronograma — {batch.course.name}
           </div>
-          <div className="mt-0.5 text-xs text-muted-foreground">
-            Turma <span className="font-medium text-foreground">{batch.code}</span>
-            {" "}· {format(batch.startDate, "dd MMM yyyy")}
-            {endDate ? ` – ${format(endDate, "dd MMM yyyy")}` : ""}
-            {" "}· {totalHours}h · Formador:{" "}
-            <span className="font-medium text-foreground">
+          <div className="text-[10px] text-zinc-600">
+            nível {batch.course.level} · Turma {batch.code} ·{" "}
+            {format(batch.startDate, "dd MMM yyyy")}
+            {endDate ? ` – ${format(endDate, "dd MMM yyyy")}` : ""} ·{" "}
+            <span className="font-medium">{totalHours} horas</span> · Formador:{" "}
+            <span className="font-medium">
               {batch.trainer?.name ?? "Unassigned"}
             </span>
           </div>
+        </header>
+
+        {/* Module rows */}
+        <div className="space-y-2 print:space-y-1.5">
+          {modules.map((g) => {
+            const first = g.rows[0].scheduledDate;
+            const last = g.rows[g.rows.length - 1].scheduledDate;
+            return (
+              <section
+                key={g.module.id}
+                className="rounded-md border border-zinc-300 px-3 py-1.5 print:rounded-none print:border-zinc-400"
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <div className="text-[12px] leading-tight">
+                    <span className="text-zinc-500 font-semibold mr-1">
+                      M{g.module.number}
+                    </span>
+                    <span className="font-semibold">{g.module.name}</span>
+                  </div>
+                  <div className="text-[10px] text-zinc-600 whitespace-nowrap">
+                    {format(first, "dd MMM")} – {format(last, "dd MMM yyyy")}
+                  </div>
+                </div>
+                <div className="mt-1 flex items-center justify-between gap-3 text-[11px] tabular-nums">
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                    {g.rows.map((r) => (
+                      <span key={r.id} className="text-zinc-700">
+                        <span className="text-[9px] uppercase text-zinc-500 mr-0.5">
+                          {format(r.scheduledDate, "EEE")}
+                        </span>
+                        <span className="font-medium">
+                          {format(r.scheduledDate, "dd/MM")}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="text-[10px] text-zinc-600 whitespace-nowrap">
+                    {timeWindow}
+                    {g.homeworkHours
+                      ? ` · +${g.homeworkHours}h trabalho autónomo`
+                      : ""}
+                  </div>
+                </div>
+              </section>
+            );
+          })}
         </div>
 
-        {/* Month sections */}
-        {groups.map((g) => (
-          <div key={g.key} className="border-b last:border-b-0">
-            <div className="bg-zinc-50 px-4 py-1.5 text-[11px] uppercase tracking-wide font-semibold text-muted-foreground">
-              {g.label}
-            </div>
-            <table className="w-full text-[13px]">
-              <tbody>
-                {g.rows.map((row) => {
-                  const date = row.scheduledDate;
-                  const dayNum = format(date, "dd");
-                  const dayName = format(date, "EEE");
-                  return (
-                    <>
-                      <tr key={row.id} className="border-t first:border-t-0">
-                        <td className="px-4 py-1.5 w-16 align-top">
-                          <div className="font-semibold tabular-nums leading-none">
-                            {dayNum}
-                          </div>
-                          <div className="text-[10px] uppercase text-muted-foreground leading-none mt-0.5">
-                            {dayName}
-                          </div>
-                        </td>
-                        <td className="px-2 py-1.5 align-top">
-                          {row.showModule ? (
-                            <>
-                              <div className="text-[10px] uppercase tracking-wide text-muted-foreground leading-none">
-                                Module {row.module.number}
-                              </div>
-                              <div className="font-medium leading-tight mt-0.5">
-                                {row.module.name}
-                              </div>
-                            </>
-                          ) : (
-                            <div className="text-muted-foreground text-xs">
-                              ↳ continued
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-2 py-1.5 w-28 text-right tabular-nums text-muted-foreground align-top">
-                          {row.startTime}–{row.endTime}
-                        </td>
-                        <td className="px-4 py-1.5 w-12 text-right text-muted-foreground align-top">
-                          {row.hours}h
-                        </td>
-                      </tr>
-                      {row.autonomousHours != null ? (
-                        <tr key={`${row.id}-hw`} className="border-t bg-orange-50/60 print:bg-zinc-50">
-                          <td colSpan={2} className="px-4 py-1 text-xs italic text-muted-foreground">
-                            + Homework — {row.autonomousHours}h trabalho autónomo
-                          </td>
-                          <td className="px-2 py-1" />
-                          <td className="px-4 py-1 w-12 text-right text-muted-foreground">
-                            {row.autonomousHours}h
-                          </td>
-                        </tr>
-                      ) : null}
-                    </>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ))}
-      </div>
+        <footer className="mt-3 text-center text-[9px] text-zinc-500 print:mt-2">
+          {batch.course.name} · Turma {batch.code} · gerado por Horizonte CRM
+        </footer>
+      </article>
+
+      <style>{`
+        .cronograma-sheet {
+          max-width: 720px;
+        }
+        @media print {
+          @page { size: A4 portrait; margin: 12mm; }
+          html, body { background: white !important; }
+          .cronograma-sheet {
+            max-width: none;
+            font-size: 10pt;
+          }
+        }
+      `}</style>
     </div>
   );
 }
