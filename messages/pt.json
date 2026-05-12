@@ -19,5 +19,48 @@
     "pt": "Português",
     "bn": "বাংলা",
     "ur": "اردو"
+  },
+  "register": {
+    "title": "Inscrever em PLA",
+    "subtitle": "Português Língua de Acolhimento · 6 módulos · 150 horas",
+    "sections": {
+      "identity": "Os seus dados",
+      "document": "Documento",
+      "address": "Morada e contribuinte",
+      "enrolment": "Curso",
+      "consent": "Consentimento"
+    },
+    "fields": {
+      "fullName": "Nome completo",
+      "email": "E-mail",
+      "phone": "Telefone (WhatsApp)",
+      "phoneHint": "Incluir indicativo do país, ex. +351 91 234 5678",
+      "dob": "Data de nascimento",
+      "nationality": "Nacionalidade",
+      "docType": "Tipo de documento",
+      "docNumber": "Nº do documento",
+      "docExpiry": "Data de validade do documento",
+      "docFront": "Documento — frente (PDF ou imagem)",
+      "docBack": "Documento — verso (opcional)",
+      "nif": "Contribuinte (NIF)",
+      "niss": "Segurança social (NISS) — opcional",
+      "address": "Morada",
+      "city": "Localidade",
+      "batch": "Qual turma?",
+      "noBatches": "Sem turmas abertas neste momento.",
+      "gdpr": "Autorizo a Novo Horizonte a tratar os meus dados pessoais para efeitos de inscrição, ao abrigo do RGPD."
+    },
+    "docTypes": {
+      "PASSPORT": "Passaporte",
+      "RESIDENCE_PERMIT": "Título de residência",
+      "ID_CARD": "Cartão de cidadão"
+    },
+    "submit": "Submeter inscrição",
+    "submitting": "A submeter…",
+    "success": {
+      "title": "Inscrição recebida!",
+      "body": "Obrigado. Recebemos a sua inscrição e iremos contactá-lo via WhatsApp com instruções de pagamento e próximos passos.",
+      "again": "Inscrever outro estudante"
+    }
   }
 }

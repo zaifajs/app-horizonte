@@ -13,7 +13,9 @@ export default async function NewBatchPage() {
   const [courses, trainers] = await Promise.all([
     prisma.course.findMany({
       orderBy: { code: "asc" },
-      select: { id: true, code: true, name: true },
+      include: {
+        modules: { select: { id: true, classroomDays: true } },
+      },
     }),
     prisma.user.findMany({
       where: { role: "TEACHER", isActive: true },
@@ -28,8 +30,10 @@ export default async function NewBatchPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">New batch</h1>
           <p className="text-sm text-muted-foreground">
-            Generates the full cronograma — 6 modules × 5 classroom days + 6
-            autonomous blocks (36 sessions total).
+            Generates the full cronograma from the selected course.
+            {courses.length === 1
+              ? ` (Currently only ${courses[0].code} is offered.)`
+              : ""}
           </p>
         </div>
         <Link href="/admin/batches">
@@ -37,7 +41,16 @@ export default async function NewBatchPage() {
         </Link>
       </div>
 
-      <NewBatchForm courses={courses} trainers={trainers} />
+      <NewBatchForm
+        courses={courses.map((c) => ({
+          id: c.id,
+          code: c.code,
+          name: c.name,
+          moduleCount: c.modules.length,
+          classroomDays: c.modules[0]?.classroomDays ?? 5,
+        }))}
+        trainers={trainers}
+      />
     </div>
   );
 }

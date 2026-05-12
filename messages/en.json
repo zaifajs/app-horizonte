@@ -19,5 +19,48 @@
     "pt": "Português",
     "bn": "বাংলা",
     "ur": "اردو"
+  },
+  "register": {
+    "title": "Register for PLA",
+    "subtitle": "Português Língua de Acolhimento · 6 modules · 150 hours",
+    "sections": {
+      "identity": "Your details",
+      "document": "Your document",
+      "address": "Address & tax",
+      "enrolment": "Course",
+      "consent": "Consent"
+    },
+    "fields": {
+      "fullName": "Full name",
+      "email": "Email",
+      "phone": "Phone (WhatsApp)",
+      "phoneHint": "Include country code, e.g. +351 91 234 5678",
+      "dob": "Date of birth",
+      "nationality": "Nationality",
+      "docType": "Document type",
+      "docNumber": "Document number",
+      "docExpiry": "Document expiry date",
+      "docFront": "Document — front (PDF or image)",
+      "docBack": "Document — back (optional)",
+      "nif": "Tax ID (NIF)",
+      "niss": "Social security (NISS) — optional",
+      "address": "Address",
+      "city": "City / town",
+      "batch": "Which batch?",
+      "noBatches": "No upcoming batches at the moment.",
+      "gdpr": "I consent to Novo Horizonte processing my personal data for enrolment, in accordance with GDPR."
+    },
+    "docTypes": {
+      "PASSPORT": "Passport",
+      "RESIDENCE_PERMIT": "Residence permit",
+      "ID_CARD": "ID card"
+    },
+    "submit": "Submit registration",
+    "submitting": "Submitting…",
+    "success": {
+      "title": "Registration received!",
+      "body": "Thank you. We have received your registration and will contact you on WhatsApp with payment instructions and next steps.",
+      "again": "Register another student"
+    }
   }
 }

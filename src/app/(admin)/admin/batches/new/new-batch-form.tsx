@@ -14,7 +14,13 @@ import {
 } from "@/components/ui/select";
 import { createBatchAction } from "@/lib/actions/batches";
 
-type Course = { id: string; code: string; name: string };
+type Course = {
+  id: string;
+  code: string;
+  name: string;
+  moduleCount: number;
+  classroomDays: number;
+};
 type Trainer = { id: string; name: string };
 
 const UNASSIGNED = "__unassigned__";
@@ -68,7 +74,12 @@ export function NewBatchForm({
         label="Course"
         htmlFor="courseId"
         error={fieldErrors.courseId}
-        hint="Currently only PLA."
+        hint={(() => {
+          const c = courses.find((x) => x.id === courseId);
+          if (!c) return "Currently only one course is offered.";
+          const classroom = c.moduleCount * c.classroomDays;
+          return `${c.code}: ${c.moduleCount} modules × ${c.classroomDays} classroom days + ${c.moduleCount} homework blocks (${classroom + c.moduleCount} sessions).`;
+        })()}
       >
         <Select value={courseId} onValueChange={(v) => v && setCourseId(v)}>
           <SelectTrigger id="courseId">
