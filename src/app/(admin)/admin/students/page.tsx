@@ -173,9 +173,7 @@ export default async function StudentsPage({
                 <SortableHeader filters={filters} sort="batch">Batch</SortableHeader>
                 <SortableHeader filters={filters} sort="paid" align="right">Paid</SortableHeader>
                 <SortableHeader filters={filters} sort="due" align="right">Due</SortableHeader>
-                <SortableHeader filters={filters} sort="lastPaid">Last paid</SortableHeader>
-                <TableHead>Deadline</TableHead>
-                <SortableHeader filters={filters} sort="registered">Registered</SortableHeader>
+                <TableHead>Starts</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -232,12 +230,10 @@ export default async function StudentsPage({
                     )}
                   </TableCell>
                   <TableCell>
-                    {r.lastPaidAt ? format(r.lastPaidAt, "dd MMM yyyy") : "—"}
+                    {r.latestEnrollment?.batchStartDate
+                      ? format(r.latestEnrollment.batchStartDate, "dd MMM yyyy")
+                      : "—"}
                   </TableCell>
-                  <TableCell className="text-xs">
-                    <DeadlineCell urgency={r.urgency} days={r.daysToDeadline} />
-                  </TableCell>
-                  <TableCell>{format(r.createdAt, "dd MMM yyyy")}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
