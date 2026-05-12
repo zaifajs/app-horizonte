@@ -14,30 +14,49 @@ export function SetPasswordForm() {
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  // null = still resolving, true = signed in, false = no session after timeout
   const [hasSession, setHasSession] = useState<boolean | null>(null);
 
-  // Wait for the Supabase browser client to ingest the URL hash and create
-  // a session. If no session after that, we redirect to login.
+  // The invite link arrives as ...#access_token=...&type=invite. The browser
+  // Supabase client parses that hash asynchronously, so we listen for the
+  // SIGNED_IN event instead of bouncing on first getUser() check.
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
-    let mounted = true;
-    (async () => {
-      // Trigger the SDK to read the hash if a tokens-in-hash invite landed here.
-      await supabase.auth.getSession();
-      const { data, error } = await supabase.auth.getUser();
-      if (!mounted) return;
-      if (error || !data.user) {
-        setHasSession(false);
-        router.replace("/login");
-        return;
-      }
-      setEmail(data.user.email ?? null);
+    let resolved = false;
+
+    function handle(session: { user?: { email?: string | null } } | null) {
+      if (!session?.user || resolved) return;
+      resolved = true;
+      setEmail(session.user.email ?? null);
       setHasSession(true);
-    })();
+    }
+
+    // 1) Listen for the auth event (fired when the SDK ingests the hash).
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => handle(session),
+    );
+
+    // 2) Cover the case where the session was set before we subscribed.
+    supabase.auth.getSession().then(({ data }) => handle(data.session));
+
+    // 3) Safety net: if nothing's happened after a few seconds, the link is
+    //    bad / expired / already used — send the user to login.
+    const timer = setTimeout(() => {
+      if (!resolved) {
+        setHasSession(false);
+      }
+    }, 4000);
+
     return () => {
-      mounted = false;
+      subscription.unsubscribe();
+      clearTimeout(timer);
     };
-  }, [router]);
+  }, []);
+
+  // Once we're sure there's no session, kick to /login.
+  useEffect(() => {
+    if (hasSession === false) router.replace("/login");
+  }, [hasSession, router]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,13 +77,21 @@ export function SetPasswordForm() {
       setError(error.message);
       return;
     }
-    // Refresh server-side session, then go to the right landing page.
     router.refresh();
     window.location.href = "/admin/today";
   }
 
   if (hasSession === null) {
-    return <p className="text-sm text-muted-foreground">Loading…</p>;
+    return (
+      <p className="text-sm text-muted-foreground">Verifying your invite…</p>
+    );
+  }
+  if (hasSession === false) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Redirecting to sign in…
+      </p>
+    );
   }
 
   return (
