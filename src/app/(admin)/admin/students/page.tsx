@@ -172,7 +172,6 @@ export default async function StudentsPage({
                 <SortableHeader filters={filters} sort="batch">Batch</SortableHeader>
                 <SortableHeader filters={filters} sort="paid" align="right">Paid</SortableHeader>
                 <SortableHeader filters={filters} sort="due" align="right">Due</SortableHeader>
-                <TableHead>Starts</TableHead>
                 <TableHead className="w-20 text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
@@ -227,11 +226,6 @@ export default async function StudentsPage({
                       </span>
                     )}
                   </TableCell>
-                  <TableCell>
-                    {r.latestEnrollment?.batchStartDate
-                      ? format(r.latestEnrollment.batchStartDate, "dd MMM yyyy")
-                      : "—"}
-                  </TableCell>
                   <TableCell className="text-right">
                     {r.latestEnrollment && r.dueCents > 0 ? (
                       <QuickPay
@@ -257,7 +251,9 @@ export default async function StudentsPage({
 
 const URGENCY_ROW_BG: Record<Urgency, string> = {
   paid: "bg-emerald-50 hover:bg-emerald-100/60",
-  partial: "bg-yellow-50 hover:bg-yellow-100/60",
+  // Pre-start AND partial-but-not-urgent both read as "owes money,
+  // not yet a problem" → same calm brown.
+  partial: "bg-stone-100 hover:bg-stone-200/60",
   due_soon: "bg-orange-100 hover:bg-orange-200/60",
   overdue: "bg-red-50 hover:bg-red-100/60",
   pre_start: "bg-stone-100 hover:bg-stone-200/60",
