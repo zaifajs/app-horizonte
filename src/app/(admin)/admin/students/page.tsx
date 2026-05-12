@@ -14,11 +14,13 @@ import { prisma } from "@/lib/db";
 import {
   applyComputedFilters,
   buildStudentWhere,
+  computeUrgency,
   filtersToSearchString,
   parseFilters,
   progressOf,
   sortRows,
   type StudentRow,
+  type Urgency,
 } from "@/lib/students/filters";
 import { StudentsFilters } from "./filters";
 import { SavedViews } from "./saved-views";
@@ -63,7 +65,8 @@ export default async function StudentsPage({
     loadBatchSequence(),
   ]);
 
-  // Build rows + compute paid/due/lastPaid.
+  // Build rows + compute paid/due/lastPaid + urgency.
+  const today = new Date();
   const rows: StudentRow[] = studentsRaw.map((s) => {
     const enr = s.enrollments[0] ?? null;
     const paid = enr?.payments.reduce((a, p) => a + p.amountCents, 0) ?? 0;
@@ -74,6 +77,13 @@ export default async function StudentsPage({
           .map((p) => p.paidAt)
           .sort((a, b) => b.getTime() - a.getTime())[0]
       : null;
+    const { urgency, daysToDeadline } = computeUrgency({
+      enrollmentStatus: enr?.status ?? null,
+      batchStartDate: enr?.batch.startDate ?? null,
+      paidCents: paid,
+      feeCents: fee,
+      today,
+    });
     return {
       id: s.id,
       fullName: s.fullName,
@@ -96,8 +106,20 @@ export default async function StudentsPage({
       dueCents: due,
       lastPaidAt,
       paymentProgress: progressOf(paid, fee),
+      urgency,
+      daysToDeadline,
     };
   });
+
+  // Counts by urgency for the summary bar — computed BEFORE applying urgency
+  // filter so the chips always show the full denominator across the rest of
+  // the active filters.
+  const urgencyCounts: Record<Urgency, number> = {
+    paid: 0, partial: 0, due_soon: 0, overdue: 0, pre_start: 0, withdrawn: 0,
+  };
+  for (const r of applyComputedFilters(rows, { ...filters, urgency: null })) {
+    urgencyCounts[r.urgency] += 1;
+  }
 
   const filtered = applyComputedFilters(rows, filters);
   const sorted = sortRows(filtered, filters);
@@ -119,6 +141,7 @@ export default async function StudentsPage({
         </div>
       </div>
 
+      <UrgencyBar counts={urgencyCounts} current={filters.urgency} />
       <SavedViews />
       <StudentsFilters
         batches={batches}
@@ -151,12 +174,18 @@ export default async function StudentsPage({
                 <SortableHeader filters={filters} sort="paid" align="right">Paid</SortableHeader>
                 <SortableHeader filters={filters} sort="due" align="right">Due</SortableHeader>
                 <SortableHeader filters={filters} sort="lastPaid">Last paid</SortableHeader>
+                <TableHead>Deadline</TableHead>
                 <SortableHeader filters={filters} sort="registered">Registered</SortableHeader>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sorted.map((r) => (
-                <TableRow key={r.id}>
+                <TableRow
+                  key={r.id}
+                  className={`${URGENCY_ROW_BG[r.urgency]} ${
+                    r.urgency === "withdrawn" ? "opacity-60" : ""
+                  }`}
+                >
                   {filters.batch ? (
                     <TableCell className="text-muted-foreground tabular-nums">
                       {r.latestEnrollment?.batchSeq ?? "—"}
@@ -205,6 +234,9 @@ export default async function StudentsPage({
                   <TableCell>
                     {r.lastPaidAt ? format(r.lastPaidAt, "dd MMM yyyy") : "—"}
                   </TableCell>
+                  <TableCell className="text-xs">
+                    <DeadlineCell urgency={r.urgency} days={r.daysToDeadline} />
+                  </TableCell>
                   <TableCell>{format(r.createdAt, "dd MMM yyyy")}</TableCell>
                 </TableRow>
               ))}
@@ -214,6 +246,78 @@ export default async function StudentsPage({
       )}
     </div>
   );
+}
+
+const URGENCY_ROW_BG: Record<Urgency, string> = {
+  paid: "bg-emerald-50 hover:bg-emerald-100/60",
+  partial: "bg-yellow-50 hover:bg-yellow-100/60",
+  due_soon: "bg-orange-100 hover:bg-orange-200/60",
+  overdue: "bg-red-50 hover:bg-red-100/60",
+  pre_start: "",
+  withdrawn: "bg-zinc-50",
+};
+
+const URGENCY_CHIP: Record<Urgency, { label: string; cls: string }> = {
+  paid:     { label: "Paid",        cls: "bg-emerald-100 text-emerald-900 border-emerald-300" },
+  partial:  { label: "Partial",     cls: "bg-yellow-100 text-yellow-900 border-yellow-300" },
+  due_soon: { label: "Due soon",    cls: "bg-orange-200 text-orange-950 border-orange-400" },
+  overdue:  { label: "Overdue",     cls: "bg-red-100 text-red-900 border-red-300" },
+  pre_start:{ label: "Pre-start",   cls: "bg-zinc-100 text-zinc-700 border-zinc-300" },
+  withdrawn:{ label: "Withdrawn",   cls: "bg-zinc-100 text-zinc-500 border-zinc-300" },
+};
+
+function UrgencyBar({
+  counts,
+  current,
+}: {
+  counts: Record<Urgency, number>;
+  current: Urgency | null;
+}) {
+  const order: Urgency[] = ["overdue", "due_soon", "partial", "paid", "pre_start", "withdrawn"];
+  const total = order.reduce((a, k) => a + counts[k], 0);
+  if (total === 0) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-xs uppercase tracking-wide text-muted-foreground mr-1">
+        At a glance
+      </span>
+      {order
+        .filter((u) => counts[u] > 0)
+        .map((u) => {
+          const c = URGENCY_CHIP[u];
+          const isActive = current === u;
+          const href = current === u ? "/admin/students" : `/admin/students?urgency=${u}`;
+          return (
+            <Link
+              key={u}
+              href={href}
+              className={`text-xs rounded-full border px-2.5 py-1 inline-flex items-center gap-1.5 ${
+                isActive ? "ring-2 ring-foreground ring-offset-1" : ""
+              } ${c.cls}`}
+            >
+              <span className="font-semibold tabular-nums">{counts[u]}</span>
+              <span>{c.label}</span>
+            </Link>
+          );
+        })}
+    </div>
+  );
+}
+
+function DeadlineCell({
+  urgency,
+  days,
+}: {
+  urgency: Urgency;
+  days: number | null;
+}) {
+  if (urgency === "paid") return <span className="text-muted-foreground">—</span>;
+  if (urgency === "withdrawn") return <span className="text-muted-foreground">—</span>;
+  if (urgency === "pre_start") return <span className="text-muted-foreground">Pre-start</span>;
+  if (days === null) return <span className="text-muted-foreground">—</span>;
+  if (days < 0) return <span className="text-red-700 font-medium">{Math.abs(days)} days overdue</span>;
+  if (days === 0) return <span className="text-orange-700 font-medium">Due today</span>;
+  return <span className={days <= 7 ? "text-orange-700 font-medium" : ""}>{days} days left</span>;
 }
 
 function SortableHeader({

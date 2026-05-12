@@ -8,10 +8,23 @@ import type { Prisma } from "@prisma/client";
 export type EnrollmentStatus = "PENDING" | "ACTIVE" | "WITHDRAWN" | "COMPLETED";
 export type PaymentProgress = "unpaid" | "partial" | "full";
 
+// Time + money combined → one actionable label.
+export type Urgency =
+  | "paid"        // green   — fully paid
+  | "partial"     // yellow  — class started, partial paid, deadline > 7d away
+  | "due_soon"    // amber   — class started, not full, ≤7d to deadline
+  | "overdue"     // red     — class started, unpaid or past deadline
+  | "pre_start"   // neutral — class hasn't started yet
+  | "withdrawn";  // dimmed  — explicit withdrawal
+
+export const PAYMENT_DEADLINE_DAYS = 28; // 4 weeks from class start
+export const DUE_SOON_WINDOW_DAYS = 7;
+
 export type StudentFilters = {
   batch: string | null;
   enrollmentStatus: EnrollmentStatus | null;
   paymentProgress: PaymentProgress | null;
+  urgency: Urgency | null;
   q: string | null;
   paidFrom: string | null; // YYYY-MM-DD
   paidTo: string | null;
@@ -30,12 +43,17 @@ export const defaultFilters: StudentFilters = {
   batch: null,
   enrollmentStatus: null,
   paymentProgress: null,
+  urgency: null,
   q: null,
   paidFrom: null,
   paidTo: null,
   sort: "batch",
   dir: "desc",
 };
+
+const URGENCY_VALUES: Urgency[] = [
+  "paid", "partial", "due_soon", "overdue", "pre_start", "withdrawn",
+];
 
 const SORT_VALUES = ["registered", "name", "batch", "batchSeq", "paid", "due", "lastPaid"] as const;
 const STATUS_VALUES: EnrollmentStatus[] = ["PENDING", "ACTIVE", "WITHDRAWN", "COMPLETED"];
@@ -53,6 +71,7 @@ export function parseFilters(
   const dir = (get("dir") ?? "desc") as StudentFilters["dir"];
   const enrollmentStatus = get("status") as EnrollmentStatus | null;
   const paymentProgress = get("paid") as PaymentProgress | null;
+  const urgency = get("urgency") as Urgency | null;
 
   return {
     batch: get("batch"),
@@ -64,6 +83,8 @@ export function parseFilters(
       paymentProgress && PROGRESS_VALUES.includes(paymentProgress)
         ? paymentProgress
         : null,
+    urgency:
+      urgency && URGENCY_VALUES.includes(urgency) ? urgency : null,
     q: (get("q") ?? "").trim() || null,
     paidFrom: get("paidFrom") || null,
     paidTo: get("paidTo") || null,
@@ -122,6 +143,9 @@ export type StudentRow = {
   dueCents: number;
   lastPaidAt: Date | null;
   paymentProgress: PaymentProgress;
+  urgency: Urgency;
+  /** Whole days from today to the payment deadline. Negative = past. Null = no enrollment / pre-start. */
+  daysToDeadline: number | null;
 };
 
 export function progressOf(paid: number, fee: number): PaymentProgress {
@@ -130,11 +154,59 @@ export function progressOf(paid: number, fee: number): PaymentProgress {
   return "partial";
 }
 
+/** Compute the action-needed state for a row. */
+export function computeUrgency({
+  enrollmentStatus,
+  batchStartDate,
+  paidCents,
+  feeCents,
+  today,
+}: {
+  enrollmentStatus: EnrollmentStatus | null;
+  batchStartDate: Date | null;
+  paidCents: number;
+  feeCents: number;
+  today: Date;
+}): { urgency: Urgency; daysToDeadline: number | null } {
+  if (enrollmentStatus === "WITHDRAWN") {
+    return { urgency: "withdrawn", daysToDeadline: null };
+  }
+  if (paidCents >= feeCents && feeCents > 0) {
+    return { urgency: "paid", daysToDeadline: null };
+  }
+  if (!batchStartDate) {
+    return { urgency: "pre_start", daysToDeadline: null };
+  }
+  const dayMs = 86_400_000;
+  const startMs = Date.UTC(batchStartDate.getUTCFullYear(), batchStartDate.getUTCMonth(), batchStartDate.getUTCDate());
+  const todayMs = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  if (todayMs < startMs) {
+    return { urgency: "pre_start", daysToDeadline: null };
+  }
+  const deadlineMs = startMs + PAYMENT_DEADLINE_DAYS * dayMs;
+  const daysToDeadline = Math.round((deadlineMs - todayMs) / dayMs);
+
+  // Class has started.
+  if (paidCents <= 0) {
+    return { urgency: "overdue", daysToDeadline };
+  }
+  if (daysToDeadline < 0) {
+    return { urgency: "overdue", daysToDeadline };
+  }
+  if (daysToDeadline <= DUE_SOON_WINDOW_DAYS) {
+    return { urgency: "due_soon", daysToDeadline };
+  }
+  return { urgency: "partial", daysToDeadline };
+}
+
 export function applyComputedFilters(
   rows: StudentRow[],
   f: StudentFilters,
 ): StudentRow[] {
   let result = rows;
+  if (f.urgency) {
+    result = result.filter((r) => r.urgency === f.urgency);
+  }
   if (f.paymentProgress) {
     result = result.filter((r) => r.paymentProgress === f.paymentProgress);
   }
@@ -209,6 +281,7 @@ export function filtersToSearchString(
   add("batch", patch.batch !== undefined ? patch.batch : current.batch);
   add("status", patch.enrollmentStatus !== undefined ? patch.enrollmentStatus : current.enrollmentStatus);
   add("paid", patch.paymentProgress !== undefined ? patch.paymentProgress : current.paymentProgress);
+  add("urgency", patch.urgency !== undefined ? (patch.urgency as string | null) : current.urgency);
   add("paidFrom", patch.paidFrom !== undefined ? patch.paidFrom : current.paidFrom);
   add("paidTo", patch.paidTo !== undefined ? patch.paidTo : current.paidTo);
   const sort = patch.sort !== undefined ? patch.sort : current.sort;

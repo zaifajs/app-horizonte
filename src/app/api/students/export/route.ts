@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import {
   applyComputedFilters,
   buildStudentWhere,
+  computeUrgency,
   parseFilters,
   progressOf,
   sortRows,
@@ -52,6 +53,7 @@ export async function GET(request: Request) {
     loadBatchSequence(),
   ]);
 
+  const today = new Date();
   const rows: StudentRow[] = students.map((s) => {
     const enr = s.enrollments[0] ?? null;
     const paid = enr?.payments.reduce((a, p) => a + p.amountCents, 0) ?? 0;
@@ -63,6 +65,13 @@ export async function GET(request: Request) {
             .map((p) => p.paidAt)
             .sort((a, b) => b.getTime() - a.getTime())[0]
         : null;
+    const { urgency, daysToDeadline } = computeUrgency({
+      enrollmentStatus: enr?.status ?? null,
+      batchStartDate: enr?.batch.startDate ?? null,
+      paidCents: paid,
+      feeCents: fee,
+      today,
+    });
     return {
       id: s.id,
       fullName: s.fullName,
@@ -85,6 +94,8 @@ export async function GET(request: Request) {
       dueCents: due,
       lastPaidAt,
       paymentProgress: progressOf(paid, fee),
+      urgency,
+      daysToDeadline,
     };
   });
 
