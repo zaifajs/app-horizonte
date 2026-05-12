@@ -40,7 +40,7 @@ export async function GET(request: Request) {
         enrollments: {
           include: {
             batch: {
-              select: { code: true, course: { select: { feeCents: true } } },
+              select: { code: true, startDate: true, course: { select: { feeCents: true } } },
             },
             payments: { select: { amountCents: true, paidAt: true } },
           },
@@ -75,7 +75,9 @@ export async function GET(request: Request) {
             id: enr.id,
             status: enr.status,
             batchCode: enr.batch.code,
+            batchStartDate: enr.batch.startDate ?? null,
             batchSeq: batchSeq.get(enr.id) ?? null,
+            enrolledAt: enr.enrolledAt,
             feeCents: fee,
           }
         : null,
