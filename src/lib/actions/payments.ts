@@ -7,16 +7,17 @@ import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 import { logChange } from "@/lib/audit";
 
-// One PaymentReceipt = one money-received event. Multiple receipts can sit
-// under the same Payment (the installment "obligation").
+// One Payment row = one money-received event. There's no fixed installment
+// structure: staff records as many or as few payments as the student arranges,
+// in any amount. The total target is `Course.feeCents` (€450 for PLA).
 //
-// When the sum of receipts >= expectedAmountCents the Payment is considered
-// fully paid; paidAt is set and (for installment 1) the enrollment auto-
-// activates from PENDING → ACTIVE.
+// The FIRST payment recorded against an Enrollment auto-activates it from
+// PENDING → ACTIVE. Activation is one-way: deleting payments later does NOT
+// revert it (avoids surprise UX).
 
-const addReceiptSchema = z.object({
-  paymentId: z.string().uuid(),
-  /** Amount in EUR (e.g. "100", "100.50"). Stored as cents internally. */
+const addPaymentSchema = z.object({
+  enrollmentId: z.string().uuid(),
+  /** Amount in EUR, e.g. "100" or "100.50". Stored as cents internally. */
   amount: z
     .string()
     .regex(/^\d+(\.\d{1,2})?$/, "Enter an amount like 100 or 100.50."),
@@ -27,17 +28,17 @@ const addReceiptSchema = z.object({
   notes: z.string().max(2000).optional().nullable(),
 });
 
-export type AddReceiptInput = z.input<typeof addReceiptSchema>;
-export type AddReceiptResult =
-  | { ok: true; fullyPaid: boolean }
+export type AddPaymentInput = z.input<typeof addPaymentSchema>;
+export type AddPaymentResult =
+  | { ok: true; activated: boolean }
   | { ok: false; error: string };
 
-export async function addPaymentReceiptAction(
-  raw: AddReceiptInput,
-): Promise<AddReceiptResult> {
+export async function addPaymentAction(
+  raw: AddPaymentInput,
+): Promise<AddPaymentResult> {
   const user = await requireRole(["ADMIN", "STAFF"]);
 
-  const parsed = addReceiptSchema.safeParse(raw);
+  const parsed = addPaymentSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
@@ -48,25 +49,16 @@ export async function addPaymentReceiptAction(
     return { ok: false, error: "Amount must be greater than zero." };
   }
 
-  const payment = await prisma.payment.findUnique({
-    where: { id: input.paymentId },
-    select: {
-      id: true,
-      installment: true,
-      expectedAmountCents: true,
-      paidAmountCents: true,
-      enrollmentId: true,
-      enrollment: {
-        select: { id: true, studentId: true, batchId: true, status: true },
-      },
-    },
+  const enrollment = await prisma.enrollment.findUnique({
+    where: { id: input.enrollmentId },
+    select: { id: true, status: true, studentId: true, batchId: true },
   });
-  if (!payment) return { ok: false, error: "Payment not found." };
+  if (!enrollment) return { ok: false, error: "Enrollment not found." };
 
   const result = await prisma.$transaction(async (tx) => {
-    const receipt = await tx.paymentReceipt.create({
+    const payment = await tx.payment.create({
       data: {
-        paymentId: payment.id,
+        enrollmentId: enrollment.id,
         amountCents,
         method: input.method as PaymentMethod,
         paidAt: new Date(`${input.paidAt}T00:00:00Z`),
@@ -75,135 +67,92 @@ export async function addPaymentReceiptAction(
       },
     });
 
-    const newPaidTotal = payment.paidAmountCents + amountCents;
-    const fullyPaid = newPaidTotal >= payment.expectedAmountCents;
-
-    await tx.payment.update({
-      where: { id: payment.id },
-      data: {
-        paidAmountCents: newPaidTotal,
-        paidAt: fullyPaid ? new Date() : null,
-      },
-    });
-
     await logChange({
       tx,
       action: "CREATE",
-      entityType: "PaymentReceipt",
-      entityId: receipt.id,
+      entityType: "Payment",
+      entityId: payment.id,
       actorUserId: user.id,
-      studentId: payment.enrollment.studentId,
+      studentId: enrollment.studentId,
       changes: {
-        paymentId: payment.id,
-        installment: payment.installment,
+        enrollmentId: enrollment.id,
         amountCents,
         method: input.method,
         paidAt: input.paidAt,
-        runningTotalCents: newPaidTotal,
-        fullyPaid,
       } as Prisma.InputJsonValue,
     });
 
-    // Auto-activate the enrollment when installment 1 is fully paid.
     let activated = false;
-    if (
-      fullyPaid &&
-      payment.installment === 1 &&
-      payment.enrollment.status === "PENDING"
-    ) {
+    if (enrollment.status === "PENDING") {
       await tx.enrollment.update({
-        where: { id: payment.enrollment.id },
+        where: { id: enrollment.id },
         data: { status: "ACTIVE" },
       });
       await logChange({
         tx,
         action: "UPDATE",
         entityType: "Enrollment",
-        entityId: payment.enrollment.id,
+        entityId: enrollment.id,
         actorUserId: user.id,
-        studentId: payment.enrollment.studentId,
+        studentId: enrollment.studentId,
         changes: {
           status: { from: "PENDING", to: "ACTIVE" },
-          reason: "Installment 1 fully paid.",
+          reason: "First payment recorded.",
         } as Prisma.InputJsonValue,
       });
       activated = true;
     }
 
-    return { fullyPaid, activated };
+    return { activated };
+  });
+
+  revalidatePath(`/admin/students/${enrollment.studentId}`);
+  if (enrollment.batchId) {
+    revalidatePath(`/admin/batches/${enrollment.batchId}`);
+  }
+  return { ok: true, activated: result.activated };
+}
+
+const deletePaymentSchema = z.object({ paymentId: z.string().uuid() });
+
+export async function deletePaymentAction(
+  raw: z.input<typeof deletePaymentSchema>,
+): Promise<{ ok: boolean; error?: string }> {
+  const user = await requireRole(["ADMIN", "STAFF"]);
+  const parsed = deletePaymentSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "Invalid input." };
+
+  const payment = await prisma.payment.findUnique({
+    where: { id: parsed.data.paymentId },
+    select: {
+      id: true,
+      amountCents: true,
+      method: true,
+      enrollmentId: true,
+      enrollment: { select: { studentId: true, batchId: true } },
+    },
+  });
+  if (!payment) return { ok: false, error: "Payment not found." };
+
+  await prisma.$transaction(async (tx) => {
+    await tx.payment.delete({ where: { id: payment.id } });
+    await logChange({
+      tx,
+      action: "DELETE",
+      entityType: "Payment",
+      entityId: payment.id,
+      actorUserId: user.id,
+      studentId: payment.enrollment.studentId,
+      changes: {
+        amountCents: payment.amountCents,
+        method: payment.method,
+      },
+    });
   });
 
   revalidatePath(`/admin/students/${payment.enrollment.studentId}`);
   if (payment.enrollment.batchId) {
     revalidatePath(`/admin/batches/${payment.enrollment.batchId}`);
-  }
-  return { ok: true, fullyPaid: result.fullyPaid };
-}
-
-// Optional: delete a receipt (e.g. correction). Recomputes paidAmountCents.
-const deleteReceiptSchema = z.object({ receiptId: z.string().uuid() });
-
-export async function deletePaymentReceiptAction(
-  raw: z.input<typeof deleteReceiptSchema>,
-): Promise<{ ok: boolean; error?: string }> {
-  const user = await requireRole(["ADMIN", "STAFF"]);
-  const parsed = deleteReceiptSchema.safeParse(raw);
-  if (!parsed.success) return { ok: false, error: "Invalid input." };
-
-  const receipt = await prisma.paymentReceipt.findUnique({
-    where: { id: parsed.data.receiptId },
-    select: {
-      id: true,
-      amountCents: true,
-      paymentId: true,
-      payment: {
-        select: {
-          enrollmentId: true,
-          enrollment: { select: { studentId: true, batchId: true } },
-        },
-      },
-    },
-  });
-  if (!receipt) return { ok: false, error: "Receipt not found." };
-
-  await prisma.$transaction(async (tx) => {
-    await tx.paymentReceipt.delete({ where: { id: receipt.id } });
-
-    const sum = await tx.paymentReceipt.aggregate({
-      where: { paymentId: receipt.paymentId },
-      _sum: { amountCents: true },
-    });
-    const total = sum._sum.amountCents ?? 0;
-
-    const payment = await tx.payment.update({
-      where: { id: receipt.paymentId },
-      data: {
-        paidAmountCents: total,
-        paidAt: null, // re-evaluated below
-      },
-      select: { expectedAmountCents: true },
-    });
-    if (total >= payment.expectedAmountCents) {
-      await tx.payment.update({
-        where: { id: receipt.paymentId },
-        data: { paidAt: new Date() },
-      });
-    }
-
-    await logChange({
-      tx,
-      action: "DELETE",
-      entityType: "PaymentReceipt",
-      entityId: receipt.id,
-      actorUserId: user.id,
-      studentId: receipt.payment.enrollment.studentId,
-      changes: { amountCents: receipt.amountCents, runningTotalCents: total },
-    });
-  });
-
-  revalidatePath(`/admin/students/${receipt.payment.enrollment.studentId}`);
-  if (receipt.payment.enrollment.batchId) {
-    revalidatePath(`/admin/batches/${receipt.payment.enrollment.batchId}`);
   }
   return { ok: true };
 }

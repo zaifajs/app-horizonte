@@ -107,7 +107,7 @@ model User {
   studentProfile Student?
   batchesTaught  Batch[]        @relation("BatchTrainer")
   sessionsOver   BatchSession[] @relation("SessionTrainer")
-  receiptsTaken  PaymentReceipt[] @relation("PaymentReceiptCollector")
+  paymentsTaken  Payment[] @relation("PaymentCollector")
   notesAuthored  Note[]         @relation("NoteAuthor")
   messagesSent   MessageLog[]   @relation("MessageSender")
   auditEntries   AuditLog[]     @relation("AuditActor")
@@ -121,6 +121,7 @@ model Course {
   name       String
   level      String
   totalHours Int
+  feeCents   Int      @default(45000)
   createdAt  DateTime @default(now())
 
   modules Module[]
@@ -251,43 +252,28 @@ model Enrollment {
   @@map("enrollments")
 }
 
+// One Payment row = one money-received event. Multiple payments may exist
+// under an Enrollment (partial / staggered payments). The total target is
+// Enrollment.batch.feeCents.
 model Payment {
-  id                  String      @id @default(uuid()) @db.Uuid
-  enrollmentId        String      @db.Uuid
-  installment         Int
-  expectedAmountCents Int
-  paidAmountCents     Int         @default(0)
-  currency            String      @default("EUR")
-  dueDate             DateTime    @db.Date
-  paidAt              DateTime?
-  notes               String?
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
-
-  enrollment Enrollment       @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
-  receipts   PaymentReceipt[]
-
-  @@index([dueDate])
-  @@index([paidAt])
-  @@map("payments")
-}
-
-model PaymentReceipt {
   id               String        @id @default(uuid()) @db.Uuid
-  paymentId        String        @db.Uuid
+  enrollmentId     String        @db.Uuid
   amountCents      Int
+  currency         String        @default("EUR")
   paidAt           DateTime
   method           PaymentMethod
   proofStoragePath String?
   collectedById    String?       @db.Uuid
   notes            String?
   createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
-  payment     Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  collectedBy User?   @relation("PaymentReceiptCollector", fields: [collectedById], references: [id])
+  enrollment  Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  collectedBy User?      @relation("PaymentCollector", fields: [collectedById], references: [id])
 
-  @@index([paymentId])
-  @@map("payment_receipts")
+  @@index([paidAt])
+  @@index([enrollmentId])
+  @@map("payments")
 }
 
 model Attendance {

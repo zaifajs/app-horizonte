@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/db";
-import { PaymentRow } from "./payment-row";
+import { EnrollmentPayments } from "./enrollment-payments";
 
 export const dynamic = "force-dynamic";
 
@@ -20,11 +20,14 @@ export default async function StudentDetailPage({
       documents: { orderBy: { uploadedAt: "desc" } },
       enrollments: {
         include: {
-          batch: { select: { code: true, startDate: true } },
-          payments: {
-            orderBy: { installment: "asc" },
-            include: { receipts: { orderBy: { paidAt: "asc" } } },
+          batch: {
+            select: {
+              code: true,
+              startDate: true,
+              course: { select: { feeCents: true } },
+            },
           },
+          payments: { orderBy: { paidAt: "asc" } },
         },
         orderBy: { enrolledAt: "desc" },
       },
@@ -92,32 +95,23 @@ export default async function StudentDetailPage({
                   </div>
                   <Badge variant="outline">{e.status.toLowerCase()}</Badge>
                 </div>
-                <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {e.payments.map((p) => (
-                    <PaymentRow
-                      key={p.id}
-                      payment={{
-                        id: p.id,
-                        installment: p.installment,
-                        expectedAmountCents: p.expectedAmountCents,
-                        paidAmountCents: p.paidAmountCents,
-                        dueDate: p.dueDate,
-                        paidAt: p.paidAt,
-                        receipts: p.receipts.map((r) => ({
-                          id: r.id,
-                          amountCents: r.amountCents,
-                          paidAt: r.paidAt,
-                          method: r.method,
-                          notes: r.notes,
-                        })),
-                      }}
-                    />
-                  ))}
+                <div className="mt-3">
+                  <EnrollmentPayments
+                    enrollmentId={e.id}
+                    feeCents={e.batch.course.feeCents}
+                    payments={e.payments.map((p) => ({
+                      id: p.id,
+                      amountCents: p.amountCents,
+                      paidAt: p.paidAt,
+                      method: p.method,
+                      notes: p.notes,
+                    }))}
+                  />
                 </div>
                 {e.status === "PENDING" ? (
                   <p className="mt-2 text-[11px] text-amber-700">
                     This enrollment is <span className="font-semibold">pending activation</span>.
-                    Mark installment 1 as paid to activate.
+                    Record the first payment to activate.
                   </p>
                 ) : null}
               </li>

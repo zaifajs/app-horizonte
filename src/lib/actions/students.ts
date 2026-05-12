@@ -8,9 +8,6 @@ import { logChange } from "@/lib/audit";
 import { studentCoreSchema, type StudentCoreInput } from "@/lib/validators/student";
 import { uploadStudentDoc } from "@/lib/storage";
 
-// €225 in cents — the default per-installment amount for PLA.
-const DEFAULT_INSTALLMENT_CENTS = 22500;
-
 export type CreateStudentResult =
   | { ok: true; id: string }
   | { ok: false; error: string; fieldErrors?: Record<string, string> };
@@ -94,38 +91,14 @@ export async function createStudentAction(
       });
 
       if (input.batchId) {
-        const batch = await tx.batch.findUniqueOrThrow({
-          where: { id: input.batchId },
-          select: { id: true, startDate: true },
-        });
-
-        const enrollment = await tx.enrollment.create({
+        await tx.enrollment.create({
           data: {
             studentId: created.id,
-            batchId: batch.id,
+            batchId: input.batchId,
           },
         });
-
-        const inst1Due = new Date(batch.startDate);
-        const inst2Due = new Date(batch.startDate);
-        inst2Due.setUTCDate(inst2Due.getUTCDate() + 28);
-
-        await tx.payment.createMany({
-          data: [
-            {
-              enrollmentId: enrollment.id,
-              installment: 1,
-              expectedAmountCents: DEFAULT_INSTALLMENT_CENTS,
-              dueDate: inst1Due,
-            },
-            {
-              enrollmentId: enrollment.id,
-              installment: 2,
-              expectedAmountCents: DEFAULT_INSTALLMENT_CENTS,
-              dueDate: inst2Due,
-            },
-          ],
-        });
+        // Enrollment starts as PENDING (schema default). Staff records
+        // payments via the detail page; the first one auto-activates.
       }
 
       await logChange({
