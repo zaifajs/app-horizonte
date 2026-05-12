@@ -25,6 +25,11 @@ export default async function AdminLayout({
             <Link href="/admin/batches" className="hover:underline">
               Batches
             </Link>
+            {user.role === "ADMIN" ? (
+              <Link href="/admin/users" className="hover:underline">
+                Users
+              </Link>
+            ) : null}
             <span className="text-muted-foreground">·</span>
             <span className="text-muted-foreground">
               {user.name} ({user.role.toLowerCase()})
