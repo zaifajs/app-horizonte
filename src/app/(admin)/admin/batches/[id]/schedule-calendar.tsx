@@ -6,11 +6,11 @@ import {
   endOfWeek,
   eachDayOfInterval,
   isSameMonth,
-  isSameDay,
   format,
   isWeekend,
 } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { holidayOn } from "@/lib/cronograma/holidays";
 
 type Session = {
   id: string;
@@ -224,6 +224,27 @@ function MonthGrid({
                 </div>
                 <div className="text-[9px] tabular-nums leading-tight opacity-90 mt-1">
                   {session.startTime}–{session.endTime}
+                </div>
+              </div>
+            );
+          }
+          // Empty (non-class) day — flag weekday holidays.
+          const hol = inMonth && !weekend ? holidayOn(d) : null;
+          if (hol) {
+            return (
+              <div
+                key={iso}
+                className="min-h-[60px] p-1 bg-red-50 text-red-800 flex flex-col justify-between border border-red-200/60 print:border-red-300"
+                title={hol.name}
+              >
+                <div className="flex items-baseline justify-between leading-none">
+                  <span className="text-[10px] font-medium">{format(d, "d")}</span>
+                  <span className="text-[9px] font-semibold uppercase tracking-wide">
+                    Holiday
+                  </span>
+                </div>
+                <div className="text-[9px] leading-tight mt-1 line-clamp-2">
+                  {hol.name}
                 </div>
               </div>
             );

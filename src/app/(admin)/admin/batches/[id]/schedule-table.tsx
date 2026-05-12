@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { weekdayHolidaysBetween } from "@/lib/cronograma/holidays";
 
 // Compact A4-portrait-friendly cronograma. Each module renders in ~3 lines so
 // the full PLA layout fits a single printed page.
@@ -118,6 +119,7 @@ export function ScheduleTable({
           {modules.map((g) => {
             const first = g.rows[0].scheduledDate;
             const last = g.rows[g.rows.length - 1].scheduledDate;
+            const skipped = weekdayHolidaysBetween(first, last);
             return (
               <section
                 key={g.module.id}
@@ -154,6 +156,14 @@ export function ScheduleTable({
                       : ""}
                   </div>
                 </div>
+                {skipped.length > 0 ? (
+                  <div className="mt-1 text-[10px] text-red-700">
+                    <span className="font-semibold mr-1">Skipped holiday{skipped.length > 1 ? "s" : ""}:</span>
+                    {skipped
+                      .map((h) => `${format(h.date, "dd/MM")} ${h.name}`)
+                      .join(" · ")}
+                  </div>
+                ) : null}
               </section>
             );
           })}
