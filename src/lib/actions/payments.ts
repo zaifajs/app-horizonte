@@ -6,6 +6,7 @@ import type { Prisma, PaymentMethod } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 import { logChange } from "@/lib/audit";
+import { uploadStudentDoc } from "@/lib/storage";
 
 // One Payment row = one money-received event. There's no fixed installment
 // structure: staff records as many or as few payments as the student arranges,
@@ -28,7 +29,9 @@ const addPaymentSchema = z.object({
   notes: z.string().max(2000).optional().nullable(),
 });
 
-export type AddPaymentInput = z.input<typeof addPaymentSchema>;
+export type AddPaymentInput = z.input<typeof addPaymentSchema> & {
+  proof?: File | null;
+};
 export type AddPaymentResult =
   | { ok: true; activated: boolean }
   | { ok: false; error: string };
@@ -38,7 +41,8 @@ export async function addPaymentAction(
 ): Promise<AddPaymentResult> {
   const user = await requireRole(["ADMIN", "STAFF"]);
 
-  const parsed = addPaymentSchema.safeParse(raw);
+  const { proof, ...rest } = raw;
+  const parsed = addPaymentSchema.safeParse(rest);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
@@ -55,6 +59,24 @@ export async function addPaymentAction(
   });
   if (!enrollment) return { ok: false, error: "Enrollment not found." };
 
+  // Upload the proof PDF before opening the DB transaction — if it fails we
+  // bail without leaving a payment row without its receipt.
+  let proofStoragePath: string | null = null;
+  if (proof instanceof File && proof.size > 0) {
+    try {
+      const safe = proof.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const { storagePath } = await uploadStudentDoc({
+        studentId: enrollment.studentId,
+        filename: `payment-proof-${Date.now()}-${safe}`,
+        file: proof,
+      });
+      proofStoragePath = storagePath;
+    } catch (e) {
+      console.error("payment proof upload failed:", e);
+      return { ok: false, error: "Couldn't upload the proof file. Try again." };
+    }
+  }
+
   const result = await prisma.$transaction(async (tx) => {
     const payment = await tx.payment.create({
       data: {
@@ -64,6 +86,7 @@ export async function addPaymentAction(
         paidAt: new Date(`${input.paidAt}T00:00:00Z`),
         collectedById: user.id,
         notes: input.notes ?? null,
+        proofStoragePath,
       },
     });
 
@@ -79,6 +102,7 @@ export async function addPaymentAction(
         amountCents,
         method: input.method,
         paidAt: input.paidAt,
+        proofUploaded: proofStoragePath !== null,
       } as Prisma.InputJsonValue,
     });
 

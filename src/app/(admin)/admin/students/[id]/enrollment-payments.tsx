@@ -35,6 +35,7 @@ type Payment = {
   paidAt: Date;
   method: Method;
   notes: string | null;
+  hasProof: boolean;
 };
 
 export function EnrollmentPayments({
@@ -63,9 +64,14 @@ export function EnrollmentPayments({
   const [paidAt, setPaidAt] = useState(today);
   const [method, setMethod] = useState<Method>("BANK");
   const [notes, setNotes] = useState("");
+  const [proof, setProof] = useState<File | null>(null);
 
   function save() {
     setError(null);
+    if (method === "BANK" && !proof) {
+      setError("Bank-transfer payments need the proof PDF attached.");
+      return;
+    }
     startTransition(async () => {
       const result = await addPaymentAction({
         enrollmentId,
@@ -73,6 +79,7 @@ export function EnrollmentPayments({
         method,
         paidAt,
         notes: notes.trim() || null,
+        proof,
       });
       if (!result.ok) {
         setError(result.error);
@@ -80,6 +87,8 @@ export function EnrollmentPayments({
       }
       setNotes("");
       setAmount("");
+      setProof(null);
+      setOpen(false);
       router.refresh();
     });
   }
@@ -142,14 +151,26 @@ export function EnrollmentPayments({
                   <div className="text-xs text-muted-foreground mt-0.5">{p.notes}</div>
                 ) : null}
               </div>
-              <button
-                type="button"
-                onClick={() => remove(p.id)}
-                className="text-xs text-muted-foreground hover:text-destructive underline"
-                disabled={pending}
-              >
-                Delete
-              </button>
+              <div className="flex items-center gap-2 text-xs">
+                {p.hasProof ? (
+                  <a
+                    href={`/api/payments/${p.id}/proof`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline text-zinc-700 hover:text-foreground"
+                  >
+                    View proof
+                  </a>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => remove(p.id)}
+                  className="text-muted-foreground hover:text-destructive underline"
+                  disabled={pending}
+                >
+                  Delete
+                </button>
+              </div>
             </li>
           ))}
         </ul>
@@ -205,6 +226,22 @@ export function EnrollmentPayments({
                 </Select>
               </div>
               <div className="space-y-1.5">
+                <Label htmlFor={`proof-${enrollmentId}`}>
+                  Bank proof (PDF or image)
+                  {method === "BANK" ? (
+                    <span className="text-destructive"> · required for bank transfers</span>
+                  ) : (
+                    <span className="text-muted-foreground"> · optional for cash</span>
+                  )}
+                </Label>
+                <Input
+                  id={`proof-${enrollmentId}`}
+                  type="file"
+                  accept="application/pdf,image/*"
+                  onChange={(e) => setProof(e.target.files?.[0] ?? null)}
+                />
+              </div>
+              <div className="space-y-1.5">
                 <Label htmlFor={`notes-${enrollmentId}`}>Notes</Label>
                 <Textarea
                   id={`notes-${enrollmentId}`}
@@ -216,7 +253,7 @@ export function EnrollmentPayments({
               </div>
               <p className="text-xs text-muted-foreground">
                 Recording the <strong>first</strong> payment activates the
-                enrollment automatically. Proof PDF upload comes in Phase 4.
+                enrollment automatically.
               </p>
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
             </div>

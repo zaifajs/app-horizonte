@@ -106,6 +106,7 @@ export default async function StudentDetailPage({
                       paidAt: p.paidAt,
                       method: p.method,
                       notes: p.notes,
+                      hasProof: !!p.proofStoragePath,
                     }))}
                   />
                 </div>
