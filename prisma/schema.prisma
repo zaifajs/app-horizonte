@@ -265,6 +265,9 @@ model Payment {
   proofStoragePath String?
   collectedById    String?       @db.Uuid
   notes            String?
+  isVerified       Boolean       @default(false)
+  verifiedAt       DateTime?
+  verifiedById     String?       @db.Uuid
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 

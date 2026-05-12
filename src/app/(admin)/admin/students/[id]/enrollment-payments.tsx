@@ -65,13 +65,10 @@ export function EnrollmentPayments({
   const [method, setMethod] = useState<Method>("BANK");
   const [notes, setNotes] = useState("");
   const [proof, setProof] = useState<File | null>(null);
+  const [isVerified, setIsVerified] = useState(false);
 
   function save() {
     setError(null);
-    if (method === "BANK" && !proof) {
-      setError("Bank-transfer payments need the proof PDF attached.");
-      return;
-    }
     startTransition(async () => {
       const result = await addPaymentAction({
         enrollmentId,
@@ -80,6 +77,7 @@ export function EnrollmentPayments({
         paidAt,
         notes: notes.trim() || null,
         proof,
+        isVerified,
       });
       if (!result.ok) {
         setError(result.error);
@@ -88,6 +86,7 @@ export function EnrollmentPayments({
       setNotes("");
       setAmount("");
       setProof(null);
+      setIsVerified(false);
       setOpen(false);
       router.refresh();
     });
@@ -228,11 +227,7 @@ export function EnrollmentPayments({
               <div className="space-y-1.5">
                 <Label htmlFor={`proof-${enrollmentId}`}>
                   Bank proof (PDF or image)
-                  {method === "BANK" ? (
-                    <span className="text-destructive"> · required for bank transfers</span>
-                  ) : (
-                    <span className="text-muted-foreground"> · optional for cash</span>
-                  )}
+                  <span className="text-muted-foreground"> · optional</span>
                 </Label>
                 <Input
                   id={`proof-${enrollmentId}`}
@@ -251,6 +246,20 @@ export function EnrollmentPayments({
                   placeholder="Bank reference, payment context, etc."
                 />
               </div>
+              <label className="flex items-start gap-2 rounded-lg border bg-zinc-50 px-3 py-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={isVerified}
+                  onChange={(e) => setIsVerified(e.target.checked)}
+                />
+                <span>
+                  <span className="font-medium">Verified</span>
+                  <span className="text-muted-foreground">
+                    {" "}— I confirmed this payment landed in the bank/cash on hand.
+                  </span>
+                </span>
+              </label>
               <p className="text-xs text-muted-foreground">
                 Recording the <strong>first</strong> payment activates the
                 enrollment automatically.

@@ -27,6 +27,7 @@ const addPaymentSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD."),
   notes: z.string().max(2000).optional().nullable(),
+  isVerified: z.boolean().optional().default(false),
 });
 
 export type AddPaymentInput = z.input<typeof addPaymentSchema> & {
@@ -87,6 +88,9 @@ export async function addPaymentAction(
         collectedById: user.id,
         notes: input.notes ?? null,
         proofStoragePath,
+        isVerified: input.isVerified ?? false,
+        verifiedAt: input.isVerified ? new Date() : null,
+        verifiedById: input.isVerified ? user.id : null,
       },
     });
 
@@ -103,6 +107,7 @@ export async function addPaymentAction(
         method: input.method,
         paidAt: input.paidAt,
         proofUploaded: proofStoragePath !== null,
+        verified: input.isVerified ?? false,
       } as Prisma.InputJsonValue,
     });
 
