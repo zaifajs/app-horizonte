@@ -21,7 +21,10 @@ export default async function StudentDetailPage({
       enrollments: {
         include: {
           batch: { select: { code: true, startDate: true } },
-          payments: { orderBy: { installment: "asc" } },
+          payments: {
+            orderBy: { installment: "asc" },
+            include: { receipts: { orderBy: { paidAt: "asc" } } },
+          },
         },
         orderBy: { enrolledAt: "desc" },
       },
@@ -96,10 +99,17 @@ export default async function StudentDetailPage({
                       payment={{
                         id: p.id,
                         installment: p.installment,
-                        amountCents: p.amountCents,
+                        expectedAmountCents: p.expectedAmountCents,
+                        paidAmountCents: p.paidAmountCents,
                         dueDate: p.dueDate,
                         paidAt: p.paidAt,
-                        method: p.method,
+                        receipts: p.receipts.map((r) => ({
+                          id: r.id,
+                          amountCents: r.amountCents,
+                          paidAt: r.paidAt,
+                          method: r.method,
+                          notes: r.notes,
+                        })),
                       }}
                     />
                   ))}

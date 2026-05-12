@@ -107,7 +107,7 @@ model User {
   studentProfile Student?
   batchesTaught  Batch[]        @relation("BatchTrainer")
   sessionsOver   BatchSession[] @relation("SessionTrainer")
-  paymentsTaken  Payment[]      @relation("PaymentCollector")
+  receiptsTaken  PaymentReceipt[] @relation("PaymentReceiptCollector")
   notesAuthored  Note[]         @relation("NoteAuthor")
   messagesSent   MessageLog[]   @relation("MessageSender")
   auditEntries   AuditLog[]     @relation("AuditActor")
@@ -252,26 +252,42 @@ model Enrollment {
 }
 
 model Payment {
-  id               String         @id @default(uuid()) @db.Uuid
-  enrollmentId     String         @db.Uuid
-  installment      Int
-  amountCents      Int
-  currency         String         @default("EUR")
-  dueDate          DateTime       @db.Date
-  paidAt           DateTime?
-  method           PaymentMethod?
-  proofStoragePath String?
-  collectedById    String?        @db.Uuid
-  notes            String?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  id                  String      @id @default(uuid()) @db.Uuid
+  enrollmentId        String      @db.Uuid
+  installment         Int
+  expectedAmountCents Int
+  paidAmountCents     Int         @default(0)
+  currency            String      @default("EUR")
+  dueDate             DateTime    @db.Date
+  paidAt              DateTime?
+  notes               String?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
 
-  enrollment  Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
-  collectedBy User?      @relation("PaymentCollector", fields: [collectedById], references: [id])
+  enrollment Enrollment       @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  receipts   PaymentReceipt[]
 
   @@index([dueDate])
   @@index([paidAt])
   @@map("payments")
+}
+
+model PaymentReceipt {
+  id               String        @id @default(uuid()) @db.Uuid
+  paymentId        String        @db.Uuid
+  amountCents      Int
+  paidAt           DateTime
+  method           PaymentMethod
+  proofStoragePath String?
+  collectedById    String?       @db.Uuid
+  notes            String?
+  createdAt        DateTime      @default(now())
+
+  payment     Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  collectedBy User?   @relation("PaymentReceiptCollector", fields: [collectedById], references: [id])
+
+  @@index([paymentId])
+  @@map("payment_receipts")
 }
 
 model Attendance {

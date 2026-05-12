@@ -115,13 +115,13 @@ export async function createStudentAction(
             {
               enrollmentId: enrollment.id,
               installment: 1,
-              amountCents: DEFAULT_INSTALLMENT_CENTS,
+              expectedAmountCents: DEFAULT_INSTALLMENT_CENTS,
               dueDate: inst1Due,
             },
             {
               enrollmentId: enrollment.id,
               installment: 2,
-              amountCents: DEFAULT_INSTALLMENT_CENTS,
+              expectedAmountCents: DEFAULT_INSTALLMENT_CENTS,
               dueDate: inst2Due,
             },
           ],
