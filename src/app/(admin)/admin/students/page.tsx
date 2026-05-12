@@ -250,14 +250,15 @@ export default async function StudentsPage({
 }
 
 const URGENCY_ROW_BG: Record<Urgency, string> = {
-  paid: "bg-emerald-50 hover:bg-emerald-100/60",
-  // Partial-paid bg matches the amber-700 "due" amount colour cue.
-  partial: "bg-amber-50 hover:bg-amber-100/60",
-  due_soon: "bg-orange-100 hover:bg-orange-200/60",
-  overdue: "bg-red-50 hover:bg-red-100/60",
-  // Pre-start: no tint — class hasn't started, nothing actionable yet.
+  paid: "bg-emerald-100 hover:bg-emerald-200/60",
+  // Visible amber so partial-paid rows actually read. Matches the
+  // amber-700 "due amount" text cue elsewhere.
+  partial: "bg-amber-100 hover:bg-amber-200/60",
+  due_soon: "bg-orange-200 hover:bg-orange-300/70",
+  overdue: "bg-red-100 hover:bg-red-200/60",
+  // Pre-start: no tint — no money received yet AND class hasn't started.
   pre_start: "",
-  withdrawn: "bg-zinc-50",
+  withdrawn: "bg-zinc-100",
 };
 
 const URGENCY_CHIP: Record<Urgency, { label: string; cls: string }> = {

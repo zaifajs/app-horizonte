@@ -171,32 +171,45 @@ export function computeUrgency({
   if (enrollmentStatus === "WITHDRAWN") {
     return { urgency: "withdrawn", daysToDeadline: null };
   }
-  if (paidCents >= feeCents && feeCents > 0) {
+  if (feeCents > 0 && paidCents >= feeCents) {
     return { urgency: "paid", daysToDeadline: null };
   }
-  if (!batchStartDate) {
-    return { urgency: "pre_start", daysToDeadline: null };
-  }
-  const dayMs = 86_400_000;
-  const startMs = Date.UTC(batchStartDate.getUTCFullYear(), batchStartDate.getUTCMonth(), batchStartDate.getUTCDate());
-  const todayMs = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
-  if (todayMs < startMs) {
-    return { urgency: "pre_start", daysToDeadline: null };
-  }
-  const deadlineMs = startMs + PAYMENT_DEADLINE_DAYS * dayMs;
-  const daysToDeadline = Math.round((deadlineMs - todayMs) / dayMs);
 
-  // Class has started.
-  if (paidCents <= 0) {
+  // Compute deadline only if we have a batch start date.
+  let daysToDeadline: number | null = null;
+  let classStarted = false;
+  if (batchStartDate) {
+    const dayMs = 86_400_000;
+    const startMs = Date.UTC(
+      batchStartDate.getUTCFullYear(),
+      batchStartDate.getUTCMonth(),
+      batchStartDate.getUTCDate(),
+    );
+    const todayMs = Date.UTC(
+      today.getUTCFullYear(),
+      today.getUTCMonth(),
+      today.getUTCDate(),
+    );
+    classStarted = todayMs >= startMs;
+    const deadlineMs = startMs + PAYMENT_DEADLINE_DAYS * dayMs;
+    daysToDeadline = Math.round((deadlineMs - todayMs) / dayMs);
+  }
+
+  // Any money received → partial track. Deadline only escalates to
+  // due_soon / overdue once the class is running.
+  if (paidCents > 0) {
+    if (classStarted && daysToDeadline !== null) {
+      if (daysToDeadline < 0) return { urgency: "overdue", daysToDeadline };
+      if (daysToDeadline <= DUE_SOON_WINDOW_DAYS) return { urgency: "due_soon", daysToDeadline };
+    }
+    return { urgency: "partial", daysToDeadline };
+  }
+
+  // Zero received.
+  if (classStarted) {
     return { urgency: "overdue", daysToDeadline };
   }
-  if (daysToDeadline < 0) {
-    return { urgency: "overdue", daysToDeadline };
-  }
-  if (daysToDeadline <= DUE_SOON_WINDOW_DAYS) {
-    return { urgency: "due_soon", daysToDeadline };
-  }
-  return { urgency: "partial", daysToDeadline };
+  return { urgency: "pre_start", daysToDeadline };
 }
 
 export function applyComputedFilters(
