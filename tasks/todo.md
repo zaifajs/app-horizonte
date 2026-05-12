@@ -11,12 +11,12 @@ Source of truth for what's left. Tick boxes as work completes. Full context in `
 - [~] 1.2 Scaffold Next.js 16 + git + push to GitHub — master + develop pushed; **master protection pending** (UI or `gh auth login`)
 - [ ] 1.3 shadcn/ui + base layout
 - [x] 1.4 horizonte-dev + horizonte-prod Supabase projects created (eu-west-1); student-documents bucket created; .env.local wired; stage + prod .env files staged in /tmp
-- [x] 1.5 CloudPanel: stage.nhorizonte.pt + app.nhorizonte.pt Node sites created with SSL (env files still to drop in once Supabase keys exist — Task 1.4)
-- [ ] 1.6 GitHub Actions: CI workflow + deploy workflow (SSH to VPS on push to develop/master)
-- [ ] 1.7 Prisma schema (full v1 data model) + initial migration → auto-applies on deploy
-- [ ] 1.8 Seed: PLA + 6 modules + dev admin (dev only)
-- [ ] 1.9 Auth + role-based route guards
-- [ ] **Checkpoint: Foundation — push to develop deploys to stage.nhorizonte.pt with working login; human review**
+- [x] 1.5 CloudPanel: stage.nhorizonte.pt + app.nhorizonte.pt Node sites created with SSL + env files
+- [x] 1.6 GitHub Actions: CI workflow + deploy workflow (SSH to VPS on push to develop/master)
+- [x] 1.7 Prisma schema (13 tables) + initial migration applied to dev DB
+- [x] 1.8 Seed: PLA + 6 modules on dev DB + dev admin user (huzaifa.wp@gmail.com)
+- [x] 1.9 Auth + role-based route guards (Supabase Auth + middleware)
+- [x] **Checkpoint: Foundation complete — push to develop deploys to stage.nhorizonte.pt with working login**
 
 ## Phase 2: Batch lifecycle
 - [ ] 2.1 BatchSession generator (pure fn + unit tests, holiday-aware)
