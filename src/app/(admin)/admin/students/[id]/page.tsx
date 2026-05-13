@@ -63,9 +63,12 @@ export default async function StudentDetailPage({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/admin/students/${student.id}/edit`}>
+          {/* Hard navigation so browser-back from the edit page is also a full
+              reload, preventing the @drawer intercepting route from firing. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+          <a href={`/admin/students/${student.id}/edit`}>
             <Button variant="outline">Edit</Button>
-          </Link>
+          </a>
           <Link href="/admin/students">
             <Button variant="outline">Back</Button>
           </Link>
