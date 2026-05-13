@@ -59,9 +59,23 @@ export function SetPasswordForm() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => handle(session));
 
-    const code = new URLSearchParams(window.location.search).get("code");
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const hashParams = new URLSearchParams(window.location.hash.slice(1));
+    const accessToken = hashParams.get("access_token");
+    const refreshToken = hashParams.get("refresh_token");
 
-    if (code) {
+    if (accessToken && refreshToken) {
+      // Implicit flow: Supabase put the session directly in the URL hash.
+      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(({ data, error }) => {
+          if (error) console.error("[set-password] setSession failed:", error);
+          handle(data.session);
+          // Clean the hash so a refresh doesn't re-use the same tokens.
+          window.history.replaceState(null, "", window.location.pathname);
+        });
+    } else if (code) {
+      // PKCE flow: exchange the auth code for a session.
       supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
         if (error) console.error("[set-password] code exchange failed:", error);
         handle(data.session);
@@ -71,6 +85,7 @@ export function SetPasswordForm() {
         window.history.replaceState(null, "", clean.toString());
       });
     } else {
+      // No tokens in URL — check for an existing session (e.g. page refresh).
       supabase.auth.getSession().then(({ data }) => handle(data.session));
     }
 
