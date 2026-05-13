@@ -19,7 +19,7 @@ export function LoginForm() {
     setError(null);
     setPending(true);
     const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -28,8 +28,11 @@ export function LoginForm() {
       setError(error.message);
       return;
     }
+    // Use the role stored in user metadata to pick the right home page.
+    const role = data.user?.user_metadata?.role as string | undefined;
+    const dest = role === "TEACHER" ? "/teacher" : "/admin/today";
     router.refresh();
-    router.push("/admin/today");
+    router.push(dest);
   }
 
   return (
