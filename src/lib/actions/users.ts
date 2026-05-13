@@ -50,6 +50,8 @@ export async function inviteUserAction(
     process.env.NEXT_PUBLIC_APP_URL
       ? `${process.env.NEXT_PUBLIC_APP_URL}/auth/set-password`
       : undefined;
+
+  // Send the Supabase invite first to obtain the auth user ID.
   const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
     data: { name: input.name, role: input.role },
     redirectTo,
@@ -58,12 +60,14 @@ export async function inviteUserAction(
     return { ok: false, error: error?.message ?? "Couldn't send the invite." };
   }
 
+  const userId = data.user.id;
+
   try {
     await prisma.$transaction(async (tx) => {
       await tx.user.upsert({
-        where: { id: data.user!.id },
+        where: { id: userId },
         create: {
-          id: data.user!.id,
+          id: userId,
           email,
           name: input.name,
           role: input.role as UserRole,
@@ -79,21 +83,26 @@ export async function inviteUserAction(
         tx,
         action: "CREATE",
         entityType: "User",
-        entityId: data.user!.id,
+        entityId: userId,
         actorUserId: actor.id,
         changes: { email, name: input.name, role: input.role } as Prisma.InputJsonValue,
       });
     });
   } catch (err) {
     console.error("inviteUserAction DB write failed:", err);
+    // Roll back the Supabase auth user so the invite doesn't leave an orphan
+    // account that can never log in (no matching Prisma row).
+    await supabase.auth.admin.deleteUser(userId).catch((e) =>
+      console.error("inviteUserAction cleanup: failed to delete Supabase user", e),
+    );
     return {
       ok: false,
-      error: "The invite email was sent, but our user record didn't save. Try again.",
+      error: "Failed to save the user record. Please try again.",
     };
   }
 
   revalidatePath("/admin/users");
-  return { ok: true, userId: data.user.id };
+  return { ok: true, userId };
 }
 
 // ------------------------------ activate / deactivate
