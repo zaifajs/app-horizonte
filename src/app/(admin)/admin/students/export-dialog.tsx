@@ -39,7 +39,7 @@ export function ExportDialog() {
       for (const k of arr) {
         if (valid.has(k as ExportColumnKey)) next.add(k as ExportColumnKey);
       }
-      if (next.size > 0) setSelected(next);
+      if (next.size > 0) setTimeout(() => setSelected(next), 0);
     } catch {
       /* ignore parse errors */
     }

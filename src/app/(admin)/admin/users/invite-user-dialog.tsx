@@ -79,7 +79,7 @@ export function InviteUserDialog() {
           <div className="rounded-lg border bg-emerald-50 border-emerald-200 p-4 text-sm space-y-2">
             <p className="font-medium text-emerald-900">Invite sent.</p>
             <p className="text-emerald-900/80">
-              They'll receive an email with a link to set their password and
+              They&apos;ll receive an email with a link to set their password and
               sign in.
             </p>
           </div>

@@ -19,9 +19,9 @@ export default async function TeacherLayout({
             <span className="text-muted-foreground">
               {user.name} ({user.role.toLowerCase()})
             </span>
-            <a href="/logout" className="hover:underline">
+            <Link href="/logout" className="hover:underline">
               Sign out
-            </a>
+            </Link>
           </nav>
         </div>
       </header>
