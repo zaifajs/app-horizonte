@@ -43,6 +43,19 @@ export function SetPasswordForm() {
       (_event, session) => handle(session),
     );
 
+    // Check for error in the URL hash (e.g. otp_expired from Supabase).
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    const hashError = hash.get("error_description") ?? hash.get("error");
+    if (hashError) {
+      resolved = true;
+      const msg = hashError === "otp_expired" || hash.get("error_code") === "otp_expired"
+        ? "This invite link has expired. Ask an admin to resend the invite."
+        : decodeURIComponent(hashError.replace(/\+/g, " "));
+      setError(msg);
+      setHasSession(false);
+      return () => { subscription.unsubscribe(); clearTimeout(timer); };
+    }
+
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
 
@@ -70,10 +83,10 @@ export function SetPasswordForm() {
     };
   }, []);
 
-  // Once we're sure there's no session, kick to /login.
+  // Once we're sure there's no session and no error to show, kick to /login.
   useEffect(() => {
-    if (hasSession === false) router.replace("/login");
-  }, [hasSession, router]);
+    if (hasSession === false && !error) router.replace("/login");
+  }, [hasSession, error, router]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -104,6 +117,9 @@ export function SetPasswordForm() {
     );
   }
   if (hasSession === false) {
+    if (error) {
+      return <p className="text-sm text-destructive">{error}</p>;
+    }
     return (
       <p className="text-sm text-muted-foreground">
         Redirecting to sign in…
