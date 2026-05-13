@@ -42,10 +42,18 @@ fi
 npm run build
 
 # Export .env into the shell so PM2 inherits PORT, DATABASE_URL, etc.
-set -a
-# shellcheck disable=SC1091
-. ./.env
-set +a
+# Use a safe parser instead of sourcing directly — values with spaces
+# (e.g. EMAIL_FROM_NAME=Novo Horizonte) would be misread as commands.
+while IFS='=' read -r key value; do
+  [[ "$key" =~ ^[[:space:]]*# ]] && continue
+  [[ -z "$key" ]] && continue
+  # Strip surrounding quotes from value if present
+  value="${value%\"}"
+  value="${value#\"}"
+  value="${value%\'}"
+  value="${value#\'}"
+  export "$key=$value"
+done < .env
 
 if pm2 describe "$PM2_NAME" >/dev/null 2>&1; then
   pm2 reload "$PM2_NAME" --update-env
