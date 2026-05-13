@@ -45,9 +45,10 @@ export default async function EditStudentPage({
             Updating personal info. Changes are audit-logged.
           </p>
         </div>
-        <Link href={`/admin/students/${id}`}>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+        <a href={`/admin/students/${id}`}>
           <Button variant="outline">Back</Button>
-        </Link>
+        </a>
       </div>
 
       <EditStudentForm
