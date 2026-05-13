@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { Prisma, type DocumentKind, type DocType } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
@@ -8,6 +9,8 @@ import { requireRole, getCurrentUser } from "@/lib/auth";
 import { logChange } from "@/lib/audit";
 import { studentCoreSchema, type StudentCoreInput } from "@/lib/validators/student";
 import { uploadStudentDoc } from "@/lib/storage";
+import { localeForNationality } from "@/lib/messaging/locale-for-nationality";
+import { loadBatchSequence } from "@/lib/students/batch-seq";
 
 export type CreateStudentResult =
   | { ok: true; id: string }
@@ -352,4 +355,94 @@ export async function updateStudentAction(
   revalidatePath(`/admin/students/${input.id}`);
   revalidatePath("/admin/students");
   return { ok: true };
+}
+
+// ------------------------------ drawer data
+
+export async function getStudentForDrawer(id: string) {
+  await requireRole(["ADMIN", "STAFF"]);
+  const student = await prisma.student.findUnique({
+    where: { id },
+    include: {
+      enrollments: {
+        include: {
+          batch: {
+            select: {
+              id: true,
+              code: true,
+              startDate: true,
+              course: { select: { feeCents: true } },
+            },
+          },
+          payments: { orderBy: { paidAt: "asc" } },
+        },
+        orderBy: { enrolledAt: "desc" },
+      },
+    },
+  });
+  if (!student) return null;
+
+  const enr = student.enrollments[0] ?? null;
+  const loc = localeForNationality(student.nationality);
+
+  let scheduleUrl: string | undefined;
+  let dueAmountStr = "";
+  let startDateStr = "";
+  let batchCode = "—";
+
+  if (enr) {
+    const paid = enr.payments.reduce((a, p) => a + p.amountCents, 0);
+    const due = Math.max(0, enr.batch.course.feeCents - paid);
+    dueAmountStr = `€${(due / 100).toFixed(2)}`;
+    startDateStr = enr.batch.startDate.toISOString().slice(0, 10);
+    batchCode = enr.batch.code;
+    const h = await headers();
+    const proto = h.get("x-forwarded-proto") ?? "https";
+    const host = h.get("host") ?? "stage.nhorizonte.pt";
+    scheduleUrl = `${proto}://${host}/${loc}/turma/${enr.batch.id}`;
+  }
+
+  const batchSeq = await loadBatchSequence();
+
+  return {
+    id: student.id,
+    fullName: student.fullName,
+    email: student.email,
+    phone: student.phone,
+    city: student.city,
+    nationality: student.nationality,
+    dob: student.dob.toISOString(),
+    address: student.address,
+    nif: student.nif,
+    niss: student.niss,
+    docType: student.docType as string,
+    docNumber: student.docNumber,
+    docExpiry: student.docExpiry.toISOString(),
+    locale: loc,
+    scheduleUrl,
+    vars: {
+      name: student.fullName.split(" ")[0],
+      batch: batchCode,
+      startDate: startDateStr,
+      dueAmount: dueAmountStr,
+      nextSessionDate: "tomorrow",
+      scheduleUrl,
+    },
+    enrollments: student.enrollments.map((e) => ({
+      id: e.id,
+      status: e.status as string,
+      batchCode: e.batch.code,
+      batchId: e.batch.id,
+      batchSeq: batchSeq.get(e.id) ?? null,
+      feeCents: e.batch.course.feeCents,
+      payments: e.payments.map((p) => ({
+        id: p.id,
+        amountCents: p.amountCents,
+        paidAt: p.paidAt.toISOString(),
+        method: p.method as string,
+        notes: p.notes,
+        hasProof: !!p.proofStoragePath,
+      })),
+    })),
+  };
 }

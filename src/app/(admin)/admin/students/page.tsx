@@ -1,22 +1,11 @@
 import Link from "next/link";
 import { headers } from "next/headers";
-import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { prisma } from "@/lib/db";
 import {
   applyComputedFilters,
   buildStudentWhere,
   computeUrgency,
-  filtersToSearchString,
   parseFilters,
   progressOf,
   sortRows,
@@ -25,16 +14,10 @@ import {
 } from "@/lib/students/filters";
 import { StudentsFilters } from "./filters";
 import { ExportDialog } from "./export-dialog";
-import { QuickPay } from "./quick-pay";
-import { ClickableRow } from "./clickable-row";
-import {
-  RowCheckbox,
-  SelectAllCheckbox,
-  SelectionProvider,
-} from "./bulk-actions";
 import type { BulkRow } from "./bulk-whatsapp-queue";
 import { loadBatchSequence } from "@/lib/students/batch-seq";
 import { localeForNationality } from "@/lib/messaging/locale-for-nationality";
+import { StudentsTable } from "./students-table";
 
 export const dynamic = "force-dynamic";
 
@@ -163,7 +146,6 @@ export default async function StudentsPage({
       },
     });
   }
-  const visibleIds = sorted.map((r) => r.id);
 
   return (
     <div className="space-y-6">
@@ -233,96 +215,7 @@ export default async function StudentsPage({
           No students match these filters.
         </div>
       ) : (
-        <SelectionProvider allIds={visibleIds} rowsForQueue={queueRows}>
-        <div className="rounded-lg border bg-white">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-8">
-                  <SelectAllCheckbox rowIds={visibleIds} />
-                </TableHead>
-                <TableHead className="w-12">#</TableHead>
-                <SortableHeader filters={filters} sort="name">Name</SortableHeader>
-                <TableHead>Phone</TableHead>
-                <SortableHeader filters={filters} sort="batch">Batch</SortableHeader>
-                <SortableHeader filters={filters} sort="paid" align="right">Paid</SortableHeader>
-                <SortableHeader filters={filters} sort="due" align="right">Due</SortableHeader>
-                <TableHead className="w-20 text-right">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sorted.map((r, i) => (
-                <ClickableRow
-                  key={r.id}
-                  href={`/admin/students/${r.id}`}
-                  className={`${URGENCY_ROW_BG[r.urgency]} ${
-                    r.urgency === "withdrawn" ? "opacity-60" : ""
-                  }`}
-                >
-                  <TableCell className="w-8">
-                    <RowCheckbox id={r.id} />
-                  </TableCell>
-                  <TableCell className="text-muted-foreground tabular-nums">
-                    {i + 1}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    <Link href={`/admin/students/${r.id}`} className="hover:underline">
-                      {r.fullName}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="tabular-nums">{r.phone}</TableCell>
-                  <TableCell>
-                    {r.latestEnrollment ? (
-                      <span className="inline-flex items-center gap-1">
-                        {r.latestEnrollment.batchCode}
-                        <Badge
-                          variant="outline"
-                          className={
-                            r.latestEnrollment.status === "PENDING"
-                              ? "bg-amber-100 text-amber-900 border-amber-300"
-                              : r.latestEnrollment.status === "ACTIVE"
-                                ? "bg-emerald-100 text-emerald-900 border-emerald-300"
-                                : ""
-                          }
-                        >
-                          {r.latestEnrollment.status.toLowerCase()}
-                        </Badge>
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    €{(r.paidCents / 100).toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {r.dueCents === 0 ? (
-                      <span className="text-muted-foreground">€0.00</span>
-                    ) : (
-                      <span className="text-amber-700 font-medium">
-                        €{(r.dueCents / 100).toFixed(2)}
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {r.latestEnrollment && r.dueCents > 0 ? (
-                      <QuickPay
-                        enrollmentId={r.latestEnrollment.id}
-                        studentName={r.fullName}
-                        remainingCents={r.dueCents}
-                        feeCents={r.latestEnrollment.feeCents}
-                        paidCents={r.paidCents}
-                      />
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                </ClickableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-        </SelectionProvider>
+        <StudentsTable rows={sorted} queueRows={Array.from(queueRows.entries())} filters={filters} />
       )}
     </div>
   );
@@ -347,114 +240,3 @@ function SummaryCard({
   );
 }
 
-const URGENCY_ROW_BG: Record<Urgency, string> = {
-  paid: "bg-emerald-100 hover:bg-emerald-200/60",
-  // Visible amber so partial-paid rows actually read. Matches the
-  // amber-700 "due amount" text cue elsewhere.
-  partial: "bg-amber-100 hover:bg-amber-200/60",
-  due_soon: "bg-orange-200 hover:bg-orange-300/70",
-  overdue: "bg-red-100 hover:bg-red-200/60",
-  // Pre-start: no tint — no money received yet AND class hasn't started.
-  pre_start: "",
-  withdrawn: "bg-zinc-100",
-};
-
-const URGENCY_CHIP: Record<Urgency, { label: string; cls: string }> = {
-  paid:     { label: "Paid",        cls: "bg-emerald-100 text-emerald-900 border-emerald-300" },
-  partial:  { label: "Partial",     cls: "bg-yellow-100 text-yellow-900 border-yellow-300" },
-  due_soon: { label: "Due soon",    cls: "bg-orange-200 text-orange-950 border-orange-400" },
-  overdue:  { label: "Overdue",     cls: "bg-red-100 text-red-900 border-red-300" },
-  pre_start:{ label: "Pre-start",   cls: "bg-zinc-100 text-zinc-700 border-zinc-300" },
-  withdrawn:{ label: "Withdrawn",   cls: "bg-zinc-100 text-zinc-500 border-zinc-300" },
-};
-
-function UrgencyBar({
-  counts,
-  current,
-}: {
-  counts: Record<Urgency, number>;
-  current: Urgency | null;
-}) {
-  const order: Urgency[] = ["overdue", "due_soon", "partial", "paid", "pre_start", "withdrawn"];
-  const total = order.reduce((a, k) => a + counts[k], 0);
-  if (total === 0) return null;
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="text-xs uppercase tracking-wide text-muted-foreground mr-1">
-        At a glance
-      </span>
-      {order
-        .filter((u) => counts[u] > 0)
-        .map((u) => {
-          const c = URGENCY_CHIP[u];
-          const isActive = current === u;
-          const href = current === u ? "/admin/students" : `/admin/students?urgency=${u}`;
-          return (
-            <Link
-              key={u}
-              href={href}
-              className={`text-xs rounded-full border px-2.5 py-1 inline-flex items-center gap-1.5 ${
-                isActive ? "ring-2 ring-foreground ring-offset-1" : ""
-              } ${c.cls}`}
-            >
-              <span className="font-semibold tabular-nums">{counts[u]}</span>
-              <span>{c.label}</span>
-            </Link>
-          );
-        })}
-    </div>
-  );
-}
-
-function DeadlineCell({
-  urgency,
-  days,
-}: {
-  urgency: Urgency;
-  days: number | null;
-}) {
-  if (urgency === "paid") return <span className="text-muted-foreground">—</span>;
-  if (urgency === "withdrawn") return <span className="text-muted-foreground">—</span>;
-  if (urgency === "pre_start") return <span className="text-muted-foreground">Pre-start</span>;
-  if (days === null) return <span className="text-muted-foreground">—</span>;
-  if (days < 0) return <span className="text-red-700 font-medium">{Math.abs(days)} days overdue</span>;
-  if (days === 0) return <span className="text-orange-700 font-medium">Due today</span>;
-  return <span className={days <= 7 ? "text-orange-700 font-medium" : ""}>{days} days left</span>;
-}
-
-function SortableHeader({
-  filters,
-  sort,
-  align,
-  children,
-}: {
-  filters: ReturnType<typeof parseFilters>;
-  sort:
-    | "name"
-    | "batch"
-    | "batchSeq"
-    | "paid"
-    | "due"
-    | "lastPaid"
-    | "registered";
-  align?: "left" | "right";
-  children: React.ReactNode;
-}) {
-  const isActive = filters.sort === sort;
-  const nextDir = isActive && filters.dir === "asc" ? "desc" : "asc";
-  const href = `/admin/students${filtersToSearchString(filters, { sort, dir: nextDir })}`;
-  const arrow = isActive ? (filters.dir === "asc" ? "↑" : "↓") : "";
-  return (
-    <TableHead className={align === "right" ? "text-right" : ""}>
-      <Link
-        href={href}
-        className={`inline-flex items-center gap-1 hover:underline ${
-          isActive ? "text-foreground font-medium" : ""
-        }`}
-      >
-        {children}
-        <span className="text-muted-foreground">{arrow}</span>
-      </Link>
-    </TableHead>
-  );
-}

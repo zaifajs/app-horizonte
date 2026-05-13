@@ -3,15 +3,14 @@
 import { useRouter } from "next/navigation";
 import { TableRow } from "@/components/ui/table";
 
-// Makes the entire <tr> navigate to `href` on click, while leaving any
-// nested button / link / dialog trigger free to handle its own click.
-
 export function ClickableRow({
   href,
+  onRowClick,
   className,
   children,
 }: {
-  href: string;
+  href?: string;
+  onRowClick?: () => void;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -28,7 +27,11 @@ export function ClickableRow({
         ) {
           return;
         }
-        router.push(href);
+        if (onRowClick) {
+          onRowClick();
+        } else if (href) {
+          router.push(href);
+        }
       }}
     >
       {children}
