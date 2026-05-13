@@ -5,7 +5,18 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { createBrowserClient } from "@supabase/ssr";
+
+// Admin-initiated invites have no client-side PKCE verifier stored.
+// Using flowType:'implicit' bypasses the verifier check so exchangeCodeForSession
+// can still POST the auth code to Supabase and receive a session.
+function createInviteClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { flowType: "implicit" } },
+  );
+}
 
 export function SetPasswordForm() {
   const router = useRouter();
@@ -17,11 +28,8 @@ export function SetPasswordForm() {
   // null = still resolving, true = signed in, false = no session after timeout
   const [hasSession, setHasSession] = useState<boolean | null>(null);
 
-  // @supabase/ssr uses PKCE: Supabase redirects to this page with ?code=<auth_code>.
-  // We must exchange that code for a session before the SDK has anything to report.
-  // Fallback: also handle the legacy implicit flow where the hash carries access_token.
   useEffect(() => {
-    const supabase = createSupabaseBrowserClient();
+    const supabase = createInviteClient();
     let resolved = false;
 
     function handle(session: { user?: { email?: string | null } } | null) {
@@ -39,8 +47,8 @@ export function SetPasswordForm() {
     const code = params.get("code");
 
     if (code) {
-      // PKCE flow: exchange the auth code for a session. onAuthStateChange fires after.
-      supabase.auth.exchangeCodeForSession(code).then(({ data }) => {
+      supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
+        if (error) console.error("[set-password] code exchange failed:", error);
         handle(data.session);
         // Clean the code out of the URL so a refresh doesn't re-attempt the exchange.
         const clean = new URL(window.location.href);
@@ -79,7 +87,7 @@ export function SetPasswordForm() {
       return;
     }
     setPending(true);
-    const supabase = createSupabaseBrowserClient();
+    const supabase = createInviteClient();
     const { error } = await supabase.auth.updateUser({ password });
     setPending(false);
     if (error) {
