@@ -1,0 +1,449 @@
+"use client";
+
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import {
+  buildWaMeLink,
+  renderTemplate,
+  TEMPLATE_META,
+  type TemplateKey,
+  type TemplateVars,
+} from "@/lib/messaging/templates";
+import {
+  logMessageSentAction,
+  sendEmailToStudentAction,
+} from "@/lib/actions/messages";
+import type { Locale } from "@/i18n/routing";
+import type { BulkRow } from "./bulk-whatsapp-queue";
+
+const LOCALES: { key: Locale; label: string }[] = [
+  { key: "pt", label: "PT" },
+  { key: "en", label: "EN" },
+  { key: "bn", label: "BN" },
+  { key: "ur", label: "UR" },
+  { key: "hi", label: "HI" },
+];
+
+const TEMPLATE_DOTS: Record<TemplateKey, string> = {
+  welcome: "var(--hz-info)",
+  payment_reminder: "var(--hz-danger)",
+  class_reminder: "var(--hz-warning)",
+  cronograma: "var(--hz-primary)",
+};
+
+type RowState = "idle" | "sending" | "sent" | "error";
+
+function initials(name: string): string {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0])
+      .join("")
+      .toUpperCase() || "??"
+  );
+}
+
+function majorityLocale(rows: BulkRow[]): Locale {
+  const counts = new Map<Locale, number>();
+  for (const r of rows) counts.set(r.locale, (counts.get(r.locale) ?? 0) + 1);
+  let best: Locale = "pt";
+  let bestN = 0;
+  for (const [loc, n] of counts) {
+    if (n > bestN) {
+      best = loc;
+      bestN = n;
+    }
+  }
+  return best;
+}
+
+// Render the rendered-template body with {{var}} segments highlighted as chips.
+function PreviewBody({
+  body,
+  vars,
+}: {
+  body: string;
+  vars: TemplateVars;
+}) {
+  // The body has already been interpolated, so we instead detect the values
+  // and visually mark them. Build a list of (value, varName) replacements.
+  const replacements: { value: string; name: string }[] = [];
+  for (const [name, val] of Object.entries(vars)) {
+    if (val == null || String(val).length === 0) continue;
+    replacements.push({ value: String(val), name });
+  }
+  // Greedy split: walk the body, take the first occurrence of any replacement.
+  const out: React.ReactNode[] = [];
+  let rest = body;
+  let i = 0;
+  while (rest.length > 0) {
+    let bestIdx = -1;
+    let bestRep: { value: string; name: string } | null = null;
+    for (const r of replacements) {
+      const k = rest.indexOf(r.value);
+      if (k !== -1 && (bestIdx === -1 || k < bestIdx)) {
+        bestIdx = k;
+        bestRep = r;
+      }
+    }
+    if (bestRep && bestIdx >= 0) {
+      if (bestIdx > 0) out.push(rest.slice(0, bestIdx));
+      out.push(
+        <span
+          key={i++}
+          className="px-1.5 py-0.5 rounded hz-mono"
+          style={{
+            background: "var(--hz-primary-50)",
+            color: "var(--hz-primary)",
+            fontSize: "0.92em",
+            border: "1px solid var(--hz-line)",
+          }}
+          title={`{{${bestRep.name}}}`}
+        >
+          {bestRep.value}
+        </span>,
+      );
+      rest = rest.slice(bestIdx + bestRep.value.length);
+    } else {
+      out.push(rest);
+      break;
+    }
+  }
+  return <>{out}</>;
+}
+
+export function MessageComposer({
+  open,
+  onClose,
+  recipients,
+  onRemoveRecipient,
+}: {
+  open: boolean;
+  onClose: () => void;
+  recipients: BulkRow[];
+  onRemoveRecipient: (studentId: string) => void;
+}) {
+  const router = useRouter();
+  const [templateKey, setTemplateKey] = useState<TemplateKey>("payment_reminder");
+  const [locale, setLocale] = useState<Locale>("pt");
+  const [waOn, setWaOn] = useState(true);
+  const [emailOn, setEmailOn] = useState(false);
+  const [rowState, setRowState] = useState<Map<string, RowState>>(new Map());
+  const [pending, startTransition] = useTransition();
+
+  // Reset state when panel opens with a fresh recipient set.
+  useEffect(() => {
+    if (!open) return;
+    setRowState(new Map());
+    setLocale(majorityLocale(recipients));
+  }, [open, recipients]);
+
+  // Auto-close when last recipient removed.
+  useEffect(() => {
+    if (open && recipients.length === 0) onClose();
+  }, [open, recipients.length, onClose]);
+
+  // ESC closes the panel.
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  const previewRecipient = recipients[0];
+  const previewBody = useMemo(() => {
+    if (!previewRecipient) return "";
+    return renderTemplate(templateKey, locale, previewRecipient.vars);
+  }, [templateKey, locale, previewRecipient]);
+
+  const channelLabel = (() => {
+    const parts: string[] = [];
+    if (waOn) parts.push(`${recipients.length} WhatsApp tab${recipients.length === 1 ? "" : "s"}`);
+    if (emailOn) parts.push(`${recipients.length} email${recipients.length === 1 ? "" : "s"}`);
+    return parts.length > 0 ? `opens ${parts.join(" + ")}` : "Nothing selected";
+  })();
+
+  function send() {
+    if (recipients.length === 0) return;
+    if (!waOn && !emailOn) return;
+    startTransition(async () => {
+      const next = new Map<string, RowState>();
+      for (const r of recipients) next.set(r.studentId, "sending");
+      setRowState(next);
+
+      for (const r of recipients) {
+        const body = renderTemplate(templateKey, r.locale ?? locale, r.vars);
+        try {
+          if (waOn) {
+            const link = buildWaMeLink(r.phone, body);
+            window.open(link, "_blank", "noopener,noreferrer");
+            await logMessageSentAction({
+              studentId: r.studentId,
+              templateKey,
+              body,
+              channel: "WA_ME",
+            });
+          }
+          if (emailOn) {
+            const res = await sendEmailToStudentAction({
+              studentId: r.studentId,
+              templateKey,
+              vars: r.vars,
+            });
+            if (!res.ok) throw new Error(res.error);
+          }
+          setRowState((prev) => {
+            const m = new Map(prev);
+            m.set(r.studentId, "sent");
+            return m;
+          });
+        } catch {
+          setRowState((prev) => {
+            const m = new Map(prev);
+            m.set(r.studentId, "error");
+            return m;
+          });
+        }
+      }
+      router.refresh();
+    });
+  }
+
+  if (!open) return null;
+
+  return (
+    <aside
+      className="hair-l flex flex-col print:hidden"
+      style={{
+        position: "fixed",
+        top: 0,
+        right: 0,
+        bottom: 0,
+        width: 420,
+        background: "var(--hz-surface)",
+        zIndex: 40,
+        boxShadow: "-16px 0 40px -16px rgba(0,0,0,0.6)",
+      }}
+    >
+      {/* Header */}
+      <header className="hair-b px-4 py-3 flex items-center gap-2">
+        <span className="status-pill" style={{ color: "var(--hz-success)" }}>
+          <span
+            className="dot"
+            style={{ background: "var(--hz-success)", boxShadow: "0 0 6px var(--hz-success)" }}
+          />
+          WhatsApp queue
+        </span>
+        <span className="hz-mono text-[13px]" style={{ color: "var(--hz-ink-3)" }}>
+          {recipients.length} recipient{recipients.length === 1 ? "" : "s"}
+        </span>
+        <button type="button" onClick={onClose} className="ibtn ml-auto" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </header>
+
+      <div className="flex-1 overflow-y-auto">
+        {/* Recipients */}
+        <section className="px-4 py-4">
+          <div className="text-[12px] hz-mono uppercase tracking-[.16em] mb-2" style={{ color: "var(--hz-ink-3)" }}>
+            Recipients
+          </div>
+          <ul className="space-y-1.5">
+            {recipients.map((r) => {
+              const state = rowState.get(r.studentId) ?? "idle";
+              return (
+                <li
+                  key={r.studentId}
+                  className="flex items-center gap-2.5 rounded-md p-2"
+                  style={{ background: "var(--hz-surface-2)", border: "1px solid var(--hz-line)" }}
+                >
+                  <span className="avi">{initials(r.fullName)}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[14px] font-semibold truncate">{r.fullName}</div>
+                    <div className="hz-mono text-[12px]" style={{ color: "var(--hz-ink-3)" }}>
+                      {r.phone}
+                      {r.vars.dueAmount ? ` · ${r.vars.dueAmount}` : null}
+                    </div>
+                  </div>
+                  {state === "sent" ? (
+                    <span style={{ color: "var(--hz-success)" }} title="Sent">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </span>
+                  ) : state === "sending" ? (
+                    <span className="hz-mono text-[12px]" style={{ color: "var(--hz-ink-3)" }}>…</span>
+                  ) : state === "error" ? (
+                    <span style={{ color: "var(--hz-danger)" }} title="Failed">!</span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => onRemoveRecipient(r.studentId)}
+                      className="ibtn"
+                      style={{ width: 22, height: 22 }}
+                      aria-label="Remove"
+                    >
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+
+        {/* Template */}
+        <section className="px-4 pb-4">
+          <div className="text-[12px] hz-mono uppercase tracking-[.16em] mb-2" style={{ color: "var(--hz-ink-3)" }}>
+            Template
+          </div>
+          <div className="relative">
+            <select
+              value={templateKey}
+              onChange={(e) => setTemplateKey(e.target.value as TemplateKey)}
+              className="w-full appearance-none btn-ghost text-left"
+              style={{ paddingLeft: 12, paddingRight: 30, height: 36, fontSize: 14 }}
+            >
+              {Object.values(TEMPLATE_META).map((m) => (
+                <option key={m.key} value={m.key}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+            <svg
+              width="11"
+              height="11"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--hz-ink-3)" }}
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </div>
+          <div className="mt-1.5 flex items-center gap-1.5 text-[12px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+            <span
+              className="dot"
+              style={{ background: TEMPLATE_DOTS[templateKey] }}
+            />
+            {TEMPLATE_META[templateKey].hint}
+          </div>
+        </section>
+
+        {/* Language tabs */}
+        <section className="px-4 pb-4">
+          <div className="seg" style={{ width: "100%" }}>
+            {LOCALES.map((l) => (
+              <button
+                key={l.key}
+                type="button"
+                onClick={() => setLocale(l.key)}
+                className={`flex-1 ${locale === l.key ? "on" : ""}`}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* Preview */}
+        {previewRecipient ? (
+          <section className="px-4 pb-4">
+            <div
+              className="flex items-baseline justify-between mb-2 text-[12px] hz-mono"
+              style={{ color: "var(--hz-ink-3)" }}
+            >
+              <span className="uppercase tracking-[.16em]">
+                Preview · {locale.toUpperCase()}-PT
+              </span>
+              <span>vars · {Object.keys(previewRecipient.vars).filter((k) => previewRecipient.vars[k as keyof TemplateVars]).length}</span>
+            </div>
+            <div
+              className="p-3 rounded-md text-[14px] leading-relaxed"
+              style={{ background: "var(--hz-surface-2)", border: "1px solid var(--hz-line)" }}
+            >
+              <PreviewBody body={previewBody} vars={previewRecipient.vars} />
+            </div>
+            <a
+              href="/admin/messages/templates"
+              className="mt-2 inline-block text-[13px] underline"
+              style={{ color: "var(--hz-ink-2)" }}
+            >
+              Edit template
+            </a>
+          </section>
+        ) : null}
+
+        {/* Send via */}
+        <section className="px-4 pb-4">
+          <div className="text-[12px] hz-mono uppercase tracking-[.16em] mb-2" style={{ color: "var(--hz-ink-3)" }}>
+            Send via
+          </div>
+          <div className="flex items-center gap-2">
+            <label
+              className="flex items-center gap-2 p-2 px-3 rounded-md flex-1 cursor-pointer"
+              style={{
+                background: waOn ? "var(--hz-primary-50)" : "var(--hz-surface-2)",
+                border: `1px solid ${waOn ? "var(--hz-primary)" : "var(--hz-line)"}`,
+              }}
+            >
+              <input
+                type="checkbox"
+                className="hz-cb"
+                checked={waOn}
+                onChange={(e) => setWaOn(e.target.checked)}
+              />
+              <span className="text-[14px] font-semibold">WhatsApp</span>
+            </label>
+            <label
+              className="flex items-center gap-2 p-2 px-3 rounded-md flex-1 cursor-pointer"
+              style={{
+                background: emailOn ? "var(--hz-primary-50)" : "var(--hz-surface-2)",
+                border: `1px solid ${emailOn ? "var(--hz-primary)" : "var(--hz-line)"}`,
+              }}
+            >
+              <input
+                type="checkbox"
+                className="hz-cb"
+                checked={emailOn}
+                onChange={(e) => setEmailOn(e.target.checked)}
+              />
+              <span className="text-[14px] font-semibold">Email cc</span>
+            </label>
+          </div>
+        </section>
+      </div>
+
+      {/* Footer */}
+      <footer className="hair-t px-4 py-3 flex items-center justify-between gap-3">
+        <span className="hz-mono text-[12px]" style={{ color: "var(--hz-ink-3)" }}>
+          {channelLabel}
+        </span>
+        <button
+          type="button"
+          onClick={send}
+          disabled={pending || recipients.length === 0 || (!waOn && !emailOn)}
+          className="btn-primary"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 2 11 13" />
+            <path d="M22 2 15 22 11 13 2 9z" />
+          </svg>
+          {pending ? "Sending…" : `Send to ${recipients.length}`}
+        </button>
+      </footer>
+    </aside>
+  );
+}

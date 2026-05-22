@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   filtersToSearchString,
@@ -17,6 +17,8 @@ import {
   useSelection,
 } from "./bulk-actions";
 import type { BulkRow } from "./bulk-whatsapp-queue";
+import { SelectionRibbon } from "./selection-ribbon";
+import { MessageComposer } from "./message-composer";
 
 const RAIL_COLOR: Record<Urgency, string> = {
   overdue: "var(--hz-danger)",
@@ -116,15 +118,75 @@ export function StudentsTable({
   queueRows: [string, BulkRow][];
   filters: ReturnType<typeof parseFilters>;
 }) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const visibleIds = rows.map((r) => r.id);
   const queueMap = new Map(queueRows);
   const now = new Date();
 
   return (
+    <SelectionProvider rowsForQueue={queueMap}>
+      <TableInner rows={rows} visibleIds={visibleIds} filters={filters} now={now} />
+    </SelectionProvider>
+  );
+}
+
+function TableInner({
+  rows,
+  visibleIds,
+  filters,
+  now,
+}: {
+  rows: StudentRow[];
+  visibleIds: string[];
+  filters: ReturnType<typeof parseFilters>;
+  now: Date;
+}) {
+  const [drawerId, setDrawerId] = useState<string | null>(null);
+  const [composerOpen, setComposerOpen] = useState(false);
+  // When a row's WA icon opens the composer, we pin to one row regardless of
+  // the bulk selection set.
+  const [singleId, setSingleId] = useState<string | null>(null);
+  const { selected, rowsForQueue, toggle } = useSelection();
+
+  const composerRecipients = useMemo(() => {
+    if (singleId) {
+      const r = rowsForQueue.get(singleId);
+      return r ? [r] : [];
+    }
+    return Array.from(selected)
+      .map((id) => rowsForQueue.get(id))
+      .filter((r): r is BulkRow => !!r);
+  }, [singleId, selected, rowsForQueue]);
+
+  function openComposerForRow(id: string) {
+    setSingleId(id);
+    setComposerOpen(true);
+  }
+
+  function openComposerForSelection() {
+    setSingleId(null);
+    setComposerOpen(true);
+  }
+
+  function closeComposer() {
+    setComposerOpen(false);
+    setSingleId(null);
+  }
+
+  function removeRecipient(id: string) {
+    if (singleId) {
+      closeComposer();
+      return;
+    }
+    toggle(id);
+  }
+
+  return (
     <>
-      <SelectionProvider allIds={visibleIds} rowsForQueue={queueMap}>
-        <div className="hz-card overflow-hidden">
+      <SelectionRibbon
+        visibleCount={visibleIds.length}
+        onSendWhatsApp={openComposerForSelection}
+      />
+      <div className="hz-card overflow-hidden">
           <table className="stbl">
             <thead>
               <tr>
@@ -153,15 +215,21 @@ export function StudentsTable({
                   row={r}
                   index={i + 1}
                   now={now}
-                  onSelect={() => setSelectedId(r.id)}
+                  onOpenDrawer={() => setDrawerId(r.id)}
+                  onSendWhatsApp={() => openComposerForRow(r.id)}
                 />
               ))}
             </tbody>
           </table>
         </div>
-      </SelectionProvider>
 
-      <StudentDrawer studentId={selectedId} onClose={() => setSelectedId(null)} />
+      <StudentDrawer studentId={drawerId} onClose={() => setDrawerId(null)} />
+      <MessageComposer
+        open={composerOpen}
+        onClose={closeComposer}
+        recipients={composerRecipients}
+        onRemoveRecipient={removeRecipient}
+      />
     </>
   );
 }
@@ -170,12 +238,14 @@ function StudentRowEl({
   row,
   index,
   now,
-  onSelect,
+  onOpenDrawer,
+  onSendWhatsApp,
 }: {
   row: StudentRow;
   index: number;
   now: Date;
-  onSelect: () => void;
+  onOpenDrawer: () => void;
+  onSendWhatsApp: () => void;
 }) {
   const router = useRouter();
   const { isSelected } = useSelection();
@@ -198,7 +268,7 @@ function StudentRowEl({
     ) {
       return;
     }
-    onSelect();
+    onOpenDrawer();
   }
 
   return (
@@ -279,19 +349,20 @@ function StudentRowEl({
         <div className="flex items-center gap-2">
           <span className="hz-mono text-[14px]">{row.phone}</span>
           {cleanPhone ? (
-            <a
-              href={`https://wa.me/${cleanPhone}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSendWhatsApp();
+              }}
               className="ibtn"
               style={{ width: 24, height: 24 }}
-              title="Send WhatsApp"
-              onClick={(e) => e.stopPropagation()}
+              title="Compose WhatsApp message"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--hz-success)" }}>
                 <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
               </svg>
-            </a>
+            </button>
           ) : null}
         </div>
       </td>
