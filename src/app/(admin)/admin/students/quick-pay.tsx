@@ -37,7 +37,7 @@ export function QuickPay({
   const [amount, setAmount] = useState((remainingCents / 100).toFixed(2));
   const [paidAt, setPaidAt] = useState(today);
   const [method, setMethod] = useState<Method>("BANK");
-  const [reference, setReference] = useState("");
+  const [proof, setProof] = useState<File | null>(null);
   const [notes, setNotes] = useState("");
   const [emailReceipt, setEmailReceipt] = useState(true);
 
@@ -48,7 +48,7 @@ export function QuickPay({
       setAmount((remainingCents / 100).toFixed(2));
       setPaidAt(today);
       setMethod("BANK");
-      setReference("");
+      setProof(null);
       setNotes("");
       setEmailReceipt(Boolean(studentEmail));
       setError(null);
@@ -69,21 +69,18 @@ export function QuickPay({
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, amount, paidAt, method, reference, notes]);
+  }, [open, amount, paidAt, method, proof, notes]);
 
   function save() {
     setError(null);
-    const combinedNotes = [reference.trim(), notes.trim()]
-      .filter(Boolean)
-      .join(" · ");
     startTransition(async () => {
       const result = await addPaymentAction({
         enrollmentId,
         amount,
         method,
         paidAt,
-        notes: combinedNotes || null,
-        proof: null,
+        notes: notes.trim() || null,
+        proof,
         isVerified: false,
       });
       if (!result.ok) {
@@ -379,7 +376,7 @@ export function QuickPay({
                 </div>
                 <div>
                   <label className="field-label">
-                    Reference
+                    Proof
                     <span
                       style={{
                         color: "var(--hz-ink-3)",
@@ -391,15 +388,58 @@ export function QuickPay({
                         marginLeft: 5,
                       }}
                     >
-                      Optional
+                      PDF or image · optional
                     </span>
                   </label>
-                  <label className="inp" style={{ height: 42 }}>
+                  <label
+                    className="inp"
+                    style={{ height: 42, cursor: "pointer" }}
+                    title={proof ? proof.name : "Choose file"}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--hz-ink-3)", flexShrink: 0 }}>
+                      <path d="m21 12-9-9-9 9" />
+                      <path d="M12 3v18" />
+                    </svg>
                     <input
-                      placeholder="TRX-… or invoice #"
-                      value={reference}
-                      onChange={(e) => setReference(e.target.value)}
+                      type="file"
+                      accept="application/pdf,image/*"
+                      onChange={(e) => setProof(e.target.files?.[0] ?? null)}
+                      style={{
+                        position: "absolute",
+                        width: 1,
+                        height: 1,
+                        opacity: 0,
+                        pointerEvents: "none",
+                      }}
                     />
+                    <span
+                      className="truncate"
+                      style={{
+                        color: proof ? "var(--hz-ink)" : "var(--hz-ink-3)",
+                        flex: 1,
+                        minWidth: 0,
+                      }}
+                    >
+                      {proof ? proof.name : "Choose file"}
+                    </span>
+                    {proof ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setProof(null);
+                        }}
+                        className="ibtn"
+                        style={{ width: 22, height: 22, flexShrink: 0 }}
+                        aria-label="Clear file"
+                      >
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M18 6 6 18" />
+                          <path d="m6 6 12 12" />
+                        </svg>
+                      </button>
+                    ) : null}
                   </label>
                 </div>
               </div>
