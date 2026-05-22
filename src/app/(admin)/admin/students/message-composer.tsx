@@ -131,12 +131,17 @@ export function MessageComposer({
   const [waOn, setWaOn] = useState(true);
   const [emailOn, setEmailOn] = useState(false);
   const [rowState, setRowState] = useState<Map<string, RowState>>(new Map());
+  const [sendResult, setSendResult] = useState<
+    | { ok: number; failed: number; channels: ("WA_ME" | "EMAIL")[] }
+    | null
+  >(null);
   const [pending, startTransition] = useTransition();
 
   // Reset state when panel opens with a fresh recipient set.
   useEffect(() => {
     if (!open) return;
     setRowState(new Map());
+    setSendResult(null);
     setLocale(majorityLocale(recipients));
   }, [open, recipients]);
 
@@ -171,10 +176,17 @@ export function MessageComposer({
   function send() {
     if (recipients.length === 0) return;
     if (!waOn && !emailOn) return;
+    setSendResult(null);
     startTransition(async () => {
       const next = new Map<string, RowState>();
       for (const r of recipients) next.set(r.studentId, "sending");
       setRowState(next);
+
+      let okCount = 0;
+      let failCount = 0;
+      const channels: ("WA_ME" | "EMAIL")[] = [];
+      if (waOn) channels.push("WA_ME");
+      if (emailOn) channels.push("EMAIL");
 
       for (const r of recipients) {
         const body = renderTemplate(templateKey, r.locale ?? locale, r.vars);
@@ -202,14 +214,18 @@ export function MessageComposer({
             m.set(r.studentId, "sent");
             return m;
           });
+          okCount += 1;
         } catch {
           setRowState((prev) => {
             const m = new Map(prev);
             m.set(r.studentId, "error");
             return m;
           });
+          failCount += 1;
         }
       }
+
+      setSendResult({ ok: okCount, failed: failCount, channels });
       router.refresh();
     });
   }
@@ -224,7 +240,7 @@ export function MessageComposer({
         top: 0,
         right: 0,
         bottom: 0,
-        width: 420,
+        width: 520,
         background: "var(--hz-surface)",
         zIndex: 40,
         boxShadow: "-16px 0 40px -16px rgba(0,0,0,0.6)",
@@ -425,6 +441,64 @@ export function MessageComposer({
           </div>
         </section>
       </div>
+
+      {/* Result banner */}
+      {sendResult ? (
+        <div
+          className="hair-t px-4 py-2.5 flex items-center gap-2"
+          style={{
+            background:
+              sendResult.failed === 0
+                ? "var(--hz-success-50)"
+                : sendResult.ok === 0
+                  ? "var(--hz-danger-50)"
+                  : "var(--hz-warning-50)",
+          }}
+        >
+          {sendResult.failed === 0 ? (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--hz-success)" }}>
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          ) : sendResult.ok === 0 ? (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--hz-danger)" }}>
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--hz-warning)" }}>
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          )}
+          <div className="flex-1">
+            <div className="text-[14px] font-semibold" style={{ color: "var(--hz-ink)" }}>
+              {sendResult.failed === 0
+                ? `Sent to ${sendResult.ok} ${sendResult.ok === 1 ? "recipient" : "recipients"}`
+                : sendResult.ok === 0
+                  ? `Failed to send to all ${sendResult.failed} ${sendResult.failed === 1 ? "recipient" : "recipients"}`
+                  : `Sent ${sendResult.ok} · failed ${sendResult.failed}`}
+            </div>
+            <div className="hz-mono text-[12px]" style={{ color: "var(--hz-ink-2)" }}>
+              via {sendResult.channels.map((c) => (c === "WA_ME" ? "WhatsApp" : "email")).join(" + ")}
+              {sendResult.channels.includes("WA_ME") ? " · check the opened tabs and press Send in each" : null}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSendResult(null)}
+            className="ibtn"
+            style={{ width: 24, height: 24 }}
+            aria-label="Dismiss"
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+        </div>
+      ) : null}
 
       {/* Footer */}
       <footer className="hair-t px-4 py-3 flex items-center justify-between gap-3">
