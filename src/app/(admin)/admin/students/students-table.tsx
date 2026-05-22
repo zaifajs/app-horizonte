@@ -387,6 +387,7 @@ function StudentRowEl({
           <span onClick={(e) => e.stopPropagation()}>
             <QuickPay
               enrollmentId={row.latestEnrollment.id}
+              studentId={row.id}
               studentName={row.fullName}
               remainingCents={row.dueCents}
               feeCents={row.latestEnrollment.feeCents}

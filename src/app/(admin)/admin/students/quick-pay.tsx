@@ -3,11 +3,13 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addPaymentAction } from "@/lib/actions/payments";
+import { sendEmailToStudentAction } from "@/lib/actions/messages";
 
 type Method = "BANK" | "CASH";
 
 export function QuickPay({
   enrollmentId,
+  studentId,
   studentName,
   remainingCents,
   feeCents,
@@ -17,6 +19,7 @@ export function QuickPay({
   urgencyTone,
 }: {
   enrollmentId: string;
+  studentId: string;
   studentName: string;
   remainingCents: number;
   feeCents: number;
@@ -36,6 +39,7 @@ export function QuickPay({
   const [method, setMethod] = useState<Method>("BANK");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
+  const [emailReceipt, setEmailReceipt] = useState(true);
 
   // Reset when opening so the modal reflects current state if the user
   // opened it on a different row earlier in the session.
@@ -46,9 +50,10 @@ export function QuickPay({
       setMethod("BANK");
       setReference("");
       setNotes("");
+      setEmailReceipt(Boolean(studentEmail));
       setError(null);
     }
-  }, [open, remainingCents, today]);
+  }, [open, remainingCents, today, studentEmail]);
 
   // ESC + ⌘↵ shortcuts
   useEffect(() => {
@@ -84,6 +89,30 @@ export function QuickPay({
       if (!result.ok) {
         setError(result.error);
         return;
+      }
+      // Optional email receipt — fire-and-forget; failure here doesn't
+      // roll back the payment that's already saved.
+      if (emailReceipt && studentEmail) {
+        const amtEur = Number.parseFloat(amount) || 0;
+        const remainingAfterCents = Math.max(0, feeCents - paidCents - Math.round(amtEur * 100));
+        const subject = `Payment receipt — €${amtEur.toFixed(2)}${batchCode ? ` for batch ${batchCode}` : ""}`;
+        const body =
+          `Hello ${studentName.split(" ")[0] || studentName},\n\n` +
+          `We've received your payment of €${amtEur.toFixed(2)} ` +
+          `(${method === "BANK" ? "bank transfer" : "cash"}) on ${paidAt}` +
+          `${batchCode ? ` for batch ${batchCode}` : ""}.\n\n` +
+          `Outstanding balance: €${(remainingAfterCents / 100).toFixed(2)}.\n\n` +
+          `Obrigado / Thank you!\nNovo Horizonte`;
+        await sendEmailToStudentAction({
+          studentId,
+          templateKey: "welcome", // bodyOverride means template choice is moot
+          bodyOverride: body,
+          subjectOverride: subject,
+          vars: {
+            name: studentName,
+            batch: batchCode ?? "",
+          },
+        });
       }
       setOpen(false);
       router.refresh();
@@ -130,23 +159,28 @@ export function QuickPay({
 
   // Quick-amount presets
   const presets: { value: number; label: string }[] = [];
+  const remainingEur = remainingCents / 100;
+  const halfFee = feeCents / 200;
   if (remainingCents > 0) {
+    // If the remaining equals exactly half the fee, the student is paying
+    // the 2nd installment — label it explicitly. Otherwise just "remaining".
+    const isSecondInstallment = Math.abs(remainingEur - halfFee) < 0.005;
     presets.push({
-      value: remainingCents / 100,
-      label: `€${(remainingCents / 100).toFixed(0)} · remaining`,
+      value: remainingEur,
+      label: `€${remainingEur.toFixed(0)} · ${isSecondInstallment ? "2nd installment" : "remaining"}`,
     });
   }
-  if (feeCents > 0 && remainingCents !== feeCents) {
+  if (feeCents > 0 && Math.abs(feeCents / 100 - remainingEur) > 0.005) {
     presets.push({
       value: feeCents / 100,
       label: `€${(feeCents / 100).toFixed(0)} · full`,
     });
   }
-  if (feeCents / 2 !== remainingCents / 100 && feeCents > 0) {
-    presets.push({
-      value: feeCents / 200,
-      label: `€${(feeCents / 200).toFixed(0)} · half`,
-    });
+  // A round €100 cash slice is a common partial payment — only offer when it
+  // makes sense (i.e. there's at least €100 remaining and it's not the same
+  // as the remaining preset above).
+  if (remainingEur >= 100 && Math.abs(remainingEur - 100) > 0.005) {
+    presets.push({ value: 100, label: "€100" });
   }
 
   return (
@@ -212,7 +246,7 @@ export function QuickPay({
               >
                 {initials}
               </span>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 text-left">
                 <div
                   className="text-xs hz-mono uppercase tracking-[.16em]"
                   style={{ color: "var(--hz-ink-3)" }}
@@ -233,7 +267,7 @@ export function QuickPay({
                   ) : null}
                   Outstanding{" "}
                   <span style={{ color: "var(--hz-ink)" }}>
-                    €{(remainingCents / 100).toFixed(0)} of €{feeEur.toFixed(0)}
+                    €{(remainingCents / 100).toFixed(0)} / €{feeEur.toFixed(0)}
                   </span>
                 </div>
               </div>
@@ -491,6 +525,24 @@ export function QuickPay({
                     </div>
                   </div>
                 </div>
+              ) : null}
+
+              {/* Email receipt option */}
+              {studentEmail ? (
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="hz-cb"
+                    checked={emailReceipt}
+                    onChange={(e) => setEmailReceipt(e.target.checked)}
+                  />
+                  <span className="text-sm">
+                    Email receipt to{" "}
+                    <span className="hz-mono" style={{ color: "var(--hz-ink-2)" }}>
+                      {studentEmail}
+                    </span>
+                  </span>
+                </label>
               ) : null}
 
               {error ? (
