@@ -104,41 +104,16 @@ export function AttendanceForm({
         </span>
       </div>
 
-      <ul className="space-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
         {rows.map((r) => (
-          <li key={r.enrollmentId} className="rounded-lg border bg-white p-3 space-y-2">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <div className="font-medium">{r.studentName}</div>
-              <div className="flex flex-wrap gap-1">
-                {OPTIONS.map((o) => {
-                  const active = r.state === o.key;
-                  return (
-                    <button
-                      key={o.key}
-                      type="button"
-                      onClick={() => setRowState(r.enrollmentId, o.key)}
-                      className={`text-xs px-2 py-1 rounded-md border transition ${
-                        active
-                          ? o.cls + " font-medium"
-                          : "bg-white text-muted-foreground hover:bg-zinc-50"
-                      }`}
-                    >
-                      {o.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <input
-              type="text"
-              value={r.notes}
-              onChange={(e) => setRowNotes(r.enrollmentId, e.target.value)}
-              placeholder="Optional note for this student…"
-              className="w-full text-xs rounded-md border bg-zinc-50/40 px-2 py-1.5 placeholder:text-muted-foreground"
-            />
-          </li>
+          <AttendanceCard
+            key={r.enrollmentId}
+            row={r}
+            onState={(state) => setRowState(r.enrollmentId, state)}
+            onNote={(note) => setRowNotes(r.enrollmentId, note)}
+          />
         ))}
-      </ul>
+      </div>
 
       <div className="space-y-1.5">
         <label className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
@@ -161,6 +136,66 @@ export function AttendanceForm({
           {pending ? "Saving…" : "Save attendance"}
         </Button>
       </div>
+    </div>
+  );
+}
+
+function AttendanceCard({
+  row,
+  onState,
+  onNote,
+}: {
+  row: Row;
+  onState: (state: State) => void;
+  onNote: (note: string) => void;
+}) {
+  const [noteOpen, setNoteOpen] = useState(row.notes.length > 0);
+  return (
+    <div className="rounded-lg border bg-white p-2.5 space-y-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="font-medium text-sm truncate">{row.studentName}</div>
+        <button
+          type="button"
+          onClick={() => setNoteOpen((v) => !v)}
+          className={`text-[11px] px-1.5 py-0.5 rounded border transition shrink-0 ${
+            row.notes.length > 0
+              ? "bg-zinc-900 text-white border-zinc-900"
+              : "text-muted-foreground hover:bg-zinc-50"
+          }`}
+          aria-label={noteOpen ? "Hide note" : "Add note"}
+        >
+          {row.notes.length > 0 ? "Note •" : "+ Note"}
+        </button>
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {OPTIONS.map((o) => {
+          const active = row.state === o.key;
+          return (
+            <button
+              key={o.key}
+              type="button"
+              onClick={() => onState(o.key)}
+              className={`text-xs px-2 py-1 rounded-md border transition ${
+                active
+                  ? o.cls + " font-medium"
+                  : "bg-white text-muted-foreground hover:bg-zinc-50"
+              }`}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+      {noteOpen ? (
+        <input
+          type="text"
+          value={row.notes}
+          onChange={(e) => onNote(e.target.value)}
+          placeholder="Optional note…"
+          autoFocus={row.notes.length === 0}
+          className="w-full text-xs rounded-md border bg-zinc-50/40 px-2 py-1.5 placeholder:text-muted-foreground"
+        />
+      ) : null}
     </div>
   );
 }
