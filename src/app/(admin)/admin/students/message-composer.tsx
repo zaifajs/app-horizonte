@@ -4,11 +4,11 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   buildWaMeLink,
-  renderTemplate,
-  TEMPLATE_META,
+  interpolate,
   type TemplateKey,
   type TemplateVars,
 } from "@/lib/messaging/templates";
+import type { ResolvedTemplate } from "@/lib/messaging/template-store";
 import {
   logMessageSentAction,
   sendEmailToStudentAction,
@@ -25,12 +25,14 @@ const LOCALES: { key: Locale; label: string }[] = [
   { key: "hi", label: "HI" },
 ];
 
-const TEMPLATE_DOTS: Record<TemplateKey, string> = {
+const TEMPLATE_DOTS: Record<string, string> = {
   welcome: "var(--hz-info)",
   payment_reminder: "var(--hz-danger)",
   class_reminder: "var(--hz-warning)",
   cronograma: "var(--hz-primary)",
 };
+
+const CUSTOM_DOT = "var(--hz-accent)";
 
 type RowState = "idle" | "sending" | "sent" | "error";
 
@@ -108,14 +110,26 @@ export function MessageComposer({
   onClose,
   recipients,
   onRemoveRecipient,
+  templates,
 }: {
   open: boolean;
   onClose: () => void;
   recipients: BulkRow[];
   onRemoveRecipient: (studentId: string) => void;
+  templates: ResolvedTemplate[];
 }) {
   const router = useRouter();
-  const [templateKey, setTemplateKey] = useState<TemplateKey>("payment_reminder");
+  // Default to payment_reminder if available, else first system template.
+  const defaultTemplateId =
+    templates.find((t) => t.key === "payment_reminder")?.id ??
+    templates.find((t) => t.isSystem)?.id ??
+    templates[0]?.id ??
+    "";
+  const [templateId, setTemplateId] = useState<string>(defaultTemplateId);
+  const selectedTemplate = useMemo(
+    () => templates.find((t) => t.id === templateId) ?? templates[0],
+    [templates, templateId],
+  );
   const [locale, setLocale] = useState<Locale>("pt");
   const [waOn, setWaOn] = useState(true);
   const [emailOn, setEmailOn] = useState(false);
@@ -151,9 +165,11 @@ export function MessageComposer({
 
   const previewRecipient = recipients[0];
   const previewBody = useMemo(() => {
-    if (!previewRecipient) return "";
-    return renderTemplate(templateKey, locale, previewRecipient.vars);
-  }, [templateKey, locale, previewRecipient]);
+    if (!previewRecipient || !selectedTemplate) return "";
+    const raw =
+      selectedTemplate.bodies[locale] || selectedTemplate.bodies.en || "";
+    return interpolate(raw, previewRecipient.vars);
+  }, [selectedTemplate, locale, previewRecipient]);
 
   const channelLabel = (() => {
     const parts: string[] = [];
@@ -178,14 +194,32 @@ export function MessageComposer({
       if (emailOn) channels.push("EMAIL");
 
       for (const r of recipients) {
-        const body = renderTemplate(templateKey, r.locale ?? locale, r.vars);
+        if (!selectedTemplate) {
+          failCount += 1;
+          continue;
+        }
+        const perLocale = r.locale ?? locale;
+        const rawBody =
+          selectedTemplate.bodies[perLocale] ||
+          selectedTemplate.bodies.en ||
+          "";
+        const rawSubject =
+          selectedTemplate.subjects[perLocale] ||
+          selectedTemplate.subjects.en ||
+          "";
+        const body = interpolate(rawBody, r.vars);
+        const subject = interpolate(rawSubject, r.vars);
+        // For the message log, system templates use their stable key;
+        // custom templates use their UUID so we can trace back to the row.
+        const logKey: TemplateKey | string =
+          selectedTemplate.key ?? selectedTemplate.id;
         try {
           if (waOn) {
             const link = buildWaMeLink(r.phone, body);
             window.open(link, "_blank", "noopener,noreferrer");
             await logMessageSentAction({
               studentId: r.studentId,
-              templateKey,
+              templateKey: logKey as TemplateKey,
               body,
               channel: "WA_ME",
             });
@@ -193,7 +227,9 @@ export function MessageComposer({
           if (emailOn) {
             const res = await sendEmailToStudentAction({
               studentId: r.studentId,
-              templateKey,
+              templateKey: (selectedTemplate.key ?? "welcome") as TemplateKey,
+              bodyOverride: body,
+              subjectOverride: subject,
               vars: r.vars,
             });
             if (!res.ok) throw new Error(res.error);
@@ -329,16 +365,27 @@ export function MessageComposer({
           </div>
           <div className="relative">
             <select
-              value={templateKey}
-              onChange={(e) => setTemplateKey(e.target.value as TemplateKey)}
+              value={templateId}
+              onChange={(e) => setTemplateId(e.target.value)}
               className="w-full appearance-none btn-ghost text-left"
-              style={{ paddingLeft: 12, paddingRight: 30, height: 36, fontSize: 14 }}
+              style={{ paddingLeft: 12, paddingRight: 30, height: 36, fontSize: "0.875rem" }}
             >
-              {Object.values(TEMPLATE_META).map((m) => (
-                <option key={m.key} value={m.key}>
-                  {m.label}
-                </option>
-              ))}
+              <optgroup label="System">
+                {templates.filter((t) => t.isSystem).map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </optgroup>
+              {templates.some((t) => !t.isSystem) ? (
+                <optgroup label="Custom">
+                  {templates.filter((t) => !t.isSystem).map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ) : null}
             </select>
             <svg
               width="11"
@@ -355,9 +402,13 @@ export function MessageComposer({
           <div className="mt-1.5 flex items-center gap-1.5 text-xs hz-mono" style={{ color: "var(--hz-ink-3)" }}>
             <span
               className="dot"
-              style={{ background: TEMPLATE_DOTS[templateKey] }}
+              style={{
+                background: selectedTemplate?.key
+                  ? TEMPLATE_DOTS[selectedTemplate.key] ?? CUSTOM_DOT
+                  : CUSTOM_DOT,
+              }}
             />
-            {TEMPLATE_META[templateKey].hint}
+            {selectedTemplate?.hint ?? (selectedTemplate?.isSystem ? "" : "Custom template")}
           </div>
         </section>
 

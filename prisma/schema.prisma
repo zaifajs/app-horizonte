@@ -107,7 +107,7 @@ model User {
   studentProfile Student?
   batchesTaught  Batch[]        @relation("BatchTrainer")
   sessionsOver   BatchSession[] @relation("SessionTrainer")
-  paymentsTaken  Payment[] @relation("PaymentCollector")
+  paymentsTaken  Payment[]      @relation("PaymentCollector")
   notesAuthored  Note[]         @relation("NoteAuthor")
   messagesSent   MessageLog[]   @relation("MessageSender")
   auditEntries   AuditLog[]     @relation("AuditActor")
@@ -342,4 +342,21 @@ model Note {
   author  User?   @relation("NoteAuthor", fields: [authorId], references: [id])
 
   @@map("notes")
+}
+
+model MessageTemplate {
+  id          String   @id @default(uuid()) @db.Uuid
+  // For system templates (welcome/payment_reminder/class_reminder/cronograma)
+  // this is the stable key automated flows reference. NULL for user-created.
+  key         String?  @unique
+  name        String
+  isSystem    Boolean  @default(false)
+  // { en: "...", pt: "...", bn: "...", ur: "...", hi: "..." }
+  bodies      Json     @default("{}")
+  subjects    Json     @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  updatedById String?  @db.Uuid
+
+  @@map("message_templates")
 }

@@ -6,12 +6,27 @@ import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 import { logChange } from "@/lib/audit";
 import { sendEmail } from "@/lib/messaging/email";
+
+function pickLocale(
+  raw: unknown,
+  locale: Locale,
+): string | null {
+  if (!raw || typeof raw !== "object") return null;
+  const obj = raw as Record<string, unknown>;
+  const v = obj[locale];
+  if (typeof v === "string" && v.length > 0) return v;
+  const en = obj.en;
+  if (typeof en === "string" && en.length > 0) return en;
+  return null;
+}
 import {
+  interpolate,
   renderEmailSubject,
   renderTemplate,
   type TemplateKey,
   type TemplateVars,
 } from "@/lib/messaging/templates";
+import type { Locale } from "@/i18n/routing";
 import { localeForNationality } from "@/lib/messaging/locale-for-nationality";
 
 const schema = z.object({
@@ -116,11 +131,22 @@ export async function sendEmailToStudentAction(
 
   const locale = localeForNationality(student.nationality);
   const vars: TemplateVars = input.vars;
+
+  // Check for an admin-edited override in the DB before falling back to
+  // the hardcoded default in templates.ts.
+  const dbRow = await prisma.messageTemplate.findUnique({
+    where: { key: input.templateKey },
+  });
+  const dbBody = pickLocale(dbRow?.bodies, locale);
+  const dbSubject = pickLocale(dbRow?.subjects, locale);
+
   const subject =
     input.subjectOverride ??
+    (dbSubject ? interpolate(dbSubject, vars) : null) ??
     renderEmailSubject(input.templateKey as TemplateKey, locale, vars);
   const body =
     input.bodyOverride ??
+    (dbBody ? interpolate(dbBody, vars) : null) ??
     renderTemplate(input.templateKey as TemplateKey, locale, vars);
 
   const result = await sendEmail({ to: student.email, subject, body });

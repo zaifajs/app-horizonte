@@ -20,6 +20,7 @@ import type { BulkRow } from "./bulk-whatsapp-queue";
 import { SelectionRibbon } from "./selection-ribbon";
 import { MessageComposer } from "./message-composer";
 import { Avatar } from "@/components/ui/avatar";
+import type { ResolvedTemplate } from "@/lib/messaging/template-store";
 
 const RAIL_COLOR: Record<Urgency, string> = {
   overdue: "var(--hz-danger)",
@@ -84,10 +85,12 @@ export function StudentsTable({
   rows,
   queueRows,
   filters,
+  templates,
 }: {
   rows: StudentRow[];
   queueRows: [string, BulkRow][];
   filters: ReturnType<typeof parseFilters>;
+  templates: ResolvedTemplate[];
 }) {
   const visibleIds = rows.map((r) => r.id);
   const queueMap = new Map(queueRows);
@@ -95,7 +98,7 @@ export function StudentsTable({
 
   return (
     <SelectionProvider rowsForQueue={queueMap}>
-      <TableInner rows={rows} visibleIds={visibleIds} filters={filters} now={now} />
+      <TableInner rows={rows} visibleIds={visibleIds} filters={filters} now={now} templates={templates} />
     </SelectionProvider>
   );
 }
@@ -105,11 +108,13 @@ function TableInner({
   visibleIds,
   filters,
   now,
+  templates,
 }: {
   rows: StudentRow[];
   visibleIds: string[];
   filters: ReturnType<typeof parseFilters>;
   now: Date;
+  templates: ResolvedTemplate[];
 }) {
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [composerOpen, setComposerOpen] = useState(false);
@@ -200,6 +205,7 @@ function TableInner({
         onClose={closeComposer}
         recipients={composerRecipients}
         onRemoveRecipient={removeRecipient}
+        templates={templates}
       />
     </>
   );

@@ -111,7 +111,7 @@ export function renderEmailSubject(
   return interpolate(subject, vars);
 }
 
-function interpolate(template: string, vars: TemplateVars): string {
+export function interpolate(template: string, vars: TemplateVars): string {
   return template.replace(/\{\{(\w+)\}\}/g, (_m, name: keyof TemplateVars) => {
     const v = vars[name];
     return v == null ? `{{${String(name)}}}` : String(v);

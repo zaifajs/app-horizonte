@@ -17,6 +17,7 @@ import { ExportDialog } from "./export-dialog";
 import type { BulkRow } from "./bulk-whatsapp-queue";
 import { loadBatchSequence } from "@/lib/students/batch-seq";
 import { localeForNationality } from "@/lib/messaging/locale-for-nationality";
+import { listAllTemplates } from "@/lib/messaging/template-store";
 import { StudentsTable } from "./students-table";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +33,7 @@ export default async function StudentsPage({
   const filters = parseFilters(sp);
   const where = buildStudentWhere(filters);
 
-  const [studentsRaw, batches, batchSeq] = await Promise.all([
+  const [studentsRaw, batches, batchSeq, templates] = await Promise.all([
     prisma.student.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -56,6 +57,7 @@ export default async function StudentsPage({
     }),
     prisma.batch.findMany({ orderBy: { startDate: "desc" }, select: { code: true } }),
     loadBatchSequence(),
+    listAllTemplates(),
   ]);
 
   // Build rows + compute paid/due/lastPaid + urgency.
@@ -244,7 +246,12 @@ export default async function StudentsPage({
           No students match these filters.
         </div>
       ) : (
-        <StudentsTable rows={sorted} queueRows={Array.from(queueRows.entries())} filters={filters} />
+        <StudentsTable
+          rows={sorted}
+          queueRows={Array.from(queueRows.entries())}
+          filters={filters}
+          templates={templates}
+        />
       )}
     </div>
   );
