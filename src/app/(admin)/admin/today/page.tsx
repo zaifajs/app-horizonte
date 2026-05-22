@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { format, addDays, startOfToday } from "date-fns";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { prisma } from "@/lib/db";
 import {
   computeUrgency,
@@ -12,48 +10,69 @@ export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Today · Horizonte CRM" };
 
+const dayMs = 86_400_000;
+
+function initials(name: string): string {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0])
+      .join("")
+      .toUpperCase() || "??"
+  );
+}
+
+function diffDays(from: Date, to: Date): number {
+  const a = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate());
+  const b = Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), to.getUTCDate());
+  return Math.round((b - a) / dayMs);
+}
+
 export default async function TodayPage() {
   const today = startOfToday();
-  const inSevenDays = addDays(today, 7);
+  const docExpiryWindow = addDays(today, 60);
 
-  // Pull enrollments that need attention: PENDING (no payment yet) or
-  // ACTIVE-with-balance, plus a recently-registered slice.
-  const enrollments = await prisma.enrollment.findMany({
-    where: { status: { in: ["PENDING", "ACTIVE"] } },
-    include: {
-      student: { select: { id: true, fullName: true, phone: true, nationality: true } },
-      batch: {
-        select: {
-          id: true,
-          code: true,
-          startDate: true,
-          status: true,
-          course: { select: { feeCents: true } },
+  const [enrollments, activeStudentCount, batches, expiringStudents, recentAudit] =
+    await Promise.all([
+      prisma.enrollment.findMany({
+        where: { status: { in: ["PENDING", "ACTIVE"] } },
+        include: {
+          student: { select: { id: true, fullName: true, phone: true } },
+          batch: {
+            select: {
+              id: true,
+              code: true,
+              startDate: true,
+              status: true,
+              course: { select: { feeCents: true } },
+            },
+          },
+          payments: { select: { amountCents: true } },
         },
-      },
-      payments: { select: { amountCents: true } },
-    },
-    orderBy: { enrolledAt: "desc" },
-  });
+        orderBy: { enrolledAt: "desc" },
+      }),
+      prisma.enrollment.count({ where: { status: "ACTIVE" } }),
+      prisma.batch.findMany({
+        where: { status: { in: ["UPCOMING", "ACTIVE"] } },
+        select: { id: true, code: true, status: true },
+        orderBy: { startDate: "asc" },
+      }),
+      prisma.student.findMany({
+        where: { docExpiry: { lte: docExpiryWindow, gte: today } },
+        select: { id: true, fullName: true, docType: true, docExpiry: true },
+        orderBy: { docExpiry: "asc" },
+        take: 5,
+      }),
+      prisma.auditLog.findMany({
+        take: 6,
+        orderBy: { createdAt: "desc" },
+        include: { actor: { select: { name: true } } },
+      }),
+    ]);
 
-  // Enrich each with paid/due/urgency.
-  type Row = {
-    studentId: string;
-    studentName: string;
-    studentPhone: string;
-    batchCode: string;
-    batchId: string;
-    paid: number;
-    fee: number;
-    due: number;
-    urgency: ReturnType<typeof computeUrgency>;
-    deadlineDate: Date | null;
-    daysUntilStart: number | null;
-    daysSinceEnrolled: number;
-    enrolledAt: Date;
-  };
-
-  const rows: Row[] = enrollments.map((e) => {
+  const rows = enrollments.map((e) => {
     const paid = e.payments.reduce((a, p) => a + p.amountCents, 0);
     const fee = e.batch.course.feeCents;
     const due = Math.max(0, fee - paid);
@@ -66,30 +85,16 @@ export default async function TodayPage() {
     });
     const deadlineDate = new Date(e.batch.startDate);
     deadlineDate.setUTCDate(deadlineDate.getUTCDate() + PAYMENT_DEADLINE_DAYS);
-    const dayMs = 86_400_000;
-    const startMs = Date.UTC(
-      e.batch.startDate.getUTCFullYear(),
-      e.batch.startDate.getUTCMonth(),
-      e.batch.startDate.getUTCDate(),
-    );
-    const todayMs = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
-    const daysUntilStart = Math.round((startMs - todayMs) / dayMs);
-    const daysSinceEnrolled = Math.round(
-      (todayMs - e.enrolledAt.getTime()) / dayMs,
-    );
     return {
       studentId: e.student.id,
       studentName: e.student.fullName,
-      studentPhone: e.student.phone,
       batchCode: e.batch.code,
       batchId: e.batch.id,
       paid,
       fee,
       due,
       urgency,
-      deadlineDate,
-      daysUntilStart,
-      daysSinceEnrolled,
+      daysSinceEnrolled: diffDays(e.enrolledAt, today),
       enrolledAt: e.enrolledAt,
     };
   });
@@ -98,207 +103,458 @@ export default async function TodayPage() {
     .filter((r) => r.urgency.urgency === "overdue")
     .sort((a, b) => (a.urgency.daysToDeadline ?? 0) - (b.urgency.daysToDeadline ?? 0));
 
-  const dueSoon = rows
-    .filter((r) => r.urgency.urgency === "due_soon")
-    .sort((a, b) => (a.urgency.daysToDeadline ?? 0) - (b.urgency.daysToDeadline ?? 0));
+  const dueSoon = rows.filter((r) => r.urgency.urgency === "due_soon");
 
-  const newPending = rows
-    .filter((r) => r.urgency.urgency === "pre_start" && r.daysSinceEnrolled <= 14 && r.paid === 0)
+  const pendingNew = rows
+    .filter(
+      (r) => r.urgency.urgency === "pre_start" && r.daysSinceEnrolled <= 14 && r.paid === 0,
+    )
     .sort((a, b) => b.enrolledAt.getTime() - a.enrolledAt.getTime());
 
-  // Today's classroom sessions to remind staff.
-  const sessions = await prisma.batchSession.findMany({
-    where: {
-      kind: "CLASSROOM",
-      scheduledDate: today,
-    },
-    orderBy: { startTime: "asc" },
-    include: {
-      batch: { select: { code: true, id: true } },
-      module: { select: { number: true, name: true } },
-    },
-  });
+  const pendingPaymentsCents = rows
+    .filter((r) => r.due > 0)
+    .reduce((a, r) => a + r.due, 0);
+  const pendingPaymentsStudentCount = rows.filter((r) => r.due > 0).length;
+
+  const overdueTotalCents = overdue.reduce((a, r) => a + r.due, 0);
+  const oldestOverdueDays = overdue[0]?.urgency.daysToDeadline
+    ? Math.abs(overdue[0].urgency.daysToDeadline)
+    : 0;
+
+  const activeBatches = batches.filter((b) => b.status === "ACTIVE");
+  const upcomingBatches = batches.filter((b) => b.status === "UPCOMING");
+
+  const now = new Date();
+  const headerStamp = format(now, "EEE · dd MMM yy · HH:mm").toUpperCase();
+  const partOfDay = (() => {
+    const h = now.getHours();
+    if (h < 12) return "morning";
+    if (h < 18) return "afternoon";
+    return "evening";
+  })();
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border bg-gradient-to-br from-zinc-50 to-white p-5">
-        <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">
-          Today
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {format(today, "EEEE, dd MMM yyyy")}
-        </p>
-        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <Stat label="Overdue"          value={overdue.length}    cls="bg-red-100 border-red-300 text-red-900" />
-          <Stat label="Due soon"         value={dueSoon.length}    cls="bg-orange-100 border-orange-300 text-orange-900" />
-          <Stat label="New registrations" value={newPending.length} cls="bg-stone-100 border-stone-300 text-stone-900" />
-          <Stat label="Sessions today"   value={sessions.length}    cls="bg-zinc-900 border-zinc-900 text-white" />
+      {/* ============ HEADER STRIP ============ */}
+      <section className="flex items-end justify-between gap-6 flex-wrap">
+        <div>
+          <div
+            className="text-[11px] hz-mono uppercase tracking-[.18em]"
+            style={{ color: "var(--hz-ink-3)" }}
+          >
+            {format(now, "EEEE")} {partOfDay} · {format(now, "HH:mm")}
+          </div>
+          <h1
+            className="font-display text-[36px] leading-[1.05] font-medium mt-1.5"
+            style={{ color: "var(--hz-ink)" }}
+          >
+            <span style={{ color: "var(--hz-danger)" }}>{overdue.length}</span>{" "}
+            <span style={{ color: "var(--hz-ink-2)", fontWeight: 400 }}>urgent</span>
+            <span style={{ color: "var(--hz-ink-3)" }}>,</span>{" "}
+            <span style={{ color: "var(--hz-warning)" }}>{dueSoon.length}</span>{" "}
+            <span style={{ color: "var(--hz-ink-2)", fontWeight: 400 }}>to watch</span>
+            <span style={{ color: "var(--hz-ink-3)" }}>,</span>{" "}
+            <span style={{ color: "var(--hz-info)" }}>{pendingNew.length}</span>{" "}
+            <span style={{ color: "var(--hz-ink-2)", fontWeight: 400 }}>waiting</span>
+            <span style={{ color: "var(--hz-ink-3)" }}>.</span>
+          </h1>
+          {(overdue.length > 0 || activeBatches.length > 0) ? (
+            <p className="mt-2 text-[13px] hz-mono" style={{ color: "var(--hz-ink-2)" }}>
+              {overdue.length > 0 ? (
+                <>
+                  {overdue.length} overdue
+                  {oldestOverdueDays > 0 ? ` · oldest ${oldestOverdueDays} days` : null}
+                </>
+              ) : null}
+              {overdue.length > 0 && activeBatches.length > 0 ? " · " : null}
+              {activeBatches.length > 0 ? (
+                <>
+                  {activeBatches.length} active{" "}
+                  {activeBatches.length === 1 ? "batch" : "batches"}{" "}
+                  ({activeBatches
+                    .slice(0, 3)
+                    .map((b) => b.code)
+                    .join(", ")})
+                </>
+              ) : null}
+            </p>
+          ) : null}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="chip chip-outline">
+            <span
+              className="dot"
+              style={{ background: "var(--hz-primary)", boxShadow: "0 0 6px var(--hz-primary)" }}
+            />
+            {headerStamp}
+          </span>
+          <Link href="/admin/students/new" className="btn-primary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <line x1="19" y1="8" x2="19" y2="14" />
+              <line x1="22" y1="11" x2="16" y2="11" />
+            </svg>
+            Enroll student
+          </Link>
+        </div>
+      </section>
+
+      {/* ============ STATS GRID ============ */}
+      <section className="hz-card overflow-hidden">
+        <div className="grid grid-cols-2 md:grid-cols-4 grid-cells">
+          <div>
+            <div className="text-[10px] hz-mono uppercase tracking-[.16em]" style={{ color: "var(--hz-ink-3)" }}>
+              Active students
+            </div>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="stat-num text-[36px]" style={{ color: "var(--hz-ink)" }}>
+                {activeStudentCount}
+              </span>
+            </div>
+            <div className="mt-1 text-[11px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+              across {activeBatches.length} {activeBatches.length === 1 ? "batch" : "batches"}
+            </div>
+          </div>
+          <div>
+            <div className="text-[10px] hz-mono uppercase tracking-[.16em]" style={{ color: "var(--hz-ink-3)" }}>
+              Active batches
+            </div>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="stat-num text-[36px]" style={{ color: "var(--hz-ink)" }}>
+                {activeBatches.length}
+              </span>
+              {upcomingBatches.length > 0 ? (
+                <span className="hz-mono text-[11px]" style={{ color: "var(--hz-ink-3)" }}>
+                  +{upcomingBatches.length} upcoming
+                </span>
+              ) : null}
+            </div>
+            <div className="mt-1 flex items-center gap-1 text-[10.5px] hz-mono flex-wrap">
+              {activeBatches.slice(0, 4).map((b) => (
+                <span key={b.id} className="px-1.5 py-0.5 rounded-sm chip-success">
+                  {b.code}
+                </span>
+              ))}
+              {upcomingBatches.slice(0, 4).map((b) => (
+                <span key={b.id} className="px-1.5 py-0.5 rounded-sm chip-warning">
+                  {b.code}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="text-[10px] hz-mono uppercase tracking-[.16em]" style={{ color: "var(--hz-ink-3)" }}>
+              Pending payments
+            </div>
+            <div className="mt-2 flex items-baseline gap-1">
+              <span className="hz-mono text-[16px]" style={{ color: "var(--hz-ink-3)" }}>
+                €
+              </span>
+              <span className="stat-num text-[36px]" style={{ color: "var(--hz-ink)" }}>
+                {(pendingPaymentsCents / 100).toLocaleString("en-US", {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                })}
+              </span>
+            </div>
+            <div className="mt-1 text-[11px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+              n={pendingPaymentsStudentCount} {pendingPaymentsStudentCount === 1 ? "student" : "students"}
+            </div>
+          </div>
+          <div style={overdue.length > 0 ? { background: "var(--hz-danger-50)" } : undefined}>
+            <div
+              className="text-[10px] hz-mono uppercase tracking-[.16em]"
+              style={{ color: overdue.length > 0 ? "var(--hz-danger)" : "var(--hz-ink-3)" }}
+            >
+              Overdue
+            </div>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span
+                className="stat-num text-[36px]"
+                style={{ color: overdue.length > 0 ? "var(--hz-danger)" : "var(--hz-ink)" }}
+              >
+                {overdue.length}
+              </span>
+              {overdue.length > 0 ? <span className="chip chip-danger">!</span> : null}
+            </div>
+            <div className="mt-1 text-[11px] hz-mono" style={{ color: "var(--hz-ink-2)" }}>
+              {overdueTotalCents > 0
+                ? `€${(overdueTotalCents / 100).toLocaleString("en-US")} owed`
+                : "All paid"}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============ MAIN GRID ============ */}
+      <div className="grid gap-5" style={{ gridTemplateColumns: "minmax(0, 1.55fr) minmax(0, 1fr)" }}>
+        {/* OVERDUE TABLE */}
+        <section className="hz-card overflow-hidden">
+          <header className="px-4 py-3 hair-b flex items-center gap-3" style={{ background: "var(--hz-surface-2)" }}>
+            <span className="status-pill" style={{ color: "var(--hz-danger)" }}>
+              <span className="dot" style={{ background: "var(--hz-danger)" }} />
+              Overdue payments
+            </span>
+            <span className="hz-mono text-[11px]" style={{ color: "var(--hz-ink-3)" }}>
+              {overdue.length} {overdue.length === 1 ? "student" : "students"} · €
+              {(overdueTotalCents / 100).toLocaleString("en-US")} owed
+            </span>
+            <Link
+              href="/admin/students?urgency=overdue"
+              className="ml-auto btn-ghost text-[11px]"
+              style={{ padding: "5px 9px" }}
+            >
+              View all
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </Link>
+          </header>
+
+          {overdue.length === 0 ? (
+            <div className="px-4 py-10 text-center text-[12.5px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+              No overdue payments. Nice.
+            </div>
+          ) : (
+            <>
+              <div
+                className="grid grid-cols-12 gap-3 px-4 py-2 hair-b text-[10px] hz-mono uppercase tracking-[.14em]"
+                style={{ color: "var(--hz-ink-3)" }}
+              >
+                <div className="col-span-5">student</div>
+                <div className="col-span-2">batch</div>
+                <div className="col-span-2">amount</div>
+                <div className="col-span-2">age</div>
+                <div className="col-span-1 text-right">act</div>
+              </div>
+              <ul>
+                {overdue.slice(0, 8).map((r, i) => {
+                  const days = Math.abs(r.urgency.daysToDeadline ?? 0);
+                  const railOpacity = Math.max(0.4, 1 - i * 0.15);
+                  return (
+                    <li
+                      key={r.studentId}
+                      className="grid grid-cols-12 gap-3 px-4 py-3 hair-b items-center row-hover"
+                    >
+                      <div className="col-span-5 flex items-center gap-3 min-w-0">
+                        <div className="rail" style={{ background: "var(--hz-danger)", opacity: railOpacity }} />
+                        <span className="avi" style={{ color: "var(--hz-danger)" }}>
+                          {initials(r.studentName)}
+                        </span>
+                        <Link
+                          href={`/admin/students/${r.studentId}`}
+                          className="min-w-0"
+                        >
+                          <div className="font-semibold text-[13.5px] truncate" style={{ color: "var(--hz-ink)" }}>
+                            {r.studentName}
+                          </div>
+                          <div className="text-[11px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+                            enrolled {format(r.enrolledAt, "yyyy-MM-dd")}
+                          </div>
+                        </Link>
+                      </div>
+                      <div className="col-span-2 hz-mono text-[12px]" style={{ color: "var(--hz-primary)" }}>
+                        {r.batchCode}
+                      </div>
+                      <div className="col-span-2 hz-mono font-semibold text-[14px]" style={{ color: "var(--hz-ink)" }}>
+                        €{(r.due / 100).toFixed(2)}
+                      </div>
+                      <div className="col-span-2">
+                        <div className="status-pill" style={{ color: "var(--hz-danger)" }}>
+                          <span className="dot" style={{ background: "var(--hz-danger)" }} />
+                          +{days}d
+                        </div>
+                      </div>
+                      <div className="col-span-1 flex items-center justify-end">
+                        <Link
+                          href={`/admin/students/${r.studentId}`}
+                          className="ibtn"
+                          title="Open student"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="m9 18 6-6-6-6" />
+                          </svg>
+                        </Link>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+              {overdue.length > 8 ? (
+                <footer
+                  className="px-4 py-2.5 hair-t text-[11px] hz-mono"
+                  style={{ background: "var(--hz-surface-2)", color: "var(--hz-ink-3)" }}
+                >
+                  Showing top 8 of {overdue.length}.{" "}
+                  <Link href="/admin/students?urgency=overdue" className="underline">
+                    See all
+                  </Link>
+                </footer>
+              ) : null}
+            </>
+          )}
+        </section>
+
+        {/* RIGHT COLUMN */}
+        <div className="flex flex-col gap-5">
+          {/* DOC EXPIRY */}
+          <section className="hz-card overflow-hidden">
+            <header className="px-4 py-3 hair-b flex items-center gap-3" style={{ background: "var(--hz-surface-2)" }}>
+              <span className="status-pill" style={{ color: "var(--hz-warning)" }}>
+                <span className="dot" style={{ background: "var(--hz-warning)" }} />
+                Documents expiring
+              </span>
+              <span className="hz-mono text-[11px]" style={{ color: "var(--hz-ink-3)" }}>
+                Within 60 days · {expiringStudents.length}{" "}
+                {expiringStudents.length === 1 ? "student" : "students"}
+              </span>
+            </header>
+            {expiringStudents.length === 0 ? (
+              <div className="px-4 py-6 text-center text-[12px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+                No documents expiring soon.
+              </div>
+            ) : (
+              <ul>
+                {expiringStudents.map((s, i) => {
+                  const days = diffDays(today, s.docExpiry);
+                  const opacity = Math.max(0.4, 1 - i * 0.2);
+                  const color = days <= 30 ? "var(--hz-warning)" : "var(--hz-ink-2)";
+                  return (
+                    <li
+                      key={s.id}
+                      className={`flex items-center gap-3 px-4 py-3 row-hover ${i < expiringStudents.length - 1 ? "hair-b" : ""}`}
+                    >
+                      <div className="rail" style={{ background: "var(--hz-warning)", opacity }} />
+                      <span className="avi" style={{ color }}>
+                        {initials(s.fullName)}
+                      </span>
+                      <Link href={`/admin/students/${s.id}`} className="flex-1 min-w-0">
+                        <div className="font-semibold text-[13px] truncate" style={{ color: "var(--hz-ink)" }}>
+                          {s.fullName}
+                        </div>
+                        <div className="text-[11px] mt-0.5 hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+                          {s.docType.toLowerCase().replace("_", " ")} · exp{" "}
+                          {format(s.docExpiry, "yyyy-MM-dd")}
+                        </div>
+                      </Link>
+                      <div className="text-right">
+                        <div className="status-pill" style={{ color }}>
+                          +{days}d
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
+          {/* PENDING ENROLLMENTS */}
+          <section className="hz-card overflow-hidden">
+            <header className="px-4 py-3 hair-b flex items-center gap-3" style={{ background: "var(--hz-surface-2)" }}>
+              <span className="status-pill" style={{ color: "var(--hz-info)" }}>
+                <span className="dot" style={{ background: "var(--hz-info)" }} />
+                Pending enrollments
+              </span>
+              <span className="hz-mono text-[11px]" style={{ color: "var(--hz-ink-3)" }}>
+                No payment yet · {pendingNew.length}{" "}
+                {pendingNew.length === 1 ? "student" : "students"}
+              </span>
+            </header>
+            {pendingNew.length === 0 ? (
+              <div className="px-4 py-6 text-center text-[12px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+                No fresh registrations awaiting first payment.
+              </div>
+            ) : (
+              <ul>
+                {pendingNew.slice(0, 5).map((r, i) => {
+                  const opacity = Math.max(0.4, 1 - i * 0.18);
+                  return (
+                    <li
+                      key={r.studentId}
+                      className={`flex items-center gap-3 px-4 py-3 row-hover ${i < Math.min(5, pendingNew.length) - 1 ? "hair-b" : ""}`}
+                    >
+                      <div className="rail" style={{ background: "var(--hz-info)", opacity }} />
+                      <span className="avi" style={{ color: "var(--hz-info)" }}>
+                        {initials(r.studentName)}
+                      </span>
+                      <Link href={`/admin/students/${r.studentId}`} className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-[13px] truncate" style={{ color: "var(--hz-ink)" }}>
+                            {r.studentName}
+                          </span>
+                          <span className="chip chip-primary">{r.batchCode}</span>
+                        </div>
+                        <div className="text-[11px] mt-0.5 hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+                          enrolled {format(r.enrolledAt, "yyyy-MM-dd")} · awaiting €
+                          {(r.fee / 100).toFixed(0)}
+                        </div>
+                      </Link>
+                      <div className="text-right">
+                        <div className="status-pill" style={{ color: "var(--hz-info)" }}>
+                          +{r.daysSinceEnrolled}d
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
+          {/* ACTIVITY LOG */}
+          {recentAudit.length > 0 ? (
+            <section className="hz-card p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="status-pill" style={{ color: "var(--hz-ink-2)" }}>
+                  <span
+                    className="dot hz-pulse"
+                    style={{ background: "var(--hz-success)", boxShadow: "0 0 6px var(--hz-success)" }}
+                  />
+                  Activity · live
+                </span>
+                <span className="ml-auto text-[10.5px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+                  last 24h
+                </span>
+              </div>
+              <ul className="space-y-1.5 text-[11.5px] hz-mono" style={{ color: "var(--hz-ink-2)" }}>
+                {recentAudit.slice(0, 6).map((a) => {
+                  const sameDay =
+                    diffDays(a.createdAt, today) === 0;
+                  const stamp = sameDay
+                    ? format(a.createdAt, "HH:mm")
+                    : diffDays(a.createdAt, today) === 1
+                      ? "Yest."
+                      : `-${diffDays(a.createdAt, today)}d`;
+                  const tag = a.entityType.toLowerCase();
+                  const color =
+                    a.entityType === "Payment"
+                      ? "var(--hz-primary)"
+                      : a.entityType === "Attendance"
+                        ? "var(--hz-success)"
+                        : a.entityType === "Enrollment"
+                          ? "var(--hz-info)"
+                          : "var(--hz-warning)";
+                  return (
+                    <li key={a.id} className="flex gap-3">
+                      <span style={{ color: "var(--hz-ink-3)", minWidth: 44 }}>{stamp}</span>
+                      <span>
+                        <span style={{ color }}>{tag}</span>
+                        <span style={{ color: "var(--hz-ink-3)" }}>
+                          {" "}
+                          · {a.action.toLowerCase()}
+                          {a.actor ? ` by ${a.actor.name}` : ""}
+                        </span>
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ) : null}
         </div>
       </div>
-
-      {sessions.length > 0 ? (
-        <Section title="Sessions today">
-          <ul className="space-y-1.5">
-            {sessions.map((s) => (
-              <li key={s.id}>
-                <Link
-                  href={`/admin/batches/${s.batch.id}`}
-                  className="flex items-center justify-between gap-2 rounded-lg border bg-white p-3 hover:border-foreground/30"
-                >
-                  <div>
-                    <div className="text-xs text-muted-foreground">
-                      Batch {s.batch.code} · M{s.module.number} · {s.module.name}
-                    </div>
-                    <div className="font-medium">
-                      {s.startTime}–{s.endTime}
-                    </div>
-                  </div>
-                  <Badge variant="outline">{s.status.toLowerCase()}</Badge>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      ) : null}
-
-      <Section
-        title={`Overdue · ${overdue.length}`}
-        emptyText="No overdue payments. Nice."
-        rows={overdue}
-        tint="red"
-      />
-      <Section
-        title={`Due soon · ${dueSoon.length}`}
-        emptyText="Nothing approaching the 4-week deadline."
-        rows={dueSoon}
-        tint="orange"
-      />
-      <Section
-        title={`New registrations · ${newPending.length}`}
-        emptyText="No fresh registrations awaiting first payment."
-        rows={newPending}
-        tint="stone"
-      />
     </div>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  cls,
-}: {
-  label: string;
-  value: number;
-  cls: string;
-}) {
-  return (
-    <div className={`rounded-xl border px-3 py-2.5 ${cls}`}>
-      <div className="text-[10px] uppercase tracking-wide opacity-70">{label}</div>
-      <div className="text-xl font-semibold tabular-nums mt-0.5">{value}</div>
-    </div>
-  );
-}
-
-type SectionRow = {
-  studentId: string;
-  studentName: string;
-  batchCode: string;
-  due: number;
-  fee: number;
-  urgency: ReturnType<typeof computeUrgency>;
-  enrolledAt: Date;
-  daysSinceEnrolled: number;
-  daysUntilStart: number | null;
-};
-
-function Section({
-  title,
-  rows,
-  emptyText,
-  tint,
-  children,
-}: {
-  title: string;
-  rows?: SectionRow[];
-  emptyText?: string;
-  tint?: "red" | "orange" | "stone";
-  children?: React.ReactNode;
-}) {
-  if (children) {
-    return (
-      <section className="space-y-2">
-        <h2 className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
-          {title}
-        </h2>
-        {children}
-      </section>
-    );
-  }
-  if (!rows) return null;
-  if (rows.length === 0) {
-    return (
-      <section className="space-y-2">
-        <h2 className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
-          {title}
-        </h2>
-        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-          {emptyText ?? "—"}
-        </div>
-      </section>
-    );
-  }
-  return (
-    <section className="space-y-2">
-      <h2 className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
-        {title}
-      </h2>
-      <ul className="space-y-1.5">
-        {rows.slice(0, 25).map((r) => (
-          <li key={r.studentId}>
-            <Link
-              href={`/admin/students/${r.studentId}`}
-              className={`flex items-center justify-between gap-3 rounded-lg border p-3 hover:border-foreground/30 bg-white`}
-            >
-              <div className="min-w-0">
-                <div className="font-medium truncate">{r.studentName}</div>
-                <div className="text-xs text-muted-foreground">
-                  Batch {r.batchCode} ·{" "}
-                  {tint === "red"
-                    ? `${Math.abs(r.urgency.daysToDeadline ?? 0)} days overdue`
-                    : tint === "orange"
-                      ? `${r.urgency.daysToDeadline ?? 0} days to deadline`
-                      : r.daysUntilStart != null
-                        ? `Starts in ${r.daysUntilStart} days`
-                        : ""}
-                </div>
-              </div>
-              <div className="text-right text-sm shrink-0">
-                <div className="text-amber-700 font-medium tabular-nums">
-                  €{(r.due / 100).toFixed(2)} due
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  of €{(r.fee / 100).toFixed(2)}
-                </div>
-              </div>
-            </Link>
-          </li>
-        ))}
-      </ul>
-      {rows.length > 25 ? (
-        <p className="text-xs text-muted-foreground">
-          Showing top 25 of {rows.length}.{" "}
-          <Link href={
-            tint === "red"
-              ? "/admin/students?urgency=overdue"
-              : tint === "orange"
-                ? "/admin/students?urgency=due_soon"
-                : "/admin/students?status=PENDING"
-          } className="underline">
-            See all
-          </Link>
-        </p>
-      ) : null}
-    </section>
   );
 }
