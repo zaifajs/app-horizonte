@@ -91,8 +91,8 @@ export default async function TodayPage() {
       where: { status: "ACTIVE", enrolledAt: { gte: oneWeekAgo } },
     }),
     prisma.batch.findMany({
-      where: { status: { in: ["UPCOMING", "ACTIVE"] } },
-      select: { id: true, code: true, status: true },
+      where: { status: { notIn: ["FINISHED", "CANCELLED"] } },
+      select: { id: true, code: true, status: true, startDate: true },
       orderBy: { startDate: "asc" },
     }),
     prisma.student.findMany({
@@ -172,8 +172,10 @@ export default async function TodayPage() {
     ? Math.abs(overdue[0].urgency.daysToDeadline)
     : 0;
 
-  const activeBatches = batches.filter((b) => b.status === "ACTIVE");
-  const upcomingBatches = batches.filter((b) => b.status === "UPCOMING");
+  // A batch is treated as "running" if its start date has passed, regardless
+  // of whether someone has flipped Batch.status from UPCOMING to ACTIVE.
+  const activeBatches = batches.filter((b) => b.startDate <= today);
+  const upcomingBatches = batches.filter((b) => b.startDate > today);
 
   const now = new Date();
   const partOfDay = (() => {

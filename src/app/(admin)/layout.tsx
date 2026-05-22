@@ -31,17 +31,20 @@ export default async function AdminLayout({
         },
       }),
       prisma.enrollment.count({ where: { status: "ACTIVE" } }),
-      prisma.batch.count({ where: { status: "ACTIVE" } }),
+      prisma.batch.count({
+        where: { status: { notIn: ["FINISHED", "CANCELLED"] }, startDate: { lte: today } },
+      }),
       prisma.batch.findMany({
-        where: { status: { in: ["ACTIVE", "UPCOMING"] } },
+        where: { status: { notIn: ["FINISHED", "CANCELLED"] } },
         select: {
           id: true,
           code: true,
           status: true,
+          startDate: true,
           course: { select: { code: true } },
           trainer: { select: { name: true } },
         },
-        orderBy: [{ status: "asc" }, { startDate: "asc" }],
+        orderBy: { startDate: "asc" },
         take: 3,
       }),
     ]);
@@ -71,7 +74,9 @@ export default async function AdminLayout({
         pinnedBatches={pinnedBatches.map((b) => ({
           id: b.id,
           code: b.code,
-          status: b.status as "ACTIVE" | "UPCOMING",
+          // Derive runtime "active vs upcoming" from start date so manually-
+          // stale Batch.status values don't mislabel a running batch.
+          status: b.startDate <= today ? "ACTIVE" : "UPCOMING",
           subtitle: `${b.course.code} · ${b.trainer?.name ?? "unassigned"}`,
         }))}
       />
