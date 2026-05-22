@@ -30,47 +30,96 @@ function diffDays(from: Date, to: Date): number {
   return Math.round((b - a) / dayMs);
 }
 
+type AuditEntry = {
+  entityType: string;
+  action: "CREATE" | "UPDATE" | "DELETE";
+  actorName: string | null;
+  changes: unknown;
+};
+
+function describeAudit(a: AuditEntry): { label: string; tone: string; body: string } {
+  const actor = a.actorName ?? "system";
+  const map: Record<string, { label: string; tone: string }> = {
+    Payment: { label: "Payment", tone: "var(--hz-primary)" },
+    Attendance: { label: "Attendance", tone: "var(--hz-success)" },
+    Enrollment: { label: "Enrollment", tone: "var(--hz-info)" },
+    Batch: { label: "Batch", tone: "var(--hz-warning)" },
+    BatchSession: { label: "Session", tone: "var(--hz-warning)" },
+    Student: { label: "Student", tone: "var(--hz-ink-2)" },
+    User: { label: "User", tone: "var(--hz-accent)" },
+  };
+  const meta = map[a.entityType] ?? { label: a.entityType, tone: "var(--hz-ink-2)" };
+  const verb =
+    a.action === "CREATE" ? "created" : a.action === "UPDATE" ? "updated" : "deleted";
+  return { label: meta.label, tone: meta.tone, body: `${verb} by ${actor}` };
+}
+
 export default async function TodayPage() {
   const today = startOfToday();
   const docExpiryWindow = addDays(today, 60);
 
-  const [enrollments, activeStudentCount, batches, expiringStudents, recentAudit] =
-    await Promise.all([
-      prisma.enrollment.findMany({
-        where: { status: { in: ["PENDING", "ACTIVE"] } },
-        include: {
-          student: { select: { id: true, fullName: true, phone: true } },
-          batch: {
-            select: {
-              id: true,
-              code: true,
-              startDate: true,
-              status: true,
-              course: { select: { feeCents: true } },
-            },
+  const oneWeekAgo = addDays(today, -7);
+
+  const [
+    enrollments,
+    activeStudentCount,
+    newActiveLastWeek,
+    batches,
+    expiringStudents,
+    recentAudit,
+    nextSession,
+  ] = await Promise.all([
+    prisma.enrollment.findMany({
+      where: { status: { in: ["PENDING", "ACTIVE"] } },
+      include: {
+        student: { select: { id: true, fullName: true, phone: true } },
+        batch: {
+          select: {
+            id: true,
+            code: true,
+            startDate: true,
+            status: true,
+            course: { select: { feeCents: true } },
           },
-          payments: { select: { amountCents: true } },
         },
-        orderBy: { enrolledAt: "desc" },
-      }),
-      prisma.enrollment.count({ where: { status: "ACTIVE" } }),
-      prisma.batch.findMany({
-        where: { status: { in: ["UPCOMING", "ACTIVE"] } },
-        select: { id: true, code: true, status: true },
-        orderBy: { startDate: "asc" },
-      }),
-      prisma.student.findMany({
-        where: { docExpiry: { lte: docExpiryWindow, gte: today } },
-        select: { id: true, fullName: true, docType: true, docExpiry: true },
-        orderBy: { docExpiry: "asc" },
-        take: 5,
-      }),
-      prisma.auditLog.findMany({
-        take: 6,
-        orderBy: { createdAt: "desc" },
-        include: { actor: { select: { name: true } } },
-      }),
-    ]);
+        payments: { select: { amountCents: true } },
+      },
+      orderBy: { enrolledAt: "desc" },
+    }),
+    prisma.enrollment.count({ where: { status: "ACTIVE" } }),
+    prisma.enrollment.count({
+      where: { status: "ACTIVE", enrolledAt: { gte: oneWeekAgo } },
+    }),
+    prisma.batch.findMany({
+      where: { status: { in: ["UPCOMING", "ACTIVE"] } },
+      select: { id: true, code: true, status: true },
+      orderBy: { startDate: "asc" },
+    }),
+    prisma.student.findMany({
+      where: { docExpiry: { lte: docExpiryWindow, gte: today } },
+      select: { id: true, fullName: true, docType: true, docExpiry: true },
+      orderBy: { docExpiry: "asc" },
+      take: 5,
+    }),
+    prisma.auditLog.findMany({
+      take: 8,
+      orderBy: { createdAt: "desc" },
+      include: { actor: { select: { name: true } } },
+    }),
+    prisma.batchSession.findFirst({
+      where: { kind: "CLASSROOM", scheduledDate: { gte: today }, status: "SCHEDULED" },
+      orderBy: [{ scheduledDate: "asc" }, { startTime: "asc" }],
+      include: {
+        batch: {
+          select: {
+            code: true,
+            trainer: { select: { name: true } },
+          },
+        },
+        module: { select: { number: true } },
+      },
+    }),
+  ]);
 
   const rows = enrollments.map((e) => {
     const paid = e.payments.reduce((a, p) => a + p.amountCents, 0);
@@ -88,12 +137,14 @@ export default async function TodayPage() {
     return {
       studentId: e.student.id,
       studentName: e.student.fullName,
+      studentPhone: e.student.phone,
       batchCode: e.batch.code,
       batchId: e.batch.id,
       paid,
       fee,
       due,
       urgency,
+      deadlineDate,
       daysSinceEnrolled: diffDays(e.enrolledAt, today),
       enrolledAt: e.enrolledAt,
     };
@@ -125,13 +176,19 @@ export default async function TodayPage() {
   const upcomingBatches = batches.filter((b) => b.status === "UPCOMING");
 
   const now = new Date();
-  const headerStamp = format(now, "EEE · dd MMM yy · HH:mm").toUpperCase();
   const partOfDay = (() => {
     const h = now.getHours();
     if (h < 12) return "morning";
     if (h < 18) return "afternoon";
     return "evening";
   })();
+
+  // Earliest active cohort detail for the descriptive header subline.
+  const earliestActive = activeBatches[0];
+  const nextSessionTime = nextSession?.startTime ?? null;
+  const nextSessionTrainer = nextSession?.batch.trainer?.name ?? null;
+  const totalBatchSlots = activeBatches.length + upcomingBatches.length;
+  const totalBatches = totalBatchSlots || 0;
 
   return (
     <div className="space-y-6">
@@ -158,36 +215,38 @@ export default async function TodayPage() {
             <span style={{ color: "var(--hz-ink-2)", fontWeight: 400 }}>waiting</span>
             <span style={{ color: "var(--hz-ink-3)" }}>.</span>
           </h1>
-          {(overdue.length > 0 || activeBatches.length > 0) ? (
-            <p className="mt-2 text-[13px] hz-mono" style={{ color: "var(--hz-ink-2)" }}>
-              {overdue.length > 0 ? (
-                <>
-                  {overdue.length} overdue
-                  {oldestOverdueDays > 0 ? ` · oldest ${oldestOverdueDays} days` : null}
-                </>
-              ) : null}
-              {overdue.length > 0 && activeBatches.length > 0 ? " · " : null}
-              {activeBatches.length > 0 ? (
-                <>
-                  {activeBatches.length} active{" "}
-                  {activeBatches.length === 1 ? "batch" : "batches"}{" "}
-                  ({activeBatches
-                    .slice(0, 3)
-                    .map((b) => b.code)
-                    .join(", ")})
-                </>
-              ) : null}
-            </p>
-          ) : null}
+          <p className="mt-2 text-[13px] hz-mono" style={{ color: "var(--hz-ink-2)" }}>
+            {overdue.length > 0 ? (
+              <>
+                {overdue.length} overdue
+                {oldestOverdueDays > 0 ? ` past ${oldestOverdueDays} days` : null}
+              </>
+            ) : (
+              "Nothing overdue"
+            )}
+            {earliestActive ? (
+              <>
+                {" · earliest cohort "}
+                <span style={{ color: "var(--hz-primary)" }}>{earliestActive.code}</span>
+              </>
+            ) : null}
+            {nextSessionTime ? (
+              <>
+                {" · next session "}
+                {nextSessionTime}
+                {nextSessionTrainer ? ` · ${nextSessionTrainer}` : null}
+              </>
+            ) : null}
+          </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <span className="chip chip-outline">
-            <span
-              className="dot"
-              style={{ background: "var(--hz-primary)", boxShadow: "0 0 6px var(--hz-primary)" }}
-            />
-            {headerStamp}
-          </span>
+          <button type="button" className="btn-ghost">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 3v18h18" />
+              <path d="m19 9-5 5-4-4-3 3" />
+            </svg>
+            Weekly report
+          </button>
           <Link href="/admin/students/new" className="btn-primary">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -211,6 +270,9 @@ export default async function TodayPage() {
               <span className="stat-num text-[36px]" style={{ color: "var(--hz-ink)" }}>
                 {activeStudentCount}
               </span>
+              {newActiveLastWeek > 0 ? (
+                <span className="chip chip-success">↑ +{newActiveLastWeek} w/w</span>
+              ) : null}
             </div>
             <div className="mt-1 text-[11px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
               across {activeBatches.length} {activeBatches.length === 1 ? "batch" : "batches"}
@@ -224,9 +286,9 @@ export default async function TodayPage() {
               <span className="stat-num text-[36px]" style={{ color: "var(--hz-ink)" }}>
                 {activeBatches.length}
               </span>
-              {upcomingBatches.length > 0 ? (
+              {totalBatches > 0 ? (
                 <span className="hz-mono text-[11px]" style={{ color: "var(--hz-ink-3)" }}>
-                  +{upcomingBatches.length} upcoming
+                  /{totalBatches} cap
                 </span>
               ) : null}
             </div>
@@ -279,8 +341,8 @@ export default async function TodayPage() {
               {overdue.length > 0 ? <span className="chip chip-danger">!</span> : null}
             </div>
             <div className="mt-1 text-[11px] hz-mono" style={{ color: "var(--hz-ink-2)" }}>
-              {overdueTotalCents > 0
-                ? `€${(overdueTotalCents / 100).toLocaleString("en-US")} owed`
+              {oldestOverdueDays > 0
+                ? `Oldest ${oldestOverdueDays} ${oldestOverdueDays === 1 ? "day" : "days"}`
                 : "All paid"}
             </div>
           </div>
@@ -332,6 +394,13 @@ export default async function TodayPage() {
                 {overdue.slice(0, 8).map((r, i) => {
                   const days = Math.abs(r.urgency.daysToDeadline ?? 0);
                   const railOpacity = Math.max(0.4, 1 - i * 0.15);
+                  const installmentLabel =
+                    r.paid === 0
+                      ? "Full fee"
+                      : r.due === r.fee / 2
+                        ? "2nd installment"
+                        : "Balance due";
+                  const cleanPhone = (r.studentPhone || "").replace(/\D+/g, "");
                   return (
                     <li
                       key={r.studentId}
@@ -350,7 +419,7 @@ export default async function TodayPage() {
                             {r.studentName}
                           </div>
                           <div className="text-[11px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
-                            enrolled {format(r.enrolledAt, "yyyy-MM-dd")}
+                            {installmentLabel} · invoiced {format(r.deadlineDate, "yyyy-MM-dd")}
                           </div>
                         </Link>
                       </div>
@@ -366,14 +435,28 @@ export default async function TodayPage() {
                           +{days}d
                         </div>
                       </div>
-                      <div className="col-span-1 flex items-center justify-end">
+                      <div className="col-span-1 flex items-center justify-end gap-1">
+                        {cleanPhone ? (
+                          <a
+                            href={`https://wa.me/${cleanPhone}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ibtn"
+                            title="Send WhatsApp"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                            </svg>
+                          </a>
+                        ) : null}
                         <Link
                           href={`/admin/students/${r.studentId}`}
                           className="ibtn"
-                          title="Open student"
+                          title="Record payment"
                         >
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="m9 18 6-6-6-6" />
+                            <rect x="2" y="5" width="20" height="14" rx="2" />
+                            <path d="M2 10h20" />
                           </svg>
                         </Link>
                       </div>
@@ -381,17 +464,33 @@ export default async function TodayPage() {
                   );
                 })}
               </ul>
-              {overdue.length > 8 ? (
-                <footer
-                  className="px-4 py-2.5 hair-t text-[11px] hz-mono"
-                  style={{ background: "var(--hz-surface-2)", color: "var(--hz-ink-3)" }}
+              <footer
+                className="px-4 py-2.5 hair-t flex items-center justify-between gap-3"
+                style={{ background: "var(--hz-surface-2)" }}
+              >
+                <div className="text-[11px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+                  {overdue.length > 8 ? (
+                    <>
+                      Showing top 8 of {overdue.length}.{" "}
+                      <Link href="/admin/students?urgency=overdue" className="underline">
+                        See all
+                      </Link>
+                    </>
+                  ) : (
+                    "Tip: select multiple rows in Students to send reminders in batch."
+                  )}
+                </div>
+                <Link
+                  href="/admin/students?urgency=overdue"
+                  className="btn-primary text-[11px]"
+                  style={{ padding: "5px 10px" }}
                 >
-                  Showing top 8 of {overdue.length}.{" "}
-                  <Link href="/admin/students?urgency=overdue" className="underline">
-                    See all
-                  </Link>
-                </footer>
-              ) : null}
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                  </svg>
+                  Remind all {overdue.length}
+                </Link>
+              </footer>
             </>
           )}
         </section>
@@ -520,32 +619,24 @@ export default async function TodayPage() {
               </div>
               <ul className="space-y-1.5 text-[11.5px] hz-mono" style={{ color: "var(--hz-ink-2)" }}>
                 {recentAudit.slice(0, 6).map((a) => {
-                  const sameDay =
-                    diffDays(a.createdAt, today) === 0;
+                  const sameDay = diffDays(a.createdAt, today) === 0;
                   const stamp = sameDay
                     ? format(a.createdAt, "HH:mm")
                     : diffDays(a.createdAt, today) === 1
                       ? "Yest."
                       : `-${diffDays(a.createdAt, today)}d`;
-                  const tag = a.entityType.toLowerCase();
-                  const color =
-                    a.entityType === "Payment"
-                      ? "var(--hz-primary)"
-                      : a.entityType === "Attendance"
-                        ? "var(--hz-success)"
-                        : a.entityType === "Enrollment"
-                          ? "var(--hz-info)"
-                          : "var(--hz-warning)";
+                  const desc = describeAudit({
+                    entityType: a.entityType,
+                    action: a.action,
+                    actorName: a.actor?.name ?? null,
+                    changes: a.changes,
+                  });
                   return (
                     <li key={a.id} className="flex gap-3">
                       <span style={{ color: "var(--hz-ink-3)", minWidth: 44 }}>{stamp}</span>
                       <span>
-                        <span style={{ color }}>{tag}</span>
-                        <span style={{ color: "var(--hz-ink-3)" }}>
-                          {" "}
-                          · {a.action.toLowerCase()}
-                          {a.actor ? ` by ${a.actor.name}` : ""}
-                        </span>
+                        <span style={{ color: desc.tone }}>{desc.label}</span>
+                        <span style={{ color: "var(--hz-ink-3)" }}> · {desc.body}</span>
                       </span>
                     </li>
                   );
