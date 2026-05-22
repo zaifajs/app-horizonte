@@ -66,7 +66,7 @@ export default async function TeacherSessionPage({
   const roster = session.batch.enrollments.map((e) => ({
     enrollmentId: e.id,
     studentName: e.student.fullName,
-    state: existing.get(e.id)?.state ?? "PRESENT",
+    state: existing.get(e.id)?.state ?? null,
     notes: existing.get(e.id)?.notes ?? "",
   }));
 

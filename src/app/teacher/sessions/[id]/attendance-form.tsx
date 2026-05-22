@@ -19,7 +19,7 @@ const OPTIONS: Array<{ key: State; label: string; cls: string }> = [
 type Row = {
   enrollmentId: string;
   studentName: string;
-  state: State;
+  state: State | null;
   notes: string;
 };
 
@@ -56,15 +56,21 @@ export function AttendanceForm({
     );
   }
 
+  const unmarked = rows.filter((r) => r.state === null).length;
+
   function save() {
     setError(null);
+    if (unmarked > 0) {
+      setError(`${unmarked} student${unmarked === 1 ? "" : "s"} still unmarked.`);
+      return;
+    }
     startTransition(async () => {
       const result = await markAttendanceAction({
         sessionId,
         notes: notes.trim() || null,
         entries: rows.map((r) => ({
           enrollmentId: r.enrollmentId,
-          state: r.state,
+          state: r.state as State,
           notes: r.notes.trim() || null,
         })),
       });
@@ -101,6 +107,11 @@ export function AttendanceForm({
         <span className="ml-auto text-xs text-muted-foreground tabular-nums">
           {counts.PRESENT} present · {counts.LATE + counts.LEFT_EARLY} partial ·{" "}
           {counts.EXCUSED_ABSENCE + counts.UNEXCUSED_ABSENCE} absent
+          {unmarked > 0 ? (
+            <span className="ml-1 font-medium text-amber-700">
+              · {unmarked} unmarked
+            </span>
+          ) : null}
         </span>
       </div>
 
@@ -132,7 +143,7 @@ export function AttendanceForm({
         <p className="text-xs text-muted-foreground">
           {savedAt ? `Saved at ${savedAt.toLocaleTimeString()}` : null}
         </p>
-        <Button onClick={save} disabled={pending}>
+        <Button onClick={save} disabled={pending || unmarked > 0}>
           {pending ? "Saving…" : "Save attendance"}
         </Button>
       </div>
@@ -150,8 +161,15 @@ function AttendanceCard({
   onNote: (note: string) => void;
 }) {
   const [noteOpen, setNoteOpen] = useState(row.notes.length > 0);
+  const unmarked = row.state === null;
   return (
-    <div className="rounded-lg border bg-white p-2.5 space-y-1.5">
+    <div
+      className={`rounded-lg border p-2.5 space-y-1.5 ${
+        unmarked
+          ? "border-dashed border-amber-300 bg-amber-50/40"
+          : "bg-white"
+      }`}
+    >
       <div className="flex items-center justify-between gap-2">
         <div className="font-medium text-sm truncate">{row.studentName}</div>
         <button
