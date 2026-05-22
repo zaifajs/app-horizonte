@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   addPaymentAction,
   deletePaymentAction,
@@ -44,6 +45,7 @@ export function EnrollmentPayments({
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const totalPaidCents = payments.reduce((a, p) => a + p.amountCents, 0);
   const feeEur = feeCents / 100;
@@ -85,11 +87,13 @@ export function EnrollmentPayments({
     });
   }
 
-  function remove(paymentId: string) {
-    if (!confirm("Delete this payment? Activation state will not auto-revert.")) return;
+  function remove() {
+    if (!confirmDelete) return;
+    const paymentId = confirmDelete;
     startTransition(async () => {
       const result = await deletePaymentAction({ paymentId });
       if (!result.ok && result.error) setError(result.error);
+      setConfirmDelete(null);
       router.refresh();
     });
   }
@@ -156,7 +160,7 @@ export function EnrollmentPayments({
                 ) : null}
                 <button
                   type="button"
-                  onClick={() => remove(p.id)}
+                  onClick={() => setConfirmDelete(p.id)}
                   className="text-muted-foreground hover:text-destructive underline"
                   disabled={pending}
                 >
@@ -167,6 +171,17 @@ export function EnrollmentPayments({
           ))}
         </ul>
       ) : null}
+
+      <ConfirmDialog
+        open={confirmDelete !== null}
+        onOpenChange={(o) => !o && setConfirmDelete(null)}
+        title="Delete this payment?"
+        description="Activation state will not auto-revert. If the enrollment was activated by this payment, you may need to deactivate it manually."
+        confirmLabel="Delete payment"
+        destructive
+        pending={pending}
+        onConfirm={remove}
+      />
 
       <div>
         <Dialog open={open} onOpenChange={setOpen}>
