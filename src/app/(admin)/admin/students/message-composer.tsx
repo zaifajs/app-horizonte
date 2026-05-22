@@ -15,6 +15,7 @@ import {
 } from "@/lib/actions/messages";
 import type { Locale } from "@/i18n/routing";
 import type { BulkRow } from "./bulk-whatsapp-queue";
+import { Avatar } from "@/components/ui/avatar";
 
 const LOCALES: { key: Locale; label: string }[] = [
   { key: "pt", label: "PT" },
@@ -32,18 +33,6 @@ const TEMPLATE_DOTS: Record<TemplateKey, string> = {
 };
 
 type RowState = "idle" | "sending" | "sent" | "error";
-
-function initials(name: string): string {
-  return (
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((p) => p[0])
-      .join("")
-      .toUpperCase() || "??"
-  );
-}
 
 function majorityLocale(rows: BulkRow[]): Locale {
   const counts = new Map<Locale, number>();
@@ -233,19 +222,33 @@ export function MessageComposer({
   if (!open) return null;
 
   return (
-    <aside
-      className="hair-l flex flex-col print:hidden"
-      style={{
-        position: "fixed",
-        top: 0,
-        right: 0,
-        bottom: 0,
-        width: 520,
-        background: "var(--hz-surface)",
-        zIndex: 40,
-        boxShadow: "-16px 0 40px -16px rgba(0,0,0,0.6)",
-      }}
-    >
+    <>
+      {/* Backdrop — click anywhere outside the panel closes it */}
+      <div
+        onClick={onClose}
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(11,14,20,0.45)",
+          backdropFilter: "blur(2px)",
+          zIndex: 39,
+        }}
+      />
+      <aside
+        className="hair-l flex flex-col print:hidden"
+        style={{
+          position: "fixed",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: 520,
+          background: "var(--hz-surface)",
+          zIndex: 40,
+          boxShadow: "-16px 0 40px -16px rgba(0,0,0,0.6)",
+          textAlign: "left",
+        }}
+      >
       {/* Header */}
       <header className="hair-b px-4 py-3 flex items-center gap-2">
         <span className="status-pill" style={{ color: "var(--hz-success)" }}>
@@ -253,7 +256,7 @@ export function MessageComposer({
             className="dot"
             style={{ background: "var(--hz-success)", boxShadow: "0 0 6px var(--hz-success)" }}
           />
-          WhatsApp queue
+          Send message
         </span>
         <span className="hz-mono text-xs" style={{ color: "var(--hz-ink-3)" }}>
           {recipients.length} recipient{recipients.length === 1 ? "" : "s"}
@@ -281,7 +284,7 @@ export function MessageComposer({
                   className="flex items-center gap-2.5 rounded-md p-2"
                   style={{ background: "var(--hz-surface-2)", border: "1px solid var(--hz-line)" }}
                 >
-                  <span className="avi">{initials(r.fullName)}</span>
+                  <Avatar name={r.fullName} />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold truncate">{r.fullName}</div>
                     <div className="hz-mono text-xs" style={{ color: "var(--hz-ink-3)" }}>
@@ -518,6 +521,7 @@ export function MessageComposer({
           {pending ? "Sending…" : `Send to ${recipients.length}`}
         </button>
       </footer>
-    </aside>
+      </aside>
+    </>
   );
 }

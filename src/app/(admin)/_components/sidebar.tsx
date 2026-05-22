@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { NavItem } from "./nav-item";
+import { Avatar } from "@/components/ui/avatar";
 
 const COLLAPSE_KEY = "horizonte.sidebar.collapsed";
 
@@ -62,14 +63,6 @@ export function Sidebar({
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  const initials =
-    user.name
-      ?.split(/\s+/)
-      .map((p) => p[0])
-      .filter(Boolean)
-      .slice(0, 2)
-      .join("")
-      .toUpperCase() || "??";
 
   return (
     <aside
@@ -318,7 +311,7 @@ export function Sidebar({
           style={collapsed ? undefined : { background: "var(--hz-surface-2)" }}
           title="Sign out"
         >
-          <span className="avi">{initials}</span>
+          <Avatar name={user.name} />
           {!collapsed ? (
             <>
               <span className="text-left leading-tight flex-1 min-w-0">

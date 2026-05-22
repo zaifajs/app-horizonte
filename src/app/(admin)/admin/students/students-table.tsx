@@ -19,6 +19,7 @@ import {
 import type { BulkRow } from "./bulk-whatsapp-queue";
 import { SelectionRibbon } from "./selection-ribbon";
 import { MessageComposer } from "./message-composer";
+import { Avatar } from "@/components/ui/avatar";
 
 const RAIL_COLOR: Record<Urgency, string> = {
   overdue: "var(--hz-danger)",
@@ -38,24 +39,6 @@ const ROW_TINT_CLASS: Record<Urgency, string> = {
   withdrawn: "",
 };
 
-const URGENCY_AVATAR_STYLE: Partial<Record<Urgency, { color: string; bg: string; border: string }>> = {
-  overdue: {
-    color: "var(--hz-danger)",
-    bg: "var(--hz-danger-50)",
-    border: "rgba(248,113,113,0.25)",
-  },
-  partial: {
-    color: "var(--hz-warning)",
-    bg: "var(--hz-warning-50)",
-    border: "rgba(244,181,63,0.25)",
-  },
-  due_soon: {
-    color: "var(--hz-accent)",
-    bg: "var(--hz-accent-50)",
-    border: "rgba(255,122,69,0.25)",
-  },
-};
-
 const PAYMENT_PILL: Record<Urgency, { label: string; color: string }> = {
   overdue: { label: "OVERDUE", color: "var(--hz-danger)" },
   partial: { label: "PARTIAL", color: "var(--hz-warning)" },
@@ -64,18 +47,6 @@ const PAYMENT_PILL: Record<Urgency, { label: string; color: string }> = {
   pre_start: { label: "AWAITING", color: "var(--hz-info)" },
   withdrawn: { label: "WITHDRAWN", color: "var(--hz-muted)" },
 };
-
-function initials(name: string): string {
-  return (
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((p) => p[0])
-      .join("")
-      .toUpperCase() || "??"
-  );
-}
 
 function daysAgo(date: Date, now: Date): number {
   const dayMs = 86_400_000;
@@ -251,7 +222,6 @@ function StudentRowEl({
   const { isSelected } = useSelection();
   const selected = isSelected(row.id);
   const tintClass = ROW_TINT_CLASS[row.urgency] ?? "";
-  const aviStyle = URGENCY_AVATAR_STYLE[row.urgency];
   const pill = PAYMENT_PILL[row.urgency];
   const railColor = RAIL_COLOR[row.urgency];
   const railOpacity = row.urgency === "paid" ? 0.6 : 1;
@@ -290,20 +260,7 @@ function StudentRowEl({
       </td>
       <td>
         <div className="flex items-center gap-2.5">
-          <span
-            className="avi"
-            style={
-              aviStyle
-                ? {
-                    color: aviStyle.color,
-                    background: aviStyle.bg,
-                    borderColor: aviStyle.border,
-                  }
-                : undefined
-            }
-          >
-            {initials(row.fullName)}
-          </span>
+          <Avatar name={row.fullName} />
           <div className="min-w-0">
             <a
               href={`/admin/students/${row.id}`}

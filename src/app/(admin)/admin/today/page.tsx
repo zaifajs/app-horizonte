@@ -5,24 +5,13 @@ import {
   computeUrgency,
   PAYMENT_DEADLINE_DAYS,
 } from "@/lib/students/filters";
+import { Avatar } from "@/components/ui/avatar";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Today · Horizonte CRM" };
 
 const dayMs = 86_400_000;
-
-function initials(name: string): string {
-  return (
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((p) => p[0])
-      .join("")
-      .toUpperCase() || "??"
-  );
-}
 
 function diffDays(from: Date, to: Date): number {
   const a = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate());
@@ -410,9 +399,7 @@ export default async function TodayPage() {
                     >
                       <div className="col-span-5 flex items-center gap-3 min-w-0">
                         <div className="rail" style={{ background: "var(--hz-danger)", opacity: railOpacity }} />
-                        <span className="avi" style={{ color: "var(--hz-danger)" }}>
-                          {initials(r.studentName)}
-                        </span>
+                        <Avatar name={r.studentName} />
                         <Link
                           href={`/admin/students/${r.studentId}`}
                           className="min-w-0"
@@ -527,9 +514,7 @@ export default async function TodayPage() {
                       className={`flex items-center gap-3 px-4 py-3 row-hover ${i < expiringStudents.length - 1 ? "hair-b" : ""}`}
                     >
                       <div className="rail" style={{ background: "var(--hz-warning)", opacity }} />
-                      <span className="avi" style={{ color }}>
-                        {initials(s.fullName)}
-                      </span>
+                      <Avatar name={s.fullName} />
                       <Link href={`/admin/students/${s.id}`} className="flex-1 min-w-0">
                         <div className="font-semibold text-base truncate" style={{ color: "var(--hz-ink)" }}>
                           {s.fullName}
@@ -577,9 +562,7 @@ export default async function TodayPage() {
                       className={`flex items-center gap-3 px-4 py-3 row-hover ${i < Math.min(5, pendingNew.length) - 1 ? "hair-b" : ""}`}
                     >
                       <div className="rail" style={{ background: "var(--hz-info)", opacity }} />
-                      <span className="avi" style={{ color: "var(--hz-info)" }}>
-                        {initials(r.studentName)}
-                      </span>
+                      <Avatar name={r.studentName} />
                       <Link href={`/admin/students/${r.studentId}`} className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-base truncate" style={{ color: "var(--hz-ink)" }}>

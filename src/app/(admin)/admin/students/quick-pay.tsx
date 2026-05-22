@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addPaymentAction } from "@/lib/actions/payments";
 import { sendEmailToStudentAction } from "@/lib/actions/messages";
+import { Avatar } from "@/components/ui/avatar";
 
 type Method = "BANK" | "CASH";
 
@@ -145,15 +146,6 @@ export function QuickPay({
     return map[urgencyTone ?? "neutral"];
   })();
 
-  const initials =
-    studentName
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((p) => p[0])
-      .join("")
-      .toUpperCase() || "??";
-
   // Quick-amount presets
   const presets: { value: number; label: string }[] = [];
   const remainingEur = remainingCents / 100;
@@ -231,19 +223,20 @@ export function QuickPay({
           >
             {/* Header */}
             <header className="px-5 py-4 hair-b flex items-center gap-3">
-              <span
-                className="avi"
-                style={{
-                  width: 40,
-                  height: 40,
-                  fontSize: "0.875rem",
-                  color: aviStyle.c,
-                  background: aviStyle.bg,
-                  borderColor: aviStyle.border,
-                }}
-              >
-                {initials}
-              </span>
+              <Avatar
+                name={studentName}
+                size={40}
+                fontSize="0.875rem"
+                tone={
+                  urgencyTone === "danger"
+                    ? "danger"
+                    : urgencyTone === "warning"
+                      ? "warning"
+                      : urgencyTone === "due"
+                        ? "accent"
+                        : undefined
+                }
+              />
               <div className="flex-1 min-w-0 text-left">
                 <div
                   className="text-xs hz-mono uppercase tracking-[.16em]"
