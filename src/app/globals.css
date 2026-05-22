@@ -576,6 +576,22 @@
     width: 100%;
   }
 
+  /* Progress bar (used in batches list, payment progress) */
+  .pbar {
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+    display: block;
+  }
+  .pbar > span {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--hz-primary);
+    transition: width 0.2s ease;
+  }
+
   /* Quick amount preset pill */
   .quick-amt {
     display: inline-flex;
