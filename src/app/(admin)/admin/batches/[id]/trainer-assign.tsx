@@ -32,6 +32,14 @@ export function TrainerAssign({
 
   const dirty = (selected === UNASSIGNED ? null : selected) !== currentTrainerId;
 
+  // If the currently-assigned trainer isn't in the option list (inactive,
+  // role changed, or deleted user), inject a stub so Radix Select doesn't
+  // render the raw UUID in the trigger.
+  const renderedTrainers =
+    currentTrainerId && !trainers.some((t) => t.id === currentTrainerId)
+      ? [{ id: currentTrainerId, name: "Unknown / inactive trainer" }, ...trainers]
+      : trainers;
+
   function onSave() {
     setError(null);
     startTransition(async () => {
@@ -57,7 +65,7 @@ export function TrainerAssign({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={UNASSIGNED}>Unassigned</SelectItem>
-            {trainers.map((t) => (
+            {renderedTrainers.map((t) => (
               <SelectItem key={t.id} value={t.id}>
                 {t.name}
               </SelectItem>
