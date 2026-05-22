@@ -45,9 +45,14 @@ export default async function TeacherBatchPage({
             {batch.course.code} · {batch.course.name} · {batch._count.enrollments} enrolled
           </p>
         </div>
-        <Link href="/teacher">
-          <Button variant="outline">Back</Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href={`/teacher/batches/${batch.id}/attendance`}>
+            <Button variant="outline">Attendance</Button>
+          </Link>
+          <Link href="/teacher">
+            <Button variant="outline">Back</Button>
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">

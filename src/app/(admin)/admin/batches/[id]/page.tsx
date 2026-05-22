@@ -111,6 +111,9 @@ export default async function BatchDetailPage({
           >
             <Button variant="outline">Roster</Button>
           </Link>
+          <Link href={`/admin/batches/${batch.id}/attendance`}>
+            <Button variant="outline">Attendance</Button>
+          </Link>
           <Link href={`/admin/batches/${batch.id}?view=table`}>
             <Button variant="outline">Compact</Button>
           </Link>
