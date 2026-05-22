@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1280" />
+<title>Batches · Horizonte CRM</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#B6FF3C; --primary-600:#9DE61A; --primary-50:rgba(182,255,60,.10);
+    --bg:#0B0E14; --surface:#131722; --surface-2:#171C2A; --line:#212838; --line-2:#1A1F2D;
+    --ink:#E6E9EF; --ink-2:#9BA3B4; --ink-3:#5C6478;
+    --success:#34D399; --success-50:rgba(52,211,153,.12);
+    --warning:#F4B53F; --warning-50:rgba(244,181,63,.12);
+    --info:#60A5FA;    --info-50:rgba(96,165,250,.12);
+    --muted:#5C6478;   --muted-50:rgba(92,100,120,.18);
+  }
+  html,body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .font-disp{font-family:'Space Grotesk',ui-sans-serif,sans-serif;letter-spacing:-.02em}
+  .font-mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+  .hair-b{border-bottom:1px solid var(--line)} .hair-t{border-top:1px solid var(--line)} .hair-r{border-right:1px solid var(--line)}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;color:var(--ink-2);font-weight:500;font-size:13px}
+  .nav-item:hover{background:rgba(255,255,255,.04);color:var(--ink)}
+  .nav-item.active{background:var(--surface-2);color:var(--ink);position:relative}
+  .nav-item.active::before{content:"";position:absolute;left:-12px;top:7px;bottom:7px;width:2px;background:var(--primary);border-radius:0 2px 2px 0}
+  .kbd{font-family:'IBM Plex Mono',monospace;font-size:10.5px;border:1px solid var(--line);padding:1px 5px;border-radius:3px;color:var(--ink-3);background:var(--surface-2)}
+  .chip{display:inline-flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;line-height:1;padding:3px 6px;border-radius:3px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+  .chip-success{background:var(--success-50);color:var(--success)}
+  .chip-warning{background:var(--warning-50);color:var(--warning)}
+  .chip-muted{background:var(--muted-50);color:var(--ink-2)}
+  .chip-primary{background:var(--primary-50);color:var(--primary)}
+  .chip-danger{background:rgba(248,113,113,.12);color:#F87171}
+  .chip-outline{background:transparent;color:var(--ink-2);border:1px solid var(--line)}
+  .dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:8px}
+  .ibtn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:5px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line)}
+  .btn-primary{background:var(--primary);color:#0B0E14;padding:8px 13px;border-radius:6px;font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:6px}
+  .btn-ghost{background:var(--surface-2);color:var(--ink-2);padding:7px 11px;border-radius:6px;font-weight:500;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line)}
+  .avi{width:28px;height:28px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;color:var(--ink);background:var(--surface-2);border:1px solid var(--line)}
+  .status-pill{display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+  .stbl{width:100%;border-collapse:separate;border-spacing:0}
+  .stbl thead th{background:var(--surface-2);text-align:left;padding:9px 14px;font-family:'IBM Plex Mono';font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--ink-3);font-weight:600;border-bottom:1px solid var(--line)}
+  .stbl tbody td{padding:13px 14px;border-bottom:1px solid var(--line-2);vertical-align:middle;font-size:13px}
+  .stbl tbody tr:hover td{background:rgba(255,255,255,.025)}
+  .pbar{height:4px;border-radius:2px;background:var(--surface-2);overflow:hidden}
+  .pbar > span{display:block;height:100%;border-radius:2px}
+  .seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:3px;gap:2px}
+  .seg button{padding:5px 10px;border-radius:5px;font-size:12px;color:var(--ink-2);display:inline-flex;align-items:center;gap:6px;font-weight:500}
+  .seg button.on{background:var(--surface-2);color:var(--ink);font-weight:600;box-shadow:inset 0 0 0 1px var(--line)}
+  .seg .ct{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--ink-3)}
+  .inp{display:flex;align-items:center;gap:7px;height:34px;padding:0 11px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:13px}
+  .inp input{outline:none;border:none;background:transparent;flex:1;color:var(--ink)}
+  .inp input::placeholder{color:var(--ink-3)}
+</style>
+</head>
+<body class="min-h-screen">
+<div class="flex min-h-screen">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="hair-r flex flex-col" style="width:232px;background:var(--surface);position:sticky;top:0;height:100vh">
+    <div class="px-4 pt-4 pb-4 hair-b">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-md flex items-center justify-center" style="background:var(--primary)"><span class="font-mono text-[12px] font-bold" style="color:#0B0E14">nh</span></div>
+        <div class="leading-tight">
+          <div class="font-mono text-[13px] font-semibold">horizonte<span style="color:var(--primary)">/</span></div>
+          <div class="text-[10px] uppercase tracking-[.18em] font-mono" style="color:var(--ink-3)">admin · v26.05</div>
+        </div>
+      </div>
+    </div>
+    <div class="px-3 pt-3 pb-2"><button class="w-full flex items-center gap-2 h-8 px-2 rounded-md text-[12.5px]" style="border:1px solid var(--line);color:var(--ink-3);background:var(--bg)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span class="font-mono">Search...</span><span class="ml-auto kbd">⌘K</span></button></div>
+    <div class="px-4 pt-3 pb-1.5"><div class="text-[9.5px] uppercase tracking-[.18em] font-mono font-semibold" style="color:var(--ink-3)">Workspace</div></div>
+    <nav class="px-3 flex flex-col gap-0.5">
+      <a class="nav-item" href="today-v3.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Today<span class="ml-auto chip chip-danger">3</span></a>
+      <a class="nav-item" href="students.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Students<span class="ml-auto font-mono text-[10.5px]" style="color:var(--ink-3)">87</span></a>
+      <a class="nav-item active" href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 4v4"/><path d="M16 4v4"/></svg>Batches<span class="ml-auto font-mono text-[10.5px]" style="color:var(--ink-3)">4</span></a>
+      <a class="nav-item" href="users.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Users</a>
+    </nav>
+    <div class="mt-auto p-3 hair-t"><button class="w-full flex items-center gap-2 p-1.5 rounded-md" style="background:var(--surface-2)"><span class="avi">HA</span><span class="text-left leading-tight flex-1 min-w-0"><span class="block text-[12.5px] font-semibold truncate font-mono">Huzaifa Ahmed</span><span class="block text-[10px] truncate font-mono" style="color:var(--ink-3)">Admin</span></span></button></div>
+  </aside>
+
+  <main class="flex-1 flex flex-col min-w-0">
+    <header class="hair-b sticky top-0 z-10" style="background:rgba(11,14,20,.85);backdrop-filter:blur(8px)">
+      <div class="px-8 h-12 flex items-center gap-3">
+        <nav class="flex items-center gap-2 text-[12.5px] font-mono" style="color:var(--ink-3)"><a href="#" class="hover:text-white">admin</a><span>/</span><span style="color:var(--ink)">batches</span></nav>
+        <span class="chip chip-outline ml-2"><span class="dot" style="background:var(--primary)"></span>4 batches · 2 active</span>
+      </div>
+    </header>
+
+    <div class="px-8 py-7 max-w-[1320px] w-full">
+
+      <section class="flex items-end justify-between gap-6 mb-6">
+        <div>
+          <div class="text-[11px] font-mono uppercase tracking-[.18em]" style="color:var(--ink-3)">Cronograma</div>
+          <h1 class="font-disp text-[32px] font-medium mt-1">Batches</h1>
+          <p class="mt-1.5 text-[13px] font-mono" style="color:var(--ink-2)">2 active · 1 upcoming · 1 finished</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="btn-ghost"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export</button>
+          <button class="btn-primary"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New batch</button>
+        </div>
+      </section>
+
+      <div class="mb-4 flex items-center gap-2">
+        <div class="seg">
+          <button class="on">All <span class="ct">4</span></button>
+          <button>Active <span class="ct">2</span></button>
+          <button>Upcoming <span class="ct">1</span></button>
+          <button>Finished <span class="ct">1</span></button>
+        </div>
+        <label class="inp ml-auto" style="width:280px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ink-3)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input placeholder="Search code, course, trainer…" />
+        </label>
+      </div>
+
+      <div class="card overflow-hidden">
+        <table class="stbl">
+          <thead>
+            <tr>
+              <th style="width:90px">Code</th>
+              <th>Course</th>
+              <th style="width:200px">Trainer</th>
+              <th style="width:130px">Starts</th>
+              <th style="width:200px">Enrolled</th>
+              <th style="width:120px">Status</th>
+              <th style="width:80px" class="text-right">Open</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- M32 active -->
+            <tr>
+              <td><a href="batch-detail.html" class="font-mono text-[14px] font-semibold" style="color:var(--primary)">M32</a></td>
+              <td>
+                <div class="font-medium">PLA</div>
+                <div class="text-[11.5px] font-mono" style="color:var(--ink-3)">Português Língua de Acolhimento · A2</div>
+              </td>
+              <td>
+                <div class="flex items-center gap-2"><span class="avi" style="color:var(--info);background:var(--info-50);border-color:rgba(96,165,250,.25)">PS</span><span>Pedro Santos</span></div>
+              </td>
+              <td class="font-mono text-[12.5px]">2026-05-18<br/><span class="text-[10.5px]" style="color:var(--ink-3)">Mon · 4 days ago</span></td>
+              <td>
+                <div class="flex items-baseline gap-2"><span class="font-mono text-[14px] font-semibold">10</span><span class="font-mono text-[11px]" style="color:var(--ink-3)">/ 25</span></div>
+                <div class="pbar mt-1.5" style="width:160px"><span style="width:40%;background:var(--primary)"></span></div>
+              </td>
+              <td><span class="status-pill" style="color:var(--success)"><span class="dot" style="background:var(--success)"></span>Active</span></td>
+              <td class="text-right"><a href="batch-detail.html" class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></a></td>
+            </tr>
+
+            <!-- M31 active -->
+            <tr>
+              <td><a href="#" class="font-mono text-[14px] font-semibold" style="color:var(--primary)">M31</a></td>
+              <td><div class="font-medium">PLA</div><div class="text-[11.5px] font-mono" style="color:var(--ink-3)">Português Língua de Acolhimento · A2</div></td>
+              <td><div class="flex items-center gap-2"><span class="avi" style="color:var(--info);background:var(--info-50);border-color:rgba(96,165,250,.25)">MS</span><span>Maria Sousa</span></div></td>
+              <td class="font-mono text-[12.5px]">2026-04-20<br/><span class="text-[10.5px]" style="color:var(--ink-3)">Mon · 32 days ago</span></td>
+              <td>
+                <div class="flex items-baseline gap-2"><span class="font-mono text-[14px] font-semibold">22</span><span class="font-mono text-[11px]" style="color:var(--ink-3)">/ 25</span></div>
+                <div class="pbar mt-1.5" style="width:160px"><span style="width:88%;background:var(--success)"></span></div>
+              </td>
+              <td><span class="status-pill" style="color:var(--success)"><span class="dot" style="background:var(--success)"></span>Active</span></td>
+              <td class="text-right"><a class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></a></td>
+            </tr>
+
+            <!-- J5 upcoming -->
+            <tr>
+              <td><a href="#" class="font-mono text-[14px] font-semibold" style="color:var(--primary)">J5</a></td>
+              <td><div class="font-medium">PLA</div><div class="text-[11.5px] font-mono" style="color:var(--ink-3)">Português Língua de Acolhimento · A2</div></td>
+              <td>
+                <button class="text-[13px] inline-flex items-center gap-1.5 px-2 py-1 rounded" style="border:1px dashed var(--line);color:var(--warning)">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="22" y1="11" x2="16" y2="11"/><line x1="19" y1="8" x2="19" y2="14"/></svg>
+                  Assign trainer
+                </button>
+              </td>
+              <td class="font-mono text-[12.5px]">2026-06-08<br/><span class="text-[10.5px]" style="color:var(--ink-3)">Mon · in 17 days</span></td>
+              <td>
+                <div class="flex items-baseline gap-2"><span class="font-mono text-[14px] font-semibold">2</span><span class="font-mono text-[11px]" style="color:var(--ink-3)">/ 25</span></div>
+                <div class="pbar mt-1.5" style="width:160px"><span style="width:8%;background:var(--warning)"></span></div>
+              </td>
+              <td><span class="status-pill" style="color:var(--warning)"><span class="dot" style="background:var(--warning)"></span>Upcoming</span></td>
+              <td class="text-right"><a class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></a></td>
+            </tr>
+
+            <!-- J3 finished -->
+            <tr style="opacity:.7">
+              <td><a href="#" class="font-mono text-[14px] font-semibold" style="color:var(--ink-2)">J3</a></td>
+              <td><div class="font-medium" style="color:var(--ink-2)">PLA</div><div class="text-[11.5px] font-mono" style="color:var(--ink-3)">Português Língua de Acolhimento · A2</div></td>
+              <td><div class="flex items-center gap-2"><span class="avi">MS</span><span style="color:var(--ink-2)">Maria Sousa</span></div></td>
+              <td class="font-mono text-[12.5px]" style="color:var(--ink-2)">2026-03-02<br/><span class="text-[10.5px]" style="color:var(--ink-3)">finished 26 Apr</span></td>
+              <td>
+                <div class="flex items-baseline gap-2" style="color:var(--ink-2)"><span class="font-mono text-[14px] font-semibold">18</span><span class="font-mono text-[11px]" style="color:var(--ink-3)">/ 25</span></div>
+                <div class="pbar mt-1.5" style="width:160px"><span style="width:72%;background:var(--ink-3)"></span></div>
+              </td>
+              <td><span class="status-pill" style="color:var(--ink-3)"><span class="dot" style="background:var(--ink-3)"></span>Finished</span></td>
+              <td class="text-right"><a class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mt-8 text-[10.5px] font-mono flex items-center gap-2" style="color:var(--ink-3)">
+        <span class="kbd">N</span> new batch · <span class="kbd">/</span> search · <span class="ml-auto">Horizonte Admin · v26.05.22</span>
+      </div>
+    </div>
+  </main>
+</div>
+  <script src="sidebar-collapse.js"></script>
+</body>
+</html>
