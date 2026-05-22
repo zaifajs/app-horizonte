@@ -1,9 +1,8 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { MessageSquare, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { BulkWhatsAppQueue, type BulkRow } from "./bulk-whatsapp-queue";
 
 type Ctx = {
@@ -112,11 +111,22 @@ export function SelectionProvider({
 
 export function SelectAllCheckbox({ rowIds }: { rowIds: string[] }) {
   const { selected, toggleAll } = useSelection();
-  const allSelected = rowIds.length > 0 && rowIds.every((id) => selected.has(id));
+  const ref = useRef<HTMLInputElement>(null);
+  const selectedCount = rowIds.filter((id) => selected.has(id)).length;
+  const allSelected = rowIds.length > 0 && selectedCount === rowIds.length;
+  const indeterminate = selectedCount > 0 && selectedCount < rowIds.length;
+
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = indeterminate;
+  }, [indeterminate]);
+
   return (
-    <Checkbox
+    <input
+      ref={ref}
+      type="checkbox"
+      className={`hz-cb ${indeterminate ? "indeterminate" : ""}`}
       checked={allSelected}
-      onCheckedChange={() => toggleAll(rowIds)}
+      onChange={() => toggleAll(rowIds)}
       aria-label="Select all"
     />
   );
@@ -125,12 +135,14 @@ export function SelectAllCheckbox({ rowIds }: { rowIds: string[] }) {
 export function RowCheckbox({ id }: { id: string }) {
   const { isSelected, toggle } = useSelection();
   return (
-    <span data-no-navigate onClick={(e) => e.stopPropagation()}>
-      <Checkbox
-        checked={isSelected(id)}
-        onCheckedChange={() => toggle(id)}
-        aria-label="Select row"
-      />
-    </span>
+    <input
+      type="checkbox"
+      className="hz-cb"
+      data-no-navigate
+      checked={isSelected(id)}
+      onChange={() => toggle(id)}
+      onClick={(e) => e.stopPropagation()}
+      aria-label="Select row"
+    />
   );
 }

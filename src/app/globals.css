@@ -368,6 +368,154 @@
       0 0 0 1px rgba(182, 255, 60, 0.15),
       0 0 24px -8px rgba(182, 255, 60, 0.4);
   }
+
+  /* Checkbox (V3 lime) */
+  .hz-cb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--hz-ink-3);
+    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    background: transparent;
+    transition: border-color 0.12s, background 0.12s;
+  }
+  .hz-cb:hover { border-color: var(--hz-ink-2); }
+  .hz-cb:checked {
+    background: var(--hz-primary);
+    border-color: var(--hz-primary-600);
+  }
+  .hz-cb:checked::after {
+    content: "";
+    width: 10px;
+    height: 10px;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%230B0E14' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='3,8 7,12 13,4'/></svg>") center/contain no-repeat;
+  }
+  .hz-cb.indeterminate {
+    background: var(--hz-primary);
+    border-color: var(--hz-primary-600);
+  }
+  .hz-cb.indeterminate::after {
+    content: "";
+    width: 10px;
+    height: 2px;
+    background: #0B0E14;
+    border-radius: 1px;
+  }
+
+  /* Data table */
+  .stbl {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .stbl thead th {
+    position: sticky;
+    top: 0;
+    background: var(--hz-surface-2);
+    text-align: left;
+    padding: 10px 14px;
+    font-family: var(--font-mono), monospace;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--hz-ink-3);
+    font-weight: 600;
+    border-bottom: 1px solid var(--hz-line);
+    white-space: nowrap;
+    z-index: 1;
+  }
+  .stbl tbody td {
+    padding: 13px 14px;
+    border-bottom: 1px solid var(--hz-line);
+    vertical-align: middle;
+    font-size: 15px;
+  }
+  .stbl tbody tr:hover td { background: rgba(255, 255, 255, 0.025); }
+  /* Urgency row tints — subtle flat tint, rail does the heavy lifting */
+  .stbl tbody tr.t-overdue:not(.sel) td { background: rgba(248, 113, 113, 0.05); }
+  .stbl tbody tr.t-partial:not(.sel) td { background: rgba(244, 181, 63, 0.05); }
+  .stbl tbody tr.t-due:not(.sel) td     { background: rgba(251, 146, 60, 0.05); }
+  /* Selected row — lime tint, rail still visible */
+  .stbl tbody tr.sel td { background: var(--hz-primary-50); }
+  .stbl tbody tr.sel td:first-child { box-shadow: inset 2px 0 0 var(--hz-primary); }
+  .rail-cell { position: relative; }
+  .rail-cell .r {
+    position: absolute;
+    left: 0;
+    top: 10px;
+    bottom: 10px;
+    width: 2px;
+    border-radius: 2px;
+  }
+
+  /* Segmented control */
+  .seg {
+    display: inline-flex;
+    background: var(--hz-surface);
+    border: 1px solid var(--hz-line);
+    border-radius: 7px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .seg > button, .seg > a {
+    padding: 6px 11px;
+    border-radius: 5px;
+    font-size: 14px;
+    color: var(--hz-ink-2);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .seg > button:hover, .seg > a:hover { color: var(--hz-ink); }
+  .seg > button.on, .seg > a.on {
+    background: var(--hz-surface-2);
+    color: var(--hz-ink);
+    font-weight: 600;
+    box-shadow: inset 0 0 0 1px var(--hz-line);
+  }
+  .seg .ct {
+    font-family: var(--font-mono), monospace;
+    font-size: 12px;
+    color: var(--hz-ink-3);
+    font-weight: 500;
+  }
+  .seg .on .ct { color: var(--hz-ink-2); }
+
+  /* Form input pill (used in filter bar) */
+  .inp {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--hz-line);
+    border-radius: 7px;
+    background: var(--hz-surface);
+    color: var(--hz-ink);
+    font-size: 15px;
+    min-width: 0;
+  }
+  .inp:focus-within {
+    border-color: var(--hz-primary);
+    box-shadow: 0 0 0 3px var(--hz-primary-50);
+  }
+  .inp input {
+    outline: none;
+    border: none;
+    background: transparent;
+    flex: 1;
+    font-family: var(--font-sans);
+    min-width: 0;
+    color: var(--hz-ink);
+  }
+  .inp input::placeholder { color: var(--hz-ink-3); }
 }
 
 @keyframes hz-pulse {

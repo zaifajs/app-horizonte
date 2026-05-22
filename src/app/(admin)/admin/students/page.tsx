@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { headers } from "next/headers";
-import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/db";
 import {
   applyComputedFilters,
@@ -9,6 +8,7 @@ import {
   parseFilters,
   progressOf,
   sortRows,
+  filtersToSearchString,
   type StudentRow,
   type Urgency,
 } from "@/lib/students/filters";
@@ -147,54 +147,80 @@ export default async function StudentsPage({
     });
   }
 
+  // Status counts for the status segmented strip (independent of payment urgency).
+  const statusCounts = {
+    ACTIVE: 0,
+    PENDING: 0,
+    WITHDRAWN: 0,
+    COMPLETED: 0,
+  };
+  for (const r of rows) {
+    const s = r.latestEnrollment?.status;
+    if (s && s in statusCounts) {
+      statusCounts[s as keyof typeof statusCounts] += 1;
+    }
+  }
+
+  const totalRows = rows.length;
+
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border bg-gradient-to-br from-zinc-50 to-white p-5 md:p-6">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="space-y-1">
-            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">
+    <div className="space-y-5">
+      {/* Page header */}
+      <section className="flex items-end justify-between gap-6 flex-wrap">
+        <div>
+          <div
+            className="text-[13px] hz-mono uppercase tracking-[.18em]"
+            style={{ color: "var(--hz-ink-3)" }}
+          >
+            All students
+          </div>
+          <div className="mt-1 flex items-baseline gap-3">
+            <h1
+              className="font-display text-[40px] font-medium"
+              style={{ color: "var(--hz-ink)" }}
+            >
               Students
             </h1>
-            <p className="text-sm text-muted-foreground">
-              {sorted.length === rows.length
-                ? `${rows.length} students total`
-                : `${sorted.length} shown of ${rows.length} total`}
-            </p>
+            <span className="hz-mono text-[16px]" style={{ color: "var(--hz-ink-3)" }}>
+              {totalRows} total
+            </span>
           </div>
-          <div className="flex items-center gap-2">
-            <ExportDialog />
-            <Link href="/admin/students/new">
-              <Button>Add student</Button>
-            </Link>
+          <div
+            className="mt-1.5 text-[14px] hz-mono"
+            style={{ color: "var(--hz-ink-2)" }}
+          >
+            {statusCounts.ACTIVE} active · {statusCounts.PENDING} pending ·{" "}
+            {statusCounts.WITHDRAWN} withdrawn · {statusCounts.COMPLETED} completed
           </div>
         </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <ExportDialog />
+          <Link href="/admin/students/new" className="btn-primary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <line x1="19" y1="8" x2="19" y2="14" />
+              <line x1="22" y1="11" x2="16" y2="11" />
+            </svg>
+            New student
+          </Link>
+        </div>
+      </section>
 
-        <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-          <SummaryCard
-            label="Paid"
-            value={urgencyCounts.paid}
-            cls="bg-emerald-50 border-emerald-200 text-emerald-900"
-          />
-          <SummaryCard
-            label="Partial"
-            value={urgencyCounts.partial}
-            cls="bg-amber-50 border-amber-200 text-amber-900"
-          />
-          <SummaryCard
-            label="Due soon"
-            value={urgencyCounts.due_soon}
-            cls="bg-orange-100 border-orange-300 text-orange-900"
-          />
-          <SummaryCard
-            label="Overdue"
-            value={urgencyCounts.overdue}
-            cls="bg-red-100 border-red-300 text-red-900"
-          />
-          <SummaryCard
-            label="Pre-start"
-            value={urgencyCounts.pre_start}
-            cls="bg-zinc-50 border-zinc-200 text-zinc-700"
-          />
+      {/* Status + payment segmented strips */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="seg">
+          <StatusSegLink filters={filters} status="">All <span className="ct">{totalRows}</span></StatusSegLink>
+          <StatusSegLink filters={filters} status="ACTIVE">Active <span className="ct">{statusCounts.ACTIVE}</span></StatusSegLink>
+          <StatusSegLink filters={filters} status="PENDING">Pending <span className="ct">{statusCounts.PENDING}</span></StatusSegLink>
+          <StatusSegLink filters={filters} status="WITHDRAWN">Withdrawn <span className="ct">{statusCounts.WITHDRAWN}</span></StatusSegLink>
+          <StatusSegLink filters={filters} status="COMPLETED">Completed <span className="ct">{statusCounts.COMPLETED}</span></StatusSegLink>
+        </div>
+        <div className="seg ml-auto">
+          <UrgencySegLink filters={filters} urgency="paid" color="var(--hz-success)" label="Paid" count={urgencyCounts.paid} />
+          <UrgencySegLink filters={filters} urgency="partial" color="var(--hz-warning)" label="Partial" count={urgencyCounts.partial} />
+          <UrgencySegLink filters={filters} urgency="due_soon" color="var(--hz-accent)" label="Due soon" count={urgencyCounts.due_soon} />
+          <UrgencySegLink filters={filters} urgency="overdue" color="var(--hz-danger)" label="Overdue" count={urgencyCounts.overdue} />
         </div>
       </div>
 
@@ -211,7 +237,10 @@ export default async function StudentsPage({
       />
 
       {sorted.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-12 text-center text-sm text-muted-foreground">
+        <div
+          className="rounded-lg border border-dashed p-12 text-center hz-mono"
+          style={{ color: "var(--hz-ink-3)", borderColor: "var(--hz-line)" }}
+        >
           No students match these filters.
         </div>
       ) : (
@@ -221,22 +250,54 @@ export default async function StudentsPage({
   );
 }
 
-function SummaryCard({
-  label,
-  value,
-  cls,
+function StatusSegLink({
+  filters,
+  status,
+  children,
 }: {
-  label: string;
-  value: number;
-  cls: string;
+  filters: ReturnType<typeof parseFilters>;
+  status: "" | "ACTIVE" | "PENDING" | "WITHDRAWN" | "COMPLETED";
+  children: React.ReactNode;
 }) {
+  const isOn = (filters.enrollmentStatus ?? "") === status;
+  const href = `/admin/students${filtersToSearchString(filters, {
+    enrollmentStatus: status || null,
+  })}`;
   return (
-    <div className={`rounded-xl border px-3 py-2.5 ${cls}`}>
-      <div className="text-[10px] uppercase tracking-wide opacity-70">
-        {label}
-      </div>
-      <div className="text-xl font-semibold tabular-nums mt-0.5">{value}</div>
-    </div>
+    <Link href={href} className={isOn ? "on" : ""}>
+      {children}
+    </Link>
+  );
+}
+
+function UrgencySegLink({
+  filters,
+  urgency,
+  color,
+  label,
+  count,
+}: {
+  filters: ReturnType<typeof parseFilters>;
+  urgency: "paid" | "partial" | "due_soon" | "overdue";
+  color: string;
+  label: string;
+  count: number;
+}) {
+  const isOn = filters.urgency === urgency;
+  const href = `/admin/students${filtersToSearchString(filters, {
+    urgency: isOn ? null : urgency,
+  })}`;
+  return (
+    <Link href={href} className={isOn ? "on" : ""}>
+      <span
+        className="dot"
+        style={{
+          background: color,
+          boxShadow: urgency === "overdue" ? `0 0 4px ${color}` : undefined,
+        }}
+      />
+      {label} <span className="ct">{count}</span>
+    </Link>
   );
 }
 
