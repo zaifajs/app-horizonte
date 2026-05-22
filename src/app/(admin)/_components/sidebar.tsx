@@ -12,10 +12,21 @@ const BRAND = {
   versionLabel: "admin · v26.05",
 };
 
+export type PinnedBatch = {
+  id: string;
+  code: string;
+  status: "ACTIVE" | "UPCOMING";
+  subtitle: string;
+};
+
 export function Sidebar({
   user,
+  counts,
+  pinnedBatches,
 }: {
   user: { name: string; role: string };
+  counts: { urgent: number; students: number; batches: number };
+  pinnedBatches: PinnedBatch[];
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -70,6 +81,8 @@ export function Sidebar({
         height: "100vh",
         width: collapsed ? 64 : 232,
         transition: "width 0.15s ease",
+        overflow: "visible",
+        zIndex: 30,
       }}
     >
       {/* Toggle pill */}
@@ -93,7 +106,7 @@ export function Sidebar({
           alignItems: "center",
           justifyContent: "center",
           cursor: "pointer",
-          zIndex: 20,
+          zIndex: 50,
           transition: "color 0.15s, border-color 0.15s, background 0.15s",
         }}
       >
@@ -119,21 +132,21 @@ export function Sidebar({
             className="w-8 h-8 rounded-md flex items-center justify-center glow-primary shrink-0"
             style={{ background: "var(--hz-primary)" }}
           >
-            <span className="hz-mono text-[14px] font-bold" style={{ color: "#0B0E14" }}>
+            <span className="hz-mono text-[16px] font-bold" style={{ color: "#0B0E14" }}>
               {BRAND.short}
             </span>
           </div>
           {!collapsed ? (
             <div className="leading-tight">
               <div
-                className="hz-mono text-[15px] font-semibold"
+                className="hz-mono text-[17px] font-semibold"
                 style={{ color: "var(--hz-ink)", letterSpacing: "-0.005em" }}
               >
                 {BRAND.name}
                 <span style={{ color: "var(--hz-primary)" }}>/</span>
               </div>
               <div
-                className="text-[12px] uppercase tracking-[.18em] hz-mono"
+                className="text-[14px] uppercase tracking-[.18em] hz-mono"
                 style={{ color: "var(--hz-ink-3)" }}
               >
                 {BRAND.versionLabel}
@@ -147,7 +160,7 @@ export function Sidebar({
       <div className={`pt-3 pb-2 ${collapsed ? "px-3" : "px-3"}`}>
         <button
           type="button"
-          className={`w-full flex items-center h-8 rounded-md text-[14px] ${collapsed ? "justify-center" : "gap-2 px-2"}`}
+          className={`w-full flex items-center h-8 rounded-md text-[16px] ${collapsed ? "justify-center" : "gap-2 px-2"}`}
           style={{ border: "1px solid var(--hz-line)", color: "var(--hz-ink-3)", background: "var(--hz-bg)" }}
           title="Search"
         >
@@ -167,7 +180,7 @@ export function Sidebar({
       {/* Workspace nav */}
       {!collapsed ? (
         <div className="px-4 pt-3 pb-1.5">
-          <div className="text-[11px] uppercase tracking-[.18em] hz-mono font-semibold" style={{ color: "var(--hz-ink-3)" }}>
+          <div className="text-[13px] uppercase tracking-[.18em] hz-mono font-semibold" style={{ color: "var(--hz-ink-3)" }}>
             Workspace
           </div>
         </div>
@@ -185,6 +198,9 @@ export function Sidebar({
             </svg>
           }
           label="Today"
+          trailing={
+            counts.urgent > 0 ? <span className="chip chip-danger">{counts.urgent}</span> : null
+          }
         />
         <NavItem
           href="/admin/students"
@@ -198,6 +214,13 @@ export function Sidebar({
             </svg>
           }
           label="Students"
+          trailing={
+            counts.students > 0 ? (
+              <span className="hz-mono text-[14px]" style={{ color: "var(--hz-ink-3)" }}>
+                {counts.students}
+              </span>
+            ) : null
+          }
         />
         <NavItem
           href="/admin/batches"
@@ -211,6 +234,13 @@ export function Sidebar({
             </svg>
           }
           label="Batches"
+          trailing={
+            counts.batches > 0 ? (
+              <span className="hz-mono text-[14px]" style={{ color: "var(--hz-ink-3)" }}>
+                {counts.batches}
+              </span>
+            ) : null
+          }
         />
         {user.role === "ADMIN" ? (
           <NavItem
@@ -227,9 +257,46 @@ export function Sidebar({
         ) : null}
       </nav>
 
+      {/* PINNED */}
+      {!collapsed && pinnedBatches.length > 0 ? (
+        <>
+          <div className="px-4 pt-6 pb-1.5">
+            <div className="text-[13px] uppercase tracking-[.18em] hz-mono font-semibold" style={{ color: "var(--hz-ink-3)" }}>
+              Pinned
+            </div>
+          </div>
+          <div className="px-3 flex flex-col gap-0.5">
+            {pinnedBatches.map((b) => (
+              <Link
+                key={b.id}
+                href={`/admin/batches/${b.id}`}
+                className="nav-item"
+              >
+                <span className="hz-mono text-[16px] font-semibold" style={{ color: "var(--hz-primary)" }}>
+                  {b.code}
+                </span>
+                <span className="truncate" style={{ color: "var(--hz-ink-2)" }}>
+                  {b.subtitle}
+                </span>
+                <span
+                  className="ml-auto status-pill"
+                  style={{ color: b.status === "ACTIVE" ? "var(--hz-success)" : "var(--hz-warning)" }}
+                >
+                  <span
+                    className="dot"
+                    style={{ background: b.status === "ACTIVE" ? "var(--hz-success)" : "var(--hz-warning)" }}
+                  />
+                  {b.status === "ACTIVE" ? "active" : "up"}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </>
+      ) : null}
+
       {/* System line */}
       {!collapsed ? (
-        <div className="mt-auto px-4 pt-3 pb-2 text-[12px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+        <div className="mt-auto px-4 pt-3 pb-2 text-[14px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
           <div className="flex items-center gap-1.5">
             <span
               className="dot"
@@ -256,13 +323,13 @@ export function Sidebar({
             <>
               <span className="text-left leading-tight flex-1 min-w-0">
                 <span
-                  className="block text-[14px] font-semibold truncate hz-mono"
+                  className="block text-[16px] font-semibold truncate hz-mono"
                   style={{ color: "var(--hz-ink)" }}
                 >
                   {user.name}
                 </span>
                 <span
-                  className="block text-[12px] truncate hz-mono"
+                  className="block text-[14px] truncate hz-mono"
                   style={{ color: "var(--hz-ink-3)" }}
                 >
                   {user.role.toLowerCase()}

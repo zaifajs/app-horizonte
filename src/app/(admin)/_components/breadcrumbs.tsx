@@ -12,7 +12,7 @@ export function Breadcrumbs() {
     return null;
   }
   return (
-    <nav className="flex items-center gap-2 text-[14px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+    <nav className="flex items-center gap-2 text-[16px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
       {parts.map((p, i) => {
         const isLast = i === parts.length - 1;
         const href = "/" + parts.slice(0, i + 1).join("/");
