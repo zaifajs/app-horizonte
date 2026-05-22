@@ -49,6 +49,9 @@ export function TemplatesEditor({ initial }: { initial: ResolvedTemplate[] }) {
   const [originalList, setOriginalList] = useState(initial);
   const [drafts, setDrafts] = useState<DraftMap>(() => cloneAll(initial));
   const [locale, setLocale] = useState<Locale>("pt");
+  const [selectedId, setSelectedId] = useState<string>(
+    initial.find((t) => t.key === "payment_reminder")?.id ?? initial[0]?.id ?? "",
+  );
   const [pending, startTransition] = useTransition();
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
@@ -175,6 +178,7 @@ export function TemplatesEditor({ initial }: { initial: ResolvedTemplate[] }) {
         next.set(res.id, newT);
         return next;
       });
+      setSelectedId(res.id);
       setCreating(false);
       setNewName("");
       router.refresh();
@@ -197,6 +201,14 @@ export function TemplatesEditor({ initial }: { initial: ResolvedTemplate[] }) {
         next.delete(id);
         return next;
       });
+      // Jump back to a safe default after deleting the currently-selected one.
+      if (selectedId === id) {
+        const fallback =
+          originalList.find((t) => t.key === "payment_reminder")?.id ??
+          originalList.find((t) => t.id !== id)?.id ??
+          "";
+        setSelectedId(fallback);
+      }
       setDeleteTarget(null);
       router.refresh();
     });
@@ -298,11 +310,76 @@ export function TemplatesEditor({ initial }: { initial: ResolvedTemplate[] }) {
         </p>
       ) : null}
 
-      {/* Template cards */}
-      <div className="space-y-4">
-        {draftList.map((t) => (
+      {/* Template picker */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div
+          className="text-xs hz-mono uppercase tracking-[.16em]"
+          style={{ color: "var(--hz-ink-3)" }}
+        >
+          Editing
+        </div>
+        <div className="relative" style={{ minWidth: 280 }}>
+          <select
+            value={selectedId}
+            onChange={(e) => setSelectedId(e.target.value)}
+            className="w-full appearance-none btn-ghost text-left"
+            style={{ paddingLeft: 12, paddingRight: 30, height: 38, fontSize: "0.875rem" }}
+          >
+            <optgroup label="System">
+              {draftList.filter((t) => t.isSystem).map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                  {dirtyIds.has(t.id) ? " •" : ""}
+                </option>
+              ))}
+            </optgroup>
+            {draftList.some((t) => !t.isSystem) ? (
+              <optgroup label="Custom">
+                {draftList.filter((t) => !t.isSystem).map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                    {dirtyIds.has(t.id) ? " •" : ""}
+                  </option>
+                ))}
+              </optgroup>
+            ) : null}
+          </select>
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            style={{
+              position: "absolute",
+              right: 10,
+              top: "50%",
+              transform: "translateY(-50%)",
+              pointerEvents: "none",
+              color: "var(--hz-ink-3)",
+            }}
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </div>
+        <span className="hz-mono text-xs" style={{ color: "var(--hz-ink-3)" }}>
+          Switching templates keeps your unsaved edits — they all get committed when you click Save.
+        </span>
+      </div>
+
+      {/* Selected template editor */}
+      {(() => {
+        const t = drafts.get(selectedId);
+        if (!t) {
+          return (
+            <p className="hz-mono text-sm" style={{ color: "var(--hz-ink-3)" }}>
+              Pick a template above to start editing.
+            </p>
+          );
+        }
+        return (
           <TemplateCard
-            key={t.id}
             template={t}
             locale={locale}
             isDirty={dirtyIds.has(t.id)}
@@ -319,8 +396,8 @@ export function TemplatesEditor({ initial }: { initial: ResolvedTemplate[] }) {
               !t.isSystem ? () => setDeleteTarget({ id: t.id, name: t.name }) : null
             }
           />
-        ))}
-      </div>
+        );
+      })()}
 
       {/* Create-new dialog */}
       {creating ? (
