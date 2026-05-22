@@ -391,6 +391,17 @@ function StudentRowEl({
               remainingCents={row.dueCents}
               feeCents={row.latestEnrollment.feeCents}
               paidCents={row.paidCents}
+              studentEmail={row.email}
+              batchCode={row.latestEnrollment.batchCode}
+              urgencyTone={
+                row.urgency === "overdue"
+                  ? "danger"
+                  : row.urgency === "partial"
+                    ? "warning"
+                    : row.urgency === "due_soon"
+                      ? "due"
+                      : "neutral"
+              }
             />
           </span>
         ) : (

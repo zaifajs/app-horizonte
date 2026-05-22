@@ -488,6 +488,113 @@
   }
   .seg .on .ct { color: var(--hz-ink-2); }
 
+  /* Field label (uppercase mono small caps) */
+  .field-label {
+    display: block;
+    font-family: var(--font-mono), monospace;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--hz-ink-3);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .field-label .req { color: var(--hz-danger); margin-left: 3px; }
+
+  /* Payment method selector (large icon button with radio dot) */
+  .pay-method {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--hz-line);
+    border-radius: 7px;
+    background: var(--hz-surface-2);
+    cursor: pointer;
+    flex: 1;
+    color: var(--hz-ink-2);
+    font-size: 15px;
+    font-weight: 500;
+    transition: all 0.12s;
+  }
+  .pay-method:hover { border-color: var(--hz-ink-3); color: var(--hz-ink); }
+  .pay-method.on {
+    background: var(--hz-primary-50);
+    border-color: var(--hz-primary);
+    color: var(--hz-ink);
+  }
+  .pay-method .ind {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--hz-ink-3);
+    position: relative;
+    flex-shrink: 0;
+  }
+  .pay-method.on .ind { border-color: var(--hz-primary); }
+  .pay-method.on .ind::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border-radius: 50%;
+    background: var(--hz-primary);
+  }
+
+  /* Large display-font amount input */
+  .pay-amount {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    height: 52px;
+    background: var(--hz-surface-2);
+    border: 1px solid var(--hz-line);
+    border-radius: 7px;
+  }
+  .pay-amount:focus-within {
+    border-color: var(--hz-primary);
+    box-shadow: 0 0 0 3px var(--hz-primary-50);
+    background: var(--hz-surface);
+  }
+  .pay-amount .cur {
+    font-family: var(--font-display), sans-serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--hz-ink-3);
+  }
+  .pay-amount input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--hz-ink);
+    font-family: var(--font-display), sans-serif;
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    text-align: right;
+    width: 100%;
+  }
+
+  /* Quick amount preset pill */
+  .quick-amt {
+    display: inline-flex;
+    padding: 5px 10px;
+    border: 1px solid var(--hz-line);
+    border-radius: 5px;
+    background: var(--hz-surface-2);
+    color: var(--hz-ink-2);
+    font-family: var(--font-mono), monospace;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .quick-amt:hover { border-color: var(--hz-ink-3); color: var(--hz-ink); }
+  .quick-amt.on {
+    background: var(--hz-primary-50);
+    border-color: var(--hz-primary);
+    color: var(--hz-primary);
+  }
+
   /* Form input pill (used in filter bar) */
   .inp {
     display: flex;
