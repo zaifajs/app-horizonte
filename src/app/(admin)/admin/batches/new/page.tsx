@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { Button } from "@/components/ui/button";
 import { NewBatchForm } from "./new-batch-form";
 
 export const dynamic = "force-dynamic";
@@ -25,32 +24,40 @@ export default async function NewBatchPage() {
   ]);
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5 max-w-2xl">
+      <section className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">New batch</h1>
-          <p className="text-sm text-muted-foreground">
-            Generates the full cronograma from the selected course.
+          <div
+            className="text-sm hz-mono uppercase tracking-[.18em]"
+            style={{ color: "var(--hz-ink-3)" }}
+          >
+            Cronograma
+          </div>
+          <h1 className="font-display text-3xl font-medium mt-1">New batch</h1>
+          <p className="mt-1 hz-mono text-xs" style={{ color: "var(--hz-ink-3)" }}>
+            Generates the full schedule from the selected course.
             {courses.length === 1
-              ? ` (Currently only ${courses[0].code} is offered.)`
+              ? ` Currently only ${courses[0].code} is offered.`
               : ""}
           </p>
         </div>
-        <Link href="/admin/batches">
-          <Button variant="outline">Cancel</Button>
+        <Link href="/admin/batches" className="btn-ghost">
+          Cancel
         </Link>
-      </div>
+      </section>
 
-      <NewBatchForm
-        courses={courses.map((c) => ({
-          id: c.id,
-          code: c.code,
-          name: c.name,
-          moduleCount: c.modules.length,
-          classroomDays: c.modules[0]?.classroomDays ?? 5,
-        }))}
-        trainers={trainers}
-      />
+      <div className="hz-card p-5">
+        <NewBatchForm
+          courses={courses.map((c) => ({
+            id: c.id,
+            code: c.code,
+            name: c.name,
+            moduleCount: c.modules.length,
+            classroomDays: c.modules[0]?.classroomDays ?? 5,
+          }))}
+          trainers={trainers}
+        />
+      </div>
     </div>
   );
 }

@@ -1,7 +1,5 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { Button } from "@/components/ui/button";
 import { EditStudentForm } from "./edit-student-form";
 
 export const dynamic = "force-dynamic";
@@ -35,21 +33,27 @@ export default async function EditStudentPage({
   const currentBatch = student.enrollments[0] ?? null;
 
   return (
-    <div className="space-y-6 max-w-3xl">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5 max-w-3xl">
+      <section className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Edit {student.fullName}
+          <div
+            className="text-sm hz-mono uppercase tracking-[.18em]"
+            style={{ color: "var(--hz-ink-3)" }}
+          >
+            Edit student
+          </div>
+          <h1 className="font-display text-3xl font-medium mt-1">
+            {student.fullName}
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Updating personal info. Changes are audit-logged.
+          <p className="mt-1 hz-mono text-xs" style={{ color: "var(--hz-ink-3)" }}>
+            Changes are audit-logged.
           </p>
         </div>
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a href={`/admin/students/${id}`}>
-          <Button variant="outline">Back</Button>
+        <a href={`/admin/students/${id}`} className="btn-ghost">
+          Back
         </a>
-      </div>
+      </section>
 
       <EditStudentForm
         initial={{
