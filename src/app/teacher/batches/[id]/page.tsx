@@ -50,51 +50,50 @@ export default async function TeacherBatchPage({
         </Link>
       </div>
 
-      <ul className="space-y-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {batch.sessions.map((s) => {
           const isCurrent = isSameDay(s.scheduledDate, today);
           const isAutonomous = s.kind === "AUTONOMOUS";
           return (
-            <li
+            <Link
               key={s.id}
-              className={`rounded-lg border p-3 ${
+              href={`/teacher/sessions/${s.id}`}
+              className={`group rounded-lg border p-3 transition hover:border-foreground/30 hover:shadow-sm ${
                 isCurrent ? "border-zinc-900 bg-zinc-50" : "bg-white"
               }`}
             >
-              <Link
-                href={`/teacher/sessions/${s.id}`}
-                className="flex items-center justify-between gap-3"
-              >
-                <div className="min-w-0">
-                  <div className="text-xs text-muted-foreground">
-                    M{s.module.number} · {s.module.name}
-                  </div>
-                  <div className="font-medium">
-                    {isAutonomous ? (
-                      <span className="italic text-muted-foreground">
-                        Homework block
-                      </span>
-                    ) : (
-                      <>
-                        {format(s.scheduledDate, "EEE dd MMM yyyy")} ·{" "}
-                        {s.startTime}–{s.endTime}
-                      </>
-                    )}
-                  </div>
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-xs font-semibold text-muted-foreground">
+                  M{s.module.number}
+                </span>
+                <SessionStatusBadge status={s.status} />
+              </div>
+              <div className="mt-2 text-sm font-medium leading-snug truncate">
+                {s.module.name}
+              </div>
+              <div className="mt-1 text-sm">
+                {isAutonomous ? (
+                  <span className="italic text-muted-foreground">
+                    Homework block
+                  </span>
+                ) : (
+                  <>
+                    <div>{format(s.scheduledDate, "EEE dd MMM yyyy")}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {s.startTime}–{s.endTime}
+                    </div>
+                  </>
+                )}
+              </div>
+              {s.status === "HELD" ? (
+                <div className="mt-2 text-xs text-muted-foreground">
+                  {s._count.attendances} marked
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <SessionStatusBadge status={s.status} />
-                  {s.status === "HELD" ? (
-                    <span className="text-xs text-muted-foreground">
-                      {s._count.attendances} marked
-                    </span>
-                  ) : null}
-                </div>
-              </Link>
-            </li>
+              ) : null}
+            </Link>
           );
         })}
-      </ul>
+      </div>
     </div>
   );
 }
