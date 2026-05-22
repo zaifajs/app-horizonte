@@ -119,21 +119,21 @@ export function Sidebar({
             className="w-8 h-8 rounded-md flex items-center justify-center glow-primary shrink-0"
             style={{ background: "var(--hz-primary)" }}
           >
-            <span className="hz-mono text-[12px] font-bold" style={{ color: "#0B0E14" }}>
+            <span className="hz-mono text-[14px] font-bold" style={{ color: "#0B0E14" }}>
               {BRAND.short}
             </span>
           </div>
           {!collapsed ? (
             <div className="leading-tight">
               <div
-                className="hz-mono text-[13px] font-semibold"
+                className="hz-mono text-[15px] font-semibold"
                 style={{ color: "var(--hz-ink)", letterSpacing: "-0.005em" }}
               >
                 {BRAND.name}
                 <span style={{ color: "var(--hz-primary)" }}>/</span>
               </div>
               <div
-                className="text-[10px] uppercase tracking-[.18em] hz-mono"
+                className="text-[12px] uppercase tracking-[.18em] hz-mono"
                 style={{ color: "var(--hz-ink-3)" }}
               >
                 {BRAND.versionLabel}
@@ -147,7 +147,7 @@ export function Sidebar({
       <div className={`pt-3 pb-2 ${collapsed ? "px-3" : "px-3"}`}>
         <button
           type="button"
-          className={`w-full flex items-center h-8 rounded-md text-[12.5px] ${collapsed ? "justify-center" : "gap-2 px-2"}`}
+          className={`w-full flex items-center h-8 rounded-md text-[14px] ${collapsed ? "justify-center" : "gap-2 px-2"}`}
           style={{ border: "1px solid var(--hz-line)", color: "var(--hz-ink-3)", background: "var(--hz-bg)" }}
           title="Search"
         >
@@ -167,7 +167,7 @@ export function Sidebar({
       {/* Workspace nav */}
       {!collapsed ? (
         <div className="px-4 pt-3 pb-1.5">
-          <div className="text-[9.5px] uppercase tracking-[.18em] hz-mono font-semibold" style={{ color: "var(--hz-ink-3)" }}>
+          <div className="text-[11px] uppercase tracking-[.18em] hz-mono font-semibold" style={{ color: "var(--hz-ink-3)" }}>
             Workspace
           </div>
         </div>
@@ -229,7 +229,7 @@ export function Sidebar({
 
       {/* System line */}
       {!collapsed ? (
-        <div className="mt-auto px-4 pt-3 pb-2 text-[10px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+        <div className="mt-auto px-4 pt-3 pb-2 text-[12px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
           <div className="flex items-center gap-1.5">
             <span
               className="dot"
@@ -256,13 +256,13 @@ export function Sidebar({
             <>
               <span className="text-left leading-tight flex-1 min-w-0">
                 <span
-                  className="block text-[12.5px] font-semibold truncate hz-mono"
+                  className="block text-[14px] font-semibold truncate hz-mono"
                   style={{ color: "var(--hz-ink)" }}
                 >
                   {user.name}
                 </span>
                 <span
-                  className="block text-[10px] truncate hz-mono"
+                  className="block text-[12px] truncate hz-mono"
                   style={{ color: "var(--hz-ink-3)" }}
                 >
                   {user.role.toLowerCase()}
