@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
+import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 import { logChange } from "@/lib/audit";
@@ -127,6 +128,73 @@ export async function createBatchAction(
       };
     }
     console.error("createBatchAction failed:", err);
+    return { ok: false, error: "Something went wrong. Please try again." };
+  }
+}
+
+const assignTrainerSchema = z.object({
+  batchId: z.string().uuid("Invalid batch."),
+  trainerId: z.string().uuid("Invalid trainer.").nullable(),
+});
+
+export type AssignTrainerResult =
+  | { ok: true; trainerId: string | null }
+  | { ok: false; error: string };
+
+export async function assignBatchTrainerAction(
+  raw: { batchId: string; trainerId: string | null },
+): Promise<AssignTrainerResult> {
+  const user = await requireRole(["ADMIN", "STAFF"]);
+
+  const parsed = assignTrainerSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+  const { batchId, trainerId } = parsed.data;
+
+  const batch = await prisma.batch.findUnique({
+    where: { id: batchId },
+    select: { id: true, trainerId: true },
+  });
+  if (!batch) return { ok: false, error: "Batch not found." };
+
+  if (trainerId) {
+    const trainer = await prisma.user.findUnique({
+      where: { id: trainerId },
+      select: { role: true, isActive: true },
+    });
+    if (!trainer || !trainer.isActive || trainer.role !== "TEACHER") {
+      return { ok: false, error: "Selected trainer is not a teacher." };
+    }
+  }
+
+  if (batch.trainerId === trainerId) {
+    return { ok: true, trainerId };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.batch.update({
+        where: { id: batchId },
+        data: { trainerId },
+      });
+      await logChange({
+        tx,
+        action: "UPDATE",
+        entityType: "Batch",
+        entityId: batchId,
+        actorUserId: user.id,
+        changes: {
+          trainerId: { from: batch.trainerId, to: trainerId },
+        },
+      });
+    });
+
+    revalidatePath(`/admin/batches/${batchId}`);
+    revalidatePath("/admin/batches");
+    return { ok: true, trainerId };
+  } catch (err) {
+    console.error("assignBatchTrainerAction failed:", err);
     return { ok: false, error: "Something went wrong. Please try again." };
   }
 }

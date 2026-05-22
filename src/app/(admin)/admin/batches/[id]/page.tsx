@@ -8,6 +8,7 @@ import { prisma } from "@/lib/db";
 import { ScheduleTable } from "./schedule-table";
 import { ScheduleCalendar } from "./schedule-calendar";
 import { SessionRow } from "./session-row";
+import { TrainerAssign } from "./trainer-assign";
 
 export const dynamic = "force-dynamic";
 
@@ -23,18 +24,25 @@ export default async function BatchDetailPage({
   const { id } = await params;
   const { view, print } = await searchParams;
 
-  const batch = await prisma.batch.findUnique({
-    where: { id },
-    include: {
-      course: { include: { modules: { orderBy: { number: "asc" } } } },
-      trainer: { select: { id: true, name: true } },
-      sessions: {
-        orderBy: [{ scheduledDate: "asc" }, { kind: "asc" }],
-        include: { module: { select: { id: true, number: true, name: true } } },
+  const [batch, trainers] = await Promise.all([
+    prisma.batch.findUnique({
+      where: { id },
+      include: {
+        course: { include: { modules: { orderBy: { number: "asc" } } } },
+        trainer: { select: { id: true, name: true } },
+        sessions: {
+          orderBy: [{ scheduledDate: "asc" }, { kind: "asc" }],
+          include: { module: { select: { id: true, number: true, name: true } } },
+        },
+        _count: { select: { enrollments: true } },
       },
-      _count: { select: { enrollments: true } },
-    },
-  });
+    }),
+    prisma.user.findMany({
+      where: { role: "TEACHER", isActive: true },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+  ]);
   if (!batch) notFound();
 
   const today = startOfToday();
@@ -127,7 +135,11 @@ export default async function BatchDetailPage({
           label="Time"
           value={`${batch.startTime}–${addHours(batch.startTime, batch.durationHours)}`}
         />
-        <Stat label="Trainer" value={batch.trainer?.name ?? "Unassigned"} />
+        <TrainerAssign
+          batchId={batch.id}
+          currentTrainerId={batch.trainer?.id ?? null}
+          trainers={trainers}
+        />
         <Stat label="Capacity" value={String(batch.capacity)} />
         <Stat label="Enrolled" value={String(batch._count.enrollments)} />
         <Stat label="Classroom sessions" value={String(classroomSessions.length)} />
