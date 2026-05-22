@@ -255,7 +255,7 @@ export function MessageComposer({
           />
           WhatsApp queue
         </span>
-        <span className="hz-mono text-[13px]" style={{ color: "var(--hz-ink-3)" }}>
+        <span className="hz-mono text-xs" style={{ color: "var(--hz-ink-3)" }}>
           {recipients.length} recipient{recipients.length === 1 ? "" : "s"}
         </span>
         <button type="button" onClick={onClose} className="ibtn ml-auto" aria-label="Close">
@@ -269,7 +269,7 @@ export function MessageComposer({
       <div className="flex-1 overflow-y-auto">
         {/* Recipients */}
         <section className="px-4 py-4">
-          <div className="text-[12px] hz-mono uppercase tracking-[.16em] mb-2" style={{ color: "var(--hz-ink-3)" }}>
+          <div className="text-xs hz-mono uppercase tracking-[.16em] mb-2" style={{ color: "var(--hz-ink-3)" }}>
             Recipients
           </div>
           <ul className="space-y-1.5">
@@ -283,8 +283,8 @@ export function MessageComposer({
                 >
                   <span className="avi">{initials(r.fullName)}</span>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[14px] font-semibold truncate">{r.fullName}</div>
-                    <div className="hz-mono text-[12px]" style={{ color: "var(--hz-ink-3)" }}>
+                    <div className="text-sm font-semibold truncate">{r.fullName}</div>
+                    <div className="hz-mono text-xs" style={{ color: "var(--hz-ink-3)" }}>
                       {r.phone}
                       {r.vars.dueAmount ? ` · ${r.vars.dueAmount}` : null}
                     </div>
@@ -296,7 +296,7 @@ export function MessageComposer({
                       </svg>
                     </span>
                   ) : state === "sending" ? (
-                    <span className="hz-mono text-[12px]" style={{ color: "var(--hz-ink-3)" }}>…</span>
+                    <span className="hz-mono text-xs" style={{ color: "var(--hz-ink-3)" }}>…</span>
                   ) : state === "error" ? (
                     <span style={{ color: "var(--hz-danger)" }} title="Failed">!</span>
                   ) : (
@@ -321,7 +321,7 @@ export function MessageComposer({
 
         {/* Template */}
         <section className="px-4 pb-4">
-          <div className="text-[12px] hz-mono uppercase tracking-[.16em] mb-2" style={{ color: "var(--hz-ink-3)" }}>
+          <div className="text-xs hz-mono uppercase tracking-[.16em] mb-2" style={{ color: "var(--hz-ink-3)" }}>
             Template
           </div>
           <div className="relative">
@@ -349,7 +349,7 @@ export function MessageComposer({
               <path d="m6 9 6 6 6-6" />
             </svg>
           </div>
-          <div className="mt-1.5 flex items-center gap-1.5 text-[12px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+          <div className="mt-1.5 flex items-center gap-1.5 text-xs hz-mono" style={{ color: "var(--hz-ink-3)" }}>
             <span
               className="dot"
               style={{ background: TEMPLATE_DOTS[templateKey] }}
@@ -378,7 +378,7 @@ export function MessageComposer({
         {previewRecipient ? (
           <section className="px-4 pb-4">
             <div
-              className="flex items-baseline justify-between mb-2 text-[12px] hz-mono"
+              className="flex items-baseline justify-between mb-2 text-xs hz-mono"
               style={{ color: "var(--hz-ink-3)" }}
             >
               <span className="uppercase tracking-[.16em]">
@@ -387,14 +387,14 @@ export function MessageComposer({
               <span>vars · {Object.keys(previewRecipient.vars).filter((k) => previewRecipient.vars[k as keyof TemplateVars]).length}</span>
             </div>
             <div
-              className="p-3 rounded-md text-[14px] leading-relaxed"
+              className="p-3 rounded-md text-sm leading-relaxed"
               style={{ background: "var(--hz-surface-2)", border: "1px solid var(--hz-line)" }}
             >
               <PreviewBody body={previewBody} vars={previewRecipient.vars} />
             </div>
             <a
               href="/admin/messages/templates"
-              className="mt-2 inline-block text-[13px] underline"
+              className="mt-2 inline-block text-xs underline"
               style={{ color: "var(--hz-ink-2)" }}
             >
               Edit template
@@ -404,7 +404,7 @@ export function MessageComposer({
 
         {/* Send via */}
         <section className="px-4 pb-4">
-          <div className="text-[12px] hz-mono uppercase tracking-[.16em] mb-2" style={{ color: "var(--hz-ink-3)" }}>
+          <div className="text-xs hz-mono uppercase tracking-[.16em] mb-2" style={{ color: "var(--hz-ink-3)" }}>
             Send via
           </div>
           <div className="flex items-center gap-2">
@@ -421,7 +421,7 @@ export function MessageComposer({
                 checked={waOn}
                 onChange={(e) => setWaOn(e.target.checked)}
               />
-              <span className="text-[14px] font-semibold">WhatsApp</span>
+              <span className="text-sm font-semibold">WhatsApp</span>
             </label>
             <label
               className="flex items-center gap-2 p-2 px-3 rounded-md flex-1 cursor-pointer"
@@ -436,7 +436,7 @@ export function MessageComposer({
                 checked={emailOn}
                 onChange={(e) => setEmailOn(e.target.checked)}
               />
-              <span className="text-[14px] font-semibold">Email cc</span>
+              <span className="text-sm font-semibold">Email cc</span>
             </label>
           </div>
         </section>
@@ -473,14 +473,14 @@ export function MessageComposer({
             </svg>
           )}
           <div className="flex-1">
-            <div className="text-[14px] font-semibold" style={{ color: "var(--hz-ink)" }}>
+            <div className="text-sm font-semibold" style={{ color: "var(--hz-ink)" }}>
               {sendResult.failed === 0
                 ? `Sent to ${sendResult.ok} ${sendResult.ok === 1 ? "recipient" : "recipients"}`
                 : sendResult.ok === 0
                   ? `Failed to send to all ${sendResult.failed} ${sendResult.failed === 1 ? "recipient" : "recipients"}`
                   : `Sent ${sendResult.ok} · failed ${sendResult.failed}`}
             </div>
-            <div className="hz-mono text-[12px]" style={{ color: "var(--hz-ink-2)" }}>
+            <div className="hz-mono text-xs" style={{ color: "var(--hz-ink-2)" }}>
               via {sendResult.channels.map((c) => (c === "WA_ME" ? "WhatsApp" : "email")).join(" + ")}
               {sendResult.channels.includes("WA_ME") ? " · check the opened tabs and press Send in each" : null}
             </div>
@@ -502,7 +502,7 @@ export function MessageComposer({
 
       {/* Footer */}
       <footer className="hair-t px-4 py-3 flex items-center justify-between gap-3">
-        <span className="hz-mono text-[12px]" style={{ color: "var(--hz-ink-3)" }}>
+        <span className="hz-mono text-xs" style={{ color: "var(--hz-ink-3)" }}>
           {channelLabel}
         </span>
         <button

@@ -204,7 +204,7 @@ export function QuickPay({
                 style={{
                   width: 40,
                   height: 40,
-                  fontSize: 14,
+                  fontSize: "0.875rem",
                   color: aviStyle.c,
                   background: aviStyle.bg,
                   borderColor: aviStyle.border,
@@ -214,16 +214,16 @@ export function QuickPay({
               </span>
               <div className="flex-1 min-w-0">
                 <div
-                  className="text-[12px] hz-mono uppercase tracking-[.16em]"
+                  className="text-xs hz-mono uppercase tracking-[.16em]"
                   style={{ color: "var(--hz-ink-3)" }}
                 >
                   Record payment
                 </div>
-                <div className="mt-0.5 font-display text-[20px] font-medium truncate">
+                <div className="mt-0.5 font-display text-xl font-medium truncate">
                   {studentName}
                 </div>
                 <div
-                  className="text-[13px] hz-mono mt-0.5"
+                  className="text-xs hz-mono mt-0.5"
                   style={{ color: "var(--hz-ink-3)" }}
                 >
                   {batchCode ? (
@@ -350,7 +350,7 @@ export function QuickPay({
                         color: "var(--hz-ink-3)",
                         fontWeight: 500,
                         fontFamily: "var(--font-sans)",
-                        fontSize: 13,
+                        fontSize: "0.875rem",
                         textTransform: "none",
                         letterSpacing: 0,
                         marginLeft: 5,
@@ -378,7 +378,7 @@ export function QuickPay({
                       color: "var(--hz-ink-3)",
                       fontWeight: 500,
                       fontFamily: "var(--font-sans)",
-                      fontSize: 13,
+                      fontSize: "0.875rem",
                       textTransform: "none",
                       letterSpacing: 0,
                       marginLeft: 5,
@@ -421,10 +421,10 @@ export function QuickPay({
                       After this payment
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-3 text-[13px] hz-mono">
+                  <div className="grid grid-cols-3 gap-3 text-xs hz-mono">
                     <div>
                       <div
-                        className="text-[11px] uppercase tracking-[.14em]"
+                        className="text-xs uppercase tracking-[.14em]"
                         style={{ color: "var(--hz-ink-3)" }}
                       >
                         Total paid
@@ -439,7 +439,7 @@ export function QuickPay({
                     </div>
                     <div>
                       <div
-                        className="text-[11px] uppercase tracking-[.14em]"
+                        className="text-xs uppercase tracking-[.14em]"
                         style={{ color: "var(--hz-ink-3)" }}
                       >
                         Outstanding
@@ -461,7 +461,7 @@ export function QuickPay({
                     </div>
                     <div>
                       <div
-                        className="text-[11px] uppercase tracking-[.14em]"
+                        className="text-xs uppercase tracking-[.14em]"
                         style={{ color: "var(--hz-ink-3)" }}
                       >
                         Status
@@ -495,7 +495,7 @@ export function QuickPay({
 
               {error ? (
                 <p
-                  className="text-[14px]"
+                  className="text-sm"
                   style={{ color: "var(--hz-danger)" }}
                   role="alert"
                 >
@@ -510,7 +510,7 @@ export function QuickPay({
               style={{ background: "var(--hz-surface-2)" }}
             >
               <span
-                className="text-[12px] hz-mono"
+                className="text-xs hz-mono"
                 style={{ color: "var(--hz-ink-3)" }}
               >
                 Esc to cancel · ⌘↵ to save

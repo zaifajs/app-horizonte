@@ -284,7 +284,7 @@ function StudentRowEl({
       </td>
       <td className="rail-cell">
         <span className="r" style={{ background: railColor, opacity: railOpacity }} />
-        <span className="hz-mono text-[14px]" style={{ color: "var(--hz-ink-3)" }}>
+        <span className="hz-mono text-sm" style={{ color: "var(--hz-ink-3)" }}>
           {String(index).padStart(2, "0")}
         </span>
       </td>
@@ -312,7 +312,7 @@ function StudentRowEl({
             >
               {row.fullName}
             </a>
-            <div className="text-[13px] hz-mono truncate" style={{ color: "var(--hz-ink-3)" }}>
+            <div className="text-xs hz-mono truncate" style={{ color: "var(--hz-ink-3)" }}>
               {row.email}
             </div>
           </div>
@@ -320,7 +320,7 @@ function StudentRowEl({
       </td>
       <td>
         {row.latestEnrollment ? (
-          <span className="hz-mono text-[14px] font-semibold" style={{ color: "var(--hz-primary)" }}>
+          <span className="hz-mono text-sm font-semibold" style={{ color: "var(--hz-primary)" }}>
             {row.latestEnrollment.batchCode}
           </span>
         ) : (
@@ -336,7 +336,7 @@ function StudentRowEl({
               {row.urgency === "overdue" && days != null ? ` · +${Math.abs(days)}d` : null}
               {row.urgency === "due_soon" && days != null ? ` · ${days}d` : null}
             </div>
-            <div className="text-[13px] hz-mono mt-1" style={{ color: "var(--hz-ink-2)" }}>
+            <div className="text-xs hz-mono mt-1" style={{ color: "var(--hz-ink-2)" }}>
               €{(row.paidCents / 100).toFixed(0)} / €
               {(row.latestEnrollment.feeCents / 100).toFixed(0)}
             </div>
@@ -347,7 +347,7 @@ function StudentRowEl({
       </td>
       <td>
         <div className="flex items-center gap-2">
-          <span className="hz-mono text-[14px]">{row.phone}</span>
+          <span className="hz-mono text-sm">{row.phone}</span>
           {cleanPhone ? (
             <button
               type="button"
@@ -369,11 +369,11 @@ function StudentRowEl({
       <td>
         {row.latestEnrollment ? (
           <>
-            <div className="hz-mono text-[14px]" style={{ color: "var(--hz-ink-2)" }}>
+            <div className="hz-mono text-sm" style={{ color: "var(--hz-ink-2)" }}>
               {row.latestEnrollment.enrolledAt.toISOString().slice(0, 10)}
             </div>
             {ago != null ? (
-              <div className="hz-mono text-[12px]" style={{ color: "var(--hz-ink-3)" }}>
+              <div className="hz-mono text-xs" style={{ color: "var(--hz-ink-3)" }}>
                 {ago}d ago
               </div>
             ) : null}

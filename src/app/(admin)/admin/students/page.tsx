@@ -169,24 +169,24 @@ export default async function StudentsPage({
       <section className="flex items-end justify-between gap-6 flex-wrap">
         <div>
           <div
-            className="text-[13px] hz-mono uppercase tracking-[.18em]"
+            className="text-xs hz-mono uppercase tracking-[.18em]"
             style={{ color: "var(--hz-ink-3)" }}
           >
             All students
           </div>
           <div className="mt-1 flex items-baseline gap-3">
             <h1
-              className="font-display text-[40px] font-medium"
+              className="font-display text-4xl font-medium"
               style={{ color: "var(--hz-ink)" }}
             >
               Students
             </h1>
-            <span className="hz-mono text-[16px]" style={{ color: "var(--hz-ink-3)" }}>
+            <span className="hz-mono text-base" style={{ color: "var(--hz-ink-3)" }}>
               {totalRows} total
             </span>
           </div>
           <div
-            className="mt-1.5 text-[14px] hz-mono"
+            className="mt-1.5 text-sm hz-mono"
             style={{ color: "var(--hz-ink-2)" }}
           >
             {statusCounts.ACTIVE} active · {statusCounts.PENDING} pending ·{" "}

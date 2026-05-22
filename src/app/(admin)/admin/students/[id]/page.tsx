@@ -129,7 +129,7 @@ export default async function StudentDetailPage({
                   />
                 </div>
                 {e.status === "PENDING" ? (
-                  <p className="mt-2 text-[11px] text-amber-700">
+                  <p className="mt-2 text-xs text-amber-700">
                     This enrollment is <span className="font-semibold">pending activation</span>.
                     Record the first payment to activate.
                   </p>

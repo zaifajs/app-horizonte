@@ -198,13 +198,13 @@ export default async function TodayPage() {
       <section className="flex items-end justify-between gap-6 flex-wrap">
         <div>
           <div
-            className="text-[15px] hz-mono uppercase tracking-[.18em]"
+            className="text-sm hz-mono uppercase tracking-[.18em]"
             style={{ color: "var(--hz-ink-3)" }}
           >
             {format(now, "EEEE")} {partOfDay} · {format(now, "HH:mm")}
           </div>
           <h1
-            className="font-display text-[52px] leading-[1.05] font-medium mt-1.5"
+            className="font-display text-5xl leading-[1.05] font-medium mt-1.5"
             style={{ color: "var(--hz-ink)" }}
           >
             <span style={{ color: "var(--hz-danger)" }}>{overdue.length}</span>{" "}
@@ -217,7 +217,7 @@ export default async function TodayPage() {
             <span style={{ color: "var(--hz-ink-2)", fontWeight: 400 }}>to enroll</span>
             <span style={{ color: "var(--hz-ink-3)" }}>.</span>
           </h1>
-          <p className="mt-2 text-[17px] hz-mono" style={{ color: "var(--hz-ink-2)" }}>
+          <p className="mt-2 text-base hz-mono" style={{ color: "var(--hz-ink-2)" }}>
             {overdue.length > 0 ? (
               <>
                 {overdue.length} overdue
@@ -265,36 +265,36 @@ export default async function TodayPage() {
       <section className="hz-card overflow-hidden">
         <div className="grid grid-cols-2 md:grid-cols-4 grid-cells">
           <div>
-            <div className="text-[14px] hz-mono uppercase tracking-[.16em]" style={{ color: "var(--hz-ink-3)" }}>
+            <div className="text-sm hz-mono uppercase tracking-[.16em]" style={{ color: "var(--hz-ink-3)" }}>
               Active students
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="stat-num text-[52px]" style={{ color: "var(--hz-ink)" }}>
+              <span className="stat-num text-5xl" style={{ color: "var(--hz-ink)" }}>
                 {activeStudentCount}
               </span>
               {newActiveLastWeek > 0 ? (
                 <span className="chip chip-success">↑ +{newActiveLastWeek} this week</span>
               ) : null}
             </div>
-            <div className="mt-1 text-[15px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+            <div className="mt-1 text-sm hz-mono" style={{ color: "var(--hz-ink-3)" }}>
               across {activeBatches.length} {activeBatches.length === 1 ? "batch" : "batches"}
             </div>
           </div>
           <div>
-            <div className="text-[14px] hz-mono uppercase tracking-[.16em]" style={{ color: "var(--hz-ink-3)" }}>
+            <div className="text-sm hz-mono uppercase tracking-[.16em]" style={{ color: "var(--hz-ink-3)" }}>
               Active batches
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="stat-num text-[52px]" style={{ color: "var(--hz-ink)" }}>
+              <span className="stat-num text-5xl" style={{ color: "var(--hz-ink)" }}>
                 {activeBatches.length}
               </span>
               {totalBatches > 0 ? (
-                <span className="hz-mono text-[15px]" style={{ color: "var(--hz-ink-3)" }}>
+                <span className="hz-mono text-sm" style={{ color: "var(--hz-ink-3)" }}>
                   of {totalBatches} total
                 </span>
               ) : null}
             </div>
-            <div className="mt-1 flex items-center gap-1 text-[14px] hz-mono flex-wrap">
+            <div className="mt-1 flex items-center gap-1 text-sm hz-mono flex-wrap">
               {activeBatches.slice(0, 4).map((b) => (
                 <span key={b.id} className="px-1.5 py-0.5 rounded-sm chip-success">
                   {b.code}
@@ -308,41 +308,41 @@ export default async function TodayPage() {
             </div>
           </div>
           <div>
-            <div className="text-[14px] hz-mono uppercase tracking-[.16em]" style={{ color: "var(--hz-ink-3)" }}>
+            <div className="text-sm hz-mono uppercase tracking-[.16em]" style={{ color: "var(--hz-ink-3)" }}>
               Pending payments
             </div>
             <div className="mt-2 flex items-baseline gap-1">
-              <span className="hz-mono text-[22px]" style={{ color: "var(--hz-ink-3)" }}>
+              <span className="hz-mono text-xl" style={{ color: "var(--hz-ink-3)" }}>
                 €
               </span>
-              <span className="stat-num text-[52px]" style={{ color: "var(--hz-ink)" }}>
+              <span className="stat-num text-5xl" style={{ color: "var(--hz-ink)" }}>
                 {(pendingPaymentsCents / 100).toLocaleString("en-US", {
                   minimumFractionDigits: 0,
                   maximumFractionDigits: 0,
                 })}
               </span>
             </div>
-            <div className="mt-1 text-[15px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+            <div className="mt-1 text-sm hz-mono" style={{ color: "var(--hz-ink-3)" }}>
               {pendingPaymentsStudentCount} {pendingPaymentsStudentCount === 1 ? "student owes" : "students owe"}
             </div>
           </div>
           <div style={overdue.length > 0 ? { background: "var(--hz-danger-50)" } : undefined}>
             <div
-              className="text-[14px] hz-mono uppercase tracking-[.16em]"
+              className="text-sm hz-mono uppercase tracking-[.16em]"
               style={{ color: overdue.length > 0 ? "var(--hz-danger)" : "var(--hz-ink-3)" }}
             >
               Overdue
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span
-                className="stat-num text-[52px]"
+                className="stat-num text-5xl"
                 style={{ color: overdue.length > 0 ? "var(--hz-danger)" : "var(--hz-ink)" }}
               >
                 {overdue.length}
               </span>
               {overdue.length > 0 ? <span className="chip chip-danger">!</span> : null}
             </div>
-            <div className="mt-1 text-[15px] hz-mono" style={{ color: "var(--hz-ink-2)" }}>
+            <div className="mt-1 text-sm hz-mono" style={{ color: "var(--hz-ink-2)" }}>
               {oldestOverdueDays > 0
                 ? `Oldest ${oldestOverdueDays} ${oldestOverdueDays === 1 ? "day" : "days"}`
                 : "All paid"}
@@ -360,13 +360,13 @@ export default async function TodayPage() {
               <span className="dot" style={{ background: "var(--hz-danger)" }} />
               Overdue payments
             </span>
-            <span className="hz-mono text-[15px]" style={{ color: "var(--hz-ink-3)" }}>
+            <span className="hz-mono text-sm" style={{ color: "var(--hz-ink-3)" }}>
               {overdue.length} {overdue.length === 1 ? "student" : "students"} · €
               {(overdueTotalCents / 100).toLocaleString("en-US")} owed
             </span>
             <Link
               href="/admin/students?urgency=overdue"
-              className="ml-auto btn-ghost text-[15px]"
+              className="ml-auto btn-ghost text-sm"
               style={{ padding: "5px 9px" }}
             >
               View all
@@ -377,13 +377,13 @@ export default async function TodayPage() {
           </header>
 
           {overdue.length === 0 ? (
-            <div className="px-4 py-10 text-center text-[16px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+            <div className="px-4 py-10 text-center text-base hz-mono" style={{ color: "var(--hz-ink-3)" }}>
               No overdue payments. Nice.
             </div>
           ) : (
             <>
               <div
-                className="grid grid-cols-12 gap-3 px-4 py-2 hair-b text-[14px] hz-mono uppercase tracking-[.14em]"
+                className="grid grid-cols-12 gap-3 px-4 py-2 hair-b text-sm hz-mono uppercase tracking-[.14em]"
                 style={{ color: "var(--hz-ink-3)" }}
               >
                 <div className="col-span-5">student</div>
@@ -417,18 +417,18 @@ export default async function TodayPage() {
                           href={`/admin/students/${r.studentId}`}
                           className="min-w-0"
                         >
-                          <div className="font-semibold text-[17px] truncate" style={{ color: "var(--hz-ink)" }}>
+                          <div className="font-semibold text-base truncate" style={{ color: "var(--hz-ink)" }}>
                             {r.studentName}
                           </div>
-                          <div className="text-[15px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+                          <div className="text-sm hz-mono" style={{ color: "var(--hz-ink-3)" }}>
                             {installmentLabel} · invoiced {format(r.deadlineDate, "yyyy-MM-dd")}
                           </div>
                         </Link>
                       </div>
-                      <div className="col-span-2 hz-mono text-[16px]" style={{ color: "var(--hz-primary)" }}>
+                      <div className="col-span-2 hz-mono text-base" style={{ color: "var(--hz-primary)" }}>
                         {r.batchCode}
                       </div>
-                      <div className="col-span-2 hz-mono font-semibold text-[19px]" style={{ color: "var(--hz-ink)" }}>
+                      <div className="col-span-2 hz-mono font-semibold text-lg" style={{ color: "var(--hz-ink)" }}>
                         €{(r.due / 100).toFixed(2)}
                       </div>
                       <div className="col-span-2">
@@ -470,7 +470,7 @@ export default async function TodayPage() {
                 className="px-4 py-2.5 hair-t flex items-center justify-between gap-3"
                 style={{ background: "var(--hz-surface-2)" }}
               >
-                <div className="text-[15px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+                <div className="text-sm hz-mono" style={{ color: "var(--hz-ink-3)" }}>
                   {overdue.length > 8 ? (
                     <>
                       Showing top 8 of {overdue.length}.{" "}
@@ -484,7 +484,7 @@ export default async function TodayPage() {
                 </div>
                 <Link
                   href="/admin/students?urgency=overdue"
-                  className="btn-primary text-[15px]"
+                  className="btn-primary text-sm"
                   style={{ padding: "5px 10px" }}
                 >
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -506,13 +506,13 @@ export default async function TodayPage() {
                 <span className="dot" style={{ background: "var(--hz-warning)" }} />
                 Documents expiring
               </span>
-              <span className="hz-mono text-[15px]" style={{ color: "var(--hz-ink-3)" }}>
+              <span className="hz-mono text-sm" style={{ color: "var(--hz-ink-3)" }}>
                 Within 60 days · {expiringStudents.length}{" "}
                 {expiringStudents.length === 1 ? "student" : "students"}
               </span>
             </header>
             {expiringStudents.length === 0 ? (
-              <div className="px-4 py-6 text-center text-[16px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+              <div className="px-4 py-6 text-center text-base hz-mono" style={{ color: "var(--hz-ink-3)" }}>
                 No documents expiring soon.
               </div>
             ) : (
@@ -531,10 +531,10 @@ export default async function TodayPage() {
                         {initials(s.fullName)}
                       </span>
                       <Link href={`/admin/students/${s.id}`} className="flex-1 min-w-0">
-                        <div className="font-semibold text-[17px] truncate" style={{ color: "var(--hz-ink)" }}>
+                        <div className="font-semibold text-base truncate" style={{ color: "var(--hz-ink)" }}>
                           {s.fullName}
                         </div>
-                        <div className="text-[15px] mt-0.5 hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+                        <div className="text-sm mt-0.5 hz-mono" style={{ color: "var(--hz-ink-3)" }}>
                           {s.docType.toLowerCase().replace("_", " ")} · expires{" "}
                           {format(s.docExpiry, "yyyy-MM-dd")}
                         </div>
@@ -558,13 +558,13 @@ export default async function TodayPage() {
                 <span className="dot" style={{ background: "var(--hz-info)" }} />
                 Pending enrollments
               </span>
-              <span className="hz-mono text-[15px]" style={{ color: "var(--hz-ink-3)" }}>
+              <span className="hz-mono text-sm" style={{ color: "var(--hz-ink-3)" }}>
                 No payment yet · {pendingNew.length}{" "}
                 {pendingNew.length === 1 ? "student" : "students"}
               </span>
             </header>
             {pendingNew.length === 0 ? (
-              <div className="px-4 py-6 text-center text-[16px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+              <div className="px-4 py-6 text-center text-base hz-mono" style={{ color: "var(--hz-ink-3)" }}>
                 No fresh registrations awaiting first payment.
               </div>
             ) : (
@@ -582,12 +582,12 @@ export default async function TodayPage() {
                       </span>
                       <Link href={`/admin/students/${r.studentId}`} className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-[17px] truncate" style={{ color: "var(--hz-ink)" }}>
+                          <span className="font-semibold text-base truncate" style={{ color: "var(--hz-ink)" }}>
                             {r.studentName}
                           </span>
                           <span className="chip chip-primary">{r.batchCode}</span>
                         </div>
-                        <div className="text-[15px] mt-0.5 hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+                        <div className="text-sm mt-0.5 hz-mono" style={{ color: "var(--hz-ink-3)" }}>
                           enrolled {format(r.enrolledAt, "yyyy-MM-dd")} · awaiting €
                           {(r.fee / 100).toFixed(0)}
                         </div>
@@ -615,11 +615,11 @@ export default async function TodayPage() {
                   />
                   Activity · live
                 </span>
-                <span className="ml-auto text-[14px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+                <span className="ml-auto text-sm hz-mono" style={{ color: "var(--hz-ink-3)" }}>
                   last 24h
                 </span>
               </div>
-              <ul className="space-y-1.5 text-[15px] hz-mono" style={{ color: "var(--hz-ink-2)" }}>
+              <ul className="space-y-1.5 text-sm hz-mono" style={{ color: "var(--hz-ink-2)" }}>
                 {recentAudit.slice(0, 6).map((a) => {
                   const sameDay = diffDays(a.createdAt, today) === 0;
                   const stamp = sameDay

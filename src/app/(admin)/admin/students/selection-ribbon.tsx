@@ -22,10 +22,10 @@ export function SelectionRibbon({
     >
       <span className="hz-cb indeterminate" style={{ display: "inline-flex" }} />
       <div className="leading-tight">
-        <div className="hz-mono text-[14px] font-semibold" style={{ color: "var(--hz-ink)" }}>
+        <div className="hz-mono text-sm font-semibold" style={{ color: "var(--hz-ink)" }}>
           {selected.size} selected
         </div>
-        <div className="hz-mono text-[12px]" style={{ color: "var(--hz-ink-2)" }}>
+        <div className="hz-mono text-xs" style={{ color: "var(--hz-ink-2)" }}>
           of {visibleCount} visible
         </div>
       </div>
@@ -33,7 +33,7 @@ export function SelectionRibbon({
       <div className="ml-auto flex items-center gap-1.5">
         <button
           type="button"
-          className="btn-ghost text-[13px]"
+          className="btn-ghost text-xs"
           style={{ padding: "5px 10px" }}
           title="Coming soon"
           disabled
@@ -46,7 +46,7 @@ export function SelectionRibbon({
         </button>
         <button
           type="button"
-          className="btn-ghost text-[13px]"
+          className="btn-ghost text-xs"
           style={{ padding: "5px 10px" }}
           title="Coming soon"
           disabled
@@ -60,7 +60,7 @@ export function SelectionRibbon({
         </button>
         <button
           type="button"
-          className="btn-ghost text-[13px]"
+          className="btn-ghost text-xs"
           style={{
             padding: "5px 10px",
             color: "var(--hz-danger)",
@@ -78,7 +78,7 @@ export function SelectionRibbon({
         <button
           type="button"
           onClick={onSendWhatsApp}
-          className="btn-primary text-[13px]"
+          className="btn-primary text-xs"
           style={{ padding: "5px 12px" }}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

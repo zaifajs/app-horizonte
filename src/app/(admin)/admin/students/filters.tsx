@@ -74,7 +74,7 @@ export function StudentsFilters({
           onChange={(e) => onSearchChange(e.target.value)}
         />
         {pending ? (
-          <span className="hz-mono text-[12px]" style={{ color: "var(--hz-ink-3)" }}>
+          <span className="hz-mono text-xs" style={{ color: "var(--hz-ink-3)" }}>
             …
           </span>
         ) : null}
@@ -131,7 +131,7 @@ export function StudentsFilters({
             startTransition(() => router.replace("/admin/students"));
             setQ("");
           }}
-          className="btn-ghost text-[14px]"
+          className="btn-ghost text-sm"
           style={{ padding: "5px 10px" }}
         >
           Clear all

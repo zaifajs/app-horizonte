@@ -132,10 +132,10 @@ export function ScheduleTable({
       <article className="cronograma-sheet mx-auto bg-white">
         {/* Title */}
         <header className="text-center mb-3 print:mb-2">
-          <div className="text-[15px] font-semibold leading-tight">
+          <div className="text-sm font-semibold leading-tight">
             Cronograma — {batch.course.name}
           </div>
-          <div className="text-[10px] text-zinc-600">
+          <div className="text-xs text-zinc-600">
             nível {batch.course.level} · Turma {batch.code} ·{" "}
             {format(batch.startDate, "dd MMM yyyy")}
             {endDate ? ` – ${format(endDate, "dd MMM yyyy")}` : ""} ·{" "}
@@ -158,17 +158,17 @@ export function ScheduleTable({
                 className="rounded-md border border-zinc-300 px-3 py-1.5 print:rounded-none print:border-zinc-400"
               >
                 <div className="flex items-baseline justify-between gap-2">
-                  <div className="text-[12px] leading-tight">
+                  <div className="text-xs leading-tight">
                     <span className="text-zinc-500 font-semibold mr-1">
                       M{g.module.number}
                     </span>
                     <span className="font-semibold">{g.module.name}</span>
                   </div>
-                  <div className="text-[10px] text-zinc-600 whitespace-nowrap">
+                  <div className="text-xs text-zinc-600 whitespace-nowrap">
                     {format(first, "dd MMM")} – {format(last, "dd MMM yyyy")}
                   </div>
                 </div>
-                <div className="mt-1 flex items-center justify-between gap-3 text-[11px] tabular-nums">
+                <div className="mt-1 flex items-center justify-between gap-3 text-xs tabular-nums">
                   <div className="flex flex-wrap gap-x-1.5 gap-y-1">
                     {g.rows.map((r) => {
                       const c = monthColor.get(monthKey(r.scheduledDate)) ?? MONTH_PALETTE[0];
@@ -187,7 +187,7 @@ export function ScheduleTable({
                       );
                     })}
                   </div>
-                  <div className="text-[10px] text-zinc-600 whitespace-nowrap">
+                  <div className="text-xs text-zinc-600 whitespace-nowrap">
                     {timeWindow}
                     {g.homeworkHours
                       ? ` · +${g.homeworkHours}h trabalho autónomo`
@@ -195,7 +195,7 @@ export function ScheduleTable({
                   </div>
                 </div>
                 {skipped.length > 0 ? (
-                  <div className="mt-1 text-[10px] text-red-700">
+                  <div className="mt-1 text-xs text-red-700">
                     <span className="font-semibold mr-1">
                       Skipped holiday{skipped.length > 1 ? "s" : ""}:
                     </span>
@@ -210,7 +210,7 @@ export function ScheduleTable({
         </div>
 
         {monthOrder.length > 1 ? (
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] print:mt-2">
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs print:mt-2">
             <span className="text-zinc-500 uppercase tracking-wide font-semibold">
               Months
             </span>

@@ -120,10 +120,10 @@ export function ScheduleCalendar({
 
       <article className="cal-sheet mx-auto bg-white">
         <header className="text-center mb-3 print:mb-2">
-          <div className="text-[15px] font-semibold leading-tight">
+          <div className="text-sm font-semibold leading-tight">
             Cronograma — {batch.course.name}
           </div>
-          <div className="text-[10px] text-zinc-600">
+          <div className="text-xs text-zinc-600">
             nível {batch.course.level} · Turma {batch.code} ·{" "}
             {format(batch.startDate, "dd MMM yyyy")}
             {endDate ? ` – ${format(endDate, "dd MMM yyyy")}` : ""} ·{" "}
@@ -136,7 +136,7 @@ export function ScheduleCalendar({
         </header>
 
         {/* Module legend */}
-        <div className="flex flex-wrap gap-2 justify-center mb-3 print:mb-2 text-[10px]">
+        <div className="flex flex-wrap gap-2 justify-center mb-3 print:mb-2 text-xs">
           {Array.from(usedModules.entries())
             .sort(([a], [b]) => a - b)
             .map(([num, name]) => {
@@ -190,7 +190,7 @@ function MonthGrid({
 
   return (
     <section>
-      <div className="text-center text-[11px] font-semibold uppercase tracking-wide text-zinc-700 mb-1">
+      <div className="text-center text-xs font-semibold uppercase tracking-wide text-zinc-700 mb-1">
         {format(month, "MMMM yyyy")}
       </div>
       <div className="grid grid-cols-7 text-[9px] uppercase text-zinc-500 mb-0.5">
@@ -215,7 +215,7 @@ function MonthGrid({
                 className={`min-h-[60px] p-1 ${c.bg} ${c.text} flex flex-col justify-between`}
               >
                 <div className="flex items-baseline justify-between leading-none">
-                  <span className="text-[10px] font-medium text-zinc-700">
+                  <span className="text-xs font-medium text-zinc-700">
                     {format(d, "d")}
                   </span>
                   <span className="text-[9px] font-semibold opacity-80">
@@ -238,7 +238,7 @@ function MonthGrid({
                 title={hol.name}
               >
                 <div className="flex items-baseline justify-between leading-none">
-                  <span className="text-[10px] font-medium">{format(d, "d")}</span>
+                  <span className="text-xs font-medium">{format(d, "d")}</span>
                   <span className="text-[9px] font-semibold uppercase tracking-wide">
                     Holiday
                   </span>
@@ -257,7 +257,7 @@ function MonthGrid({
               } ${weekend && inMonth ? "bg-zinc-50/80" : ""}`}
             >
               <span
-                className={`text-[10px] ${
+                className={`text-xs ${
                   inMonth ? "text-zinc-700" : "text-zinc-300"
                 }`}
               >
