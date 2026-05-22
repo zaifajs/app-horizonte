@@ -1,0 +1,31 @@
+name: Supabase keepalive
+
+on:
+  schedule:
+    # 06:00 UTC every Monday and Thursday — well inside Supabase's 7-day idle window.
+    - cron: "0 6 * * 1,4"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping dev DB
+        env:
+          DB_URL: ${{ secrets.SUPABASE_KEEPALIVE_URL_DEV }}
+        run: |
+          if [ -z "$DB_URL" ]; then
+            echo "SUPABASE_KEEPALIVE_URL_DEV not set — skipping."
+            exit 0
+          fi
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -c "SELECT 1;"
+
+      - name: Ping prod DB
+        env:
+          DB_URL: ${{ secrets.SUPABASE_KEEPALIVE_URL_PROD }}
+        run: |
+          if [ -z "$DB_URL" ]; then
+            echo "SUPABASE_KEEPALIVE_URL_PROD not set — skipping."
+            exit 0
+          fi
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -c "SELECT 1;"
