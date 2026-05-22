@@ -138,7 +138,11 @@ export default async function BatchDetailPage({
         <TrainerAssign
           batchId={batch.id}
           currentTrainerId={batch.trainer?.id ?? null}
-          trainers={trainers}
+          trainers={
+            batch.trainer && !trainers.some((t) => t.id === batch.trainer!.id)
+              ? [{ id: batch.trainer.id, name: `${batch.trainer.name} (inactive)` }, ...trainers]
+              : trainers
+          }
         />
         <Stat label="Capacity" value={String(batch.capacity)} />
         <Stat label="Enrolled" value={String(batch._count.enrollments)} />
