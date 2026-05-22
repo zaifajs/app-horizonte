@@ -229,6 +229,7 @@ export function QuickPay({
               borderRadius: 10,
               overflow: "hidden",
               boxShadow: "0 24px 60px -16px rgba(0,0,0,0.6)",
+              textAlign: "left",
             }}
           >
             {/* Header */}
@@ -362,7 +363,7 @@ export function QuickPay({
                   <label className="field-label">
                     Paid on <span className="req">*</span>
                   </label>
-                  <label className="inp" style={{ height: 38 }}>
+                  <label className="inp" style={{ height: 42 }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--hz-ink-3)" }}>
                       <rect x="3" y="4" width="18" height="16" rx="2" />
                       <path d="M3 10h18" />
@@ -393,7 +394,7 @@ export function QuickPay({
                       Optional
                     </span>
                   </label>
-                  <label className="inp" style={{ height: 38 }}>
+                  <label className="inp" style={{ height: 42 }}>
                     <input
                       placeholder="TRX-… or invoice #"
                       value={reference}
@@ -430,6 +431,8 @@ export function QuickPay({
                     fontFamily: "var(--font-sans)",
                     lineHeight: 1.4,
                     resize: "vertical",
+                    width: "100%",
+                    display: "block",
                   }}
                   placeholder="e.g. paid at reception by mother"
                   value={notes}
@@ -572,6 +575,7 @@ export function QuickPay({
                   type="button"
                   onClick={() => setOpen(false)}
                   className="btn-ghost"
+                  style={{ height: 38 }}
                   disabled={pending}
                 >
                   Cancel
@@ -580,6 +584,7 @@ export function QuickPay({
                   type="button"
                   onClick={save}
                   className="btn-primary"
+                  style={{ height: 38 }}
                   disabled={pending || amtNum <= 0}
                 >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">

@@ -595,6 +595,17 @@
     color: var(--hz-primary);
   }
 
+  /* Hide the browser-native calendar/clear/time icons inside .inp — we
+     supply our own leading icon and don't want the duplicate. */
+  .inp input::-webkit-calendar-picker-indicator {
+    display: none;
+    -webkit-appearance: none;
+  }
+  .inp input[type="date"],
+  .inp input[type="time"] {
+    color-scheme: dark;
+  }
+
   /* Form input pill (used in filter bar) */
   .inp {
     display: flex;
