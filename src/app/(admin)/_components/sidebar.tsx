@@ -79,7 +79,7 @@ export function Sidebar({
         position: "sticky",
         top: 0,
         height: "100vh",
-        width: collapsed ? 64 : 232,
+        width: collapsed ? 80 : 272,
         transition: "width 0.15s ease",
         overflow: "visible",
         zIndex: 30,
@@ -129,7 +129,7 @@ export function Sidebar({
       <div className={`pt-4 pb-4 hair-b ${collapsed ? "px-3" : "px-4"}`}>
         <Link href="/admin/today" className="flex items-center gap-2.5">
           <div
-            className="w-8 h-8 rounded-md flex items-center justify-center glow-primary shrink-0"
+            className="w-10 h-10 rounded-md flex items-center justify-center glow-primary shrink-0"
             style={{ background: "var(--hz-primary)" }}
           >
             <span className="hz-mono text-[16px] font-bold" style={{ color: "#0B0E14" }}>
@@ -164,7 +164,7 @@ export function Sidebar({
           style={{ border: "1px solid var(--hz-line)", color: "var(--hz-ink-3)", background: "var(--hz-bg)" }}
           title="Search"
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.3-4.3" />
           </svg>
@@ -192,7 +192,7 @@ export function Sidebar({
           href="/admin/today"
           collapsed={collapsed}
           icon={
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="9" />
               <path d="M12 7v5l3 2" />
             </svg>
@@ -206,7 +206,7 @@ export function Sidebar({
           href="/admin/students"
           collapsed={collapsed}
           icon={
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
               <circle cx="9" cy="7" r="4" />
               <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
@@ -226,7 +226,7 @@ export function Sidebar({
           href="/admin/batches"
           collapsed={collapsed}
           icon={
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="4" width="18" height="16" rx="2" />
               <path d="M3 10h18" />
               <path d="M8 4v4" />
@@ -247,7 +247,7 @@ export function Sidebar({
             href="/admin/users"
             collapsed={collapsed}
             icon={
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
@@ -286,7 +286,7 @@ export function Sidebar({
                     className="dot"
                     style={{ background: b.status === "ACTIVE" ? "var(--hz-success)" : "var(--hz-warning)" }}
                   />
-                  {b.status === "ACTIVE" ? "active" : "up"}
+                  {b.status === "ACTIVE" ? "active" : "soon"}
                 </span>
               </Link>
             ))}
@@ -302,7 +302,7 @@ export function Sidebar({
               className="dot"
               style={{ background: "var(--hz-success)", boxShadow: "0 0 6px var(--hz-success)" }}
             />
-            All systems normal
+            Online
           </div>
         </div>
       ) : (

@@ -50,7 +50,7 @@ function describeAudit(a: AuditEntry): { label: string; tone: string; body: stri
   };
   const meta = map[a.entityType] ?? { label: a.entityType, tone: "var(--hz-ink-2)" };
   const verb =
-    a.action === "CREATE" ? "created" : a.action === "UPDATE" ? "updated" : "deleted";
+    a.action === "CREATE" ? "added" : a.action === "UPDATE" ? "changed" : "removed";
   return { label: meta.label, tone: meta.tone, body: `${verb} by ${actor}` };
 }
 
@@ -206,13 +206,13 @@ export default async function TodayPage() {
             style={{ color: "var(--hz-ink)" }}
           >
             <span style={{ color: "var(--hz-danger)" }}>{overdue.length}</span>{" "}
-            <span style={{ color: "var(--hz-ink-2)", fontWeight: 400 }}>urgent</span>
+            <span style={{ color: "var(--hz-ink-2)", fontWeight: 400 }}>overdue</span>
             <span style={{ color: "var(--hz-ink-3)" }}>,</span>{" "}
             <span style={{ color: "var(--hz-warning)" }}>{dueSoon.length}</span>{" "}
-            <span style={{ color: "var(--hz-ink-2)", fontWeight: 400 }}>to watch</span>
+            <span style={{ color: "var(--hz-ink-2)", fontWeight: 400 }}>due soon</span>
             <span style={{ color: "var(--hz-ink-3)" }}>,</span>{" "}
             <span style={{ color: "var(--hz-info)" }}>{pendingNew.length}</span>{" "}
-            <span style={{ color: "var(--hz-ink-2)", fontWeight: 400 }}>waiting</span>
+            <span style={{ color: "var(--hz-ink-2)", fontWeight: 400 }}>to enroll</span>
             <span style={{ color: "var(--hz-ink-3)" }}>.</span>
           </h1>
           <p className="mt-2 text-[17px] hz-mono" style={{ color: "var(--hz-ink-2)" }}>
@@ -226,15 +226,15 @@ export default async function TodayPage() {
             )}
             {earliestActive ? (
               <>
-                {" · earliest cohort "}
+                {" · current batch "}
                 <span style={{ color: "var(--hz-primary)" }}>{earliestActive.code}</span>
               </>
             ) : null}
             {nextSessionTime ? (
               <>
-                {" · next session "}
+                {" · next class "}
                 {nextSessionTime}
-                {nextSessionTrainer ? ` · ${nextSessionTrainer}` : null}
+                {nextSessionTrainer ? ` with ${nextSessionTrainer}` : null}
               </>
             ) : null}
           </p>
@@ -271,7 +271,7 @@ export default async function TodayPage() {
                 {activeStudentCount}
               </span>
               {newActiveLastWeek > 0 ? (
-                <span className="chip chip-success">↑ +{newActiveLastWeek} w/w</span>
+                <span className="chip chip-success">↑ +{newActiveLastWeek} this week</span>
               ) : null}
             </div>
             <div className="mt-1 text-[15px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
@@ -288,7 +288,7 @@ export default async function TodayPage() {
               </span>
               {totalBatches > 0 ? (
                 <span className="hz-mono text-[15px]" style={{ color: "var(--hz-ink-3)" }}>
-                  /{totalBatches} cap
+                  of {totalBatches} total
                 </span>
               ) : null}
             </div>
@@ -321,7 +321,7 @@ export default async function TodayPage() {
               </span>
             </div>
             <div className="mt-1 text-[15px] hz-mono" style={{ color: "var(--hz-ink-3)" }}>
-              n={pendingPaymentsStudentCount} {pendingPaymentsStudentCount === 1 ? "student" : "students"}
+              {pendingPaymentsStudentCount} {pendingPaymentsStudentCount === 1 ? "student owes" : "students owe"}
             </div>
           </div>
           <div style={overdue.length > 0 ? { background: "var(--hz-danger-50)" } : undefined}>
@@ -387,8 +387,8 @@ export default async function TodayPage() {
                 <div className="col-span-5">student</div>
                 <div className="col-span-2">batch</div>
                 <div className="col-span-2">amount</div>
-                <div className="col-span-2">age</div>
-                <div className="col-span-1 text-right">act</div>
+                <div className="col-span-2">days late</div>
+                <div className="col-span-1 text-right">actions</div>
               </div>
               <ul>
                 {overdue.slice(0, 8).map((r, i) => {
@@ -533,7 +533,7 @@ export default async function TodayPage() {
                           {s.fullName}
                         </div>
                         <div className="text-[15px] mt-0.5 hz-mono" style={{ color: "var(--hz-ink-3)" }}>
-                          {s.docType.toLowerCase().replace("_", " ")} · exp{" "}
+                          {s.docType.toLowerCase().replace("_", " ")} · expires{" "}
                           {format(s.docExpiry, "yyyy-MM-dd")}
                         </div>
                       </Link>
