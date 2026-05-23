@@ -30,6 +30,27 @@ function fmtScalar(v: unknown): string {
   return JSON.stringify(v);
 }
 
+// Human-readable labels for known message template keys. Falls back to the raw key.
+const TEMPLATE_LABEL: Record<string, string> = {
+  welcome: "Welcome",
+  payment_reminder: "Payment reminder",
+  class_reminder: "Class reminder",
+  cronograma: "Schedule",
+  pay_reminder_1: "Payment reminder",
+  pay_reminder_2: "Payment reminder (2nd)",
+};
+
+function channelLabel(c: unknown): string {
+  if (c === "WA_ME") return "WhatsApp";
+  if (c === "EMAIL") return "email";
+  if (typeof c === "string") return c.toLowerCase();
+  return "message";
+}
+
+function titleCase(s: string): string {
+  return s.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
 function describe(entry: {
   action: "CREATE" | "UPDATE" | "DELETE";
   entityType: string;
@@ -38,8 +59,11 @@ function describe(entry: {
   const { action, entityType, changes } = entry;
   const ch = (changes ?? {}) as Record<string, unknown>;
 
-  // Headlines per entity + action.
+  // Field names we never want to surface in the details list — either already
+  // baked into the headline or noisy internals.
+  const skip = new Set<string>(["amountCents", "method", "paidAt"]);
   let headline: string;
+
   switch (entityType) {
     case "Student":
       headline = action === "CREATE" ? "Student created" : `Student ${action.toLowerCase()}d`;
@@ -64,13 +88,41 @@ function describe(entry: {
       }
       break;
     case "PaymentReceipt":
-      // Legacy entries from the receipts era — keep showing them
+      // Legacy entries from the receipts era — keep showing them.
       if (action === "CREATE") {
         const amt = typeof ch.amountCents === "number" ? `€${(ch.amountCents / 100).toFixed(2)}` : "";
         headline = `Payment receipt recorded — ${amt}`;
       } else {
         headline = `Payment receipt ${action.toLowerCase()}d`;
       }
+      break;
+    case "MessageLog":
+    case "Messaging": {
+      // Both modern (MessageLog) and legacy (Messaging) entries share the
+      // same shape: { templateKey, channel, bodyPreview }.
+      const tplKey = typeof ch.templateKey === "string" ? ch.templateKey : "";
+      const tplLabel = TEMPLATE_LABEL[tplKey] ?? (tplKey ? titleCase(tplKey) : "Message");
+      const channel = channelLabel(ch.channel);
+      headline = action === "CREATE" ? `Sent ${tplLabel} via ${channel}` : `Message ${action.toLowerCase()}d`;
+      // Suppress the raw fields — they're all in the headline now.
+      skip.add("templateKey");
+      skip.add("channel");
+      skip.add("bodyPreview");
+      // Legacy field names that may exist on older rows.
+      skip.add("messagingPayload");
+      skip.add("recipientPhone");
+      skip.add("scheduleId");
+      break;
+    }
+    case "MessageTemplate":
+      headline = action === "CREATE"
+        ? "Template created"
+        : action === "DELETE"
+        ? "Template deleted"
+        : "Template updated";
+      break;
+    case "User":
+      headline = `User ${action.toLowerCase()}d`;
       break;
     case "BatchSession":
       headline = `Session ${action.toLowerCase()}d`;
@@ -82,18 +134,18 @@ function describe(entry: {
       headline = `${entityType} ${action.toLowerCase()}d`;
   }
 
-  // Details list: surface every field-level change.
+  // Details list: surface every field-level change that isn't already in the headline.
   const details: string[] = [];
   for (const [k, v] of Object.entries(ch)) {
-    if (k === "amountCents" || k === "method" || k === "paidAt") continue; // already in headline
+    if (skip.has(k)) continue;
     if (isFromTo(v)) {
       const from = fmtScalar(v.from);
       const to = fmtScalar(v.to);
-      details.push(`${k}: ${from} → ${to}`);
+      details.push(`${titleCase(k)}: ${from} → ${to}`);
     } else if (typeof v === "object" && v !== null) {
       // skip nested objects we didn't classify
     } else {
-      details.push(`${k}: ${fmtScalar(v)}`);
+      details.push(`${titleCase(k)}: ${fmtScalar(v)}`);
     }
   }
   return { headline, details };
