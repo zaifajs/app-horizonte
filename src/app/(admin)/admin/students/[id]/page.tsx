@@ -164,6 +164,10 @@ export default async function StudentDetailPage({
                     <EnrollmentPayments
                       enrollmentId={e.id}
                       feeCents={e.batch.course.feeCents}
+                      studentId={student.id}
+                      studentName={student.fullName}
+                      studentEmail={student.email}
+                      batchCode={e.batch.code}
                       payments={e.payments.map((p) => ({
                         id: p.id,
                         amountCents: p.amountCents,

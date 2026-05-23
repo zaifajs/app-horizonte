@@ -66,7 +66,7 @@ export function Sidebar({
 
   return (
     <aside
-      className={`hair-r flex flex-col print:hidden hz-sidebar ${collapsed ? "hz-sidebar-collapsed" : ""}`}
+      className={`hair-r hidden lg:flex flex-col print:hidden hz-sidebar ${collapsed ? "hz-sidebar-collapsed" : ""}`}
       style={{
         background: "var(--hz-surface)",
         position: "sticky",

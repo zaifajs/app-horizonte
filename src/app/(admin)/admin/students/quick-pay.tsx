@@ -18,6 +18,7 @@ export function QuickPay({
   studentEmail,
   batchCode,
   urgencyTone,
+  trigger,
 }: {
   enrollmentId: string;
   studentId: string;
@@ -28,6 +29,10 @@ export function QuickPay({
   studentEmail?: string;
   batchCode?: string;
   urgencyTone?: "danger" | "warning" | "due" | "neutral";
+  // Optional render-prop replacement for the default icon-button trigger.
+  // Receives an onClick that opens the modal — let callers wire it to any
+  // shape of button they want (text button, full-width pill, etc.).
+  trigger?: (open: (e?: React.MouseEvent) => void) => React.ReactNode;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -172,22 +177,31 @@ export function QuickPay({
     presets.push({ value: 100, label: "€100" });
   }
 
+  const openHandler = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setOpen(true);
+  };
+
   return (
     <>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen(true);
-        }}
-        className="ibtn"
-        title="Record payment"
-      >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="2" y="5" width="20" height="14" rx="2" />
-          <path d="M2 10h20" />
-        </svg>
-      </button>
+      {trigger ? (
+        trigger(openHandler)
+      ) : (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(true);
+          }}
+          className="ibtn"
+          title="Record payment"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="2" />
+            <path d="M2 10h20" />
+          </svg>
+        </button>
+      )}
 
       {open ? (
         <div

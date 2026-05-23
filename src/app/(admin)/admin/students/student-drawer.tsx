@@ -121,6 +121,10 @@ function DrawerContent({ data }: { data: DrawerData }) {
             <EnrollmentPayments
               enrollmentId={enr.id}
               feeCents={enr.feeCents}
+              studentId={data.id}
+              studentName={data.fullName}
+              studentEmail={data.email}
+              batchCode={enr.batchCode}
               payments={enr.payments.map((p) => ({
                 id: p.id,
                 amountCents: p.amountCents,

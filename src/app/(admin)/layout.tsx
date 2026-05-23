@@ -4,6 +4,7 @@ import { startOfToday } from "date-fns";
 import { computeUrgency } from "@/lib/students/filters";
 import { Sidebar } from "./_components/sidebar";
 import { TopBar } from "./_components/top-bar";
+import { MobileNav } from "./_components/mobile-nav";
 
 export default async function AdminLayout({
   children,
@@ -83,8 +84,12 @@ export default async function AdminLayout({
 
       <main className="flex-1 flex flex-col min-w-0">
         <TopBar />
-        <div className="px-8 py-7 w-full print:px-0 print:py-0">{children}</div>
+        <div className="px-4 sm:px-6 lg:px-8 py-5 lg:py-7 w-full pb-24 lg:pb-7 print:px-0 print:py-0">
+          {children}
+        </div>
       </main>
+
+      <MobileNav isAdmin={user.role === "ADMIN"} urgentCount={urgentCount} />
     </div>
   );
 }
