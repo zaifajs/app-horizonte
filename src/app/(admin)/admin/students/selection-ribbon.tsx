@@ -31,50 +31,9 @@ export function SelectionRibbon({
       </div>
 
       <div className="sm:ml-auto flex items-center gap-1.5 flex-wrap">
-        <button
-          type="button"
-          className="btn-ghost text-xs"
-          style={{ padding: "5px 10px" }}
-          title="Coming soon"
-          disabled
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="2" y="5" width="20" height="14" rx="2" />
-            <path d="M2 10h20" />
-          </svg>
-          Record payment ({selected.size})
-        </button>
-        <button
-          type="button"
-          className="btn-ghost text-xs"
-          style={{ padding: "5px 10px" }}
-          title="Coming soon"
-          disabled
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-          Export
-        </button>
-        <button
-          type="button"
-          className="btn-ghost text-xs"
-          style={{
-            padding: "5px 10px",
-            color: "var(--hz-danger)",
-            borderColor: "rgba(248,113,113,0.3)",
-          }}
-          title="Coming soon"
-          disabled
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <path d="m4.9 4.9 14.2 14.2" />
-          </svg>
-          Withdraw
-        </button>
+        {/* Bulk Record payment / Export / Withdraw are deferred — the
+            disabled buttons that lived here were confusing affordances.
+            Reintroduce them as enabled actions when the server actions exist. */}
         <button
           type="button"
           onClick={onSendWhatsApp}

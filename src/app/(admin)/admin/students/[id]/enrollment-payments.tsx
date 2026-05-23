@@ -149,31 +149,33 @@ export function EnrollmentPayments({
         onConfirm={remove}
       />
 
-      {/* Use the same QuickPay modal as the students list. Custom trigger
-          so the button shows "Record first/another payment" instead of an
-          icon. */}
-      <QuickPay
-        enrollmentId={enrollmentId}
-        studentId={studentId}
-        studentName={studentName}
-        remainingCents={leftCents}
-        feeCents={feeCents}
-        paidCents={totalPaidCents}
-        studentEmail={studentEmail}
-        batchCode={batchCode}
-        urgencyTone={urgencyTone}
-        trigger={(open) => (
-          <button
-            type="button"
-            onClick={(e) => open(e)}
-            className={fullyPaid ? "btn-ghost" : "btn-primary"}
-          >
-            {payments.length === 0
-              ? "Record first payment"
-              : "Record another payment"}
-          </button>
-        )}
-      />
+      {/* Once the enrollment is fully paid, the "record another payment"
+          affordance is a misclick trap — hide it. Overpayments are rare
+          enough to handle by deleting+re-adding a row. */}
+      {fullyPaid ? null : (
+        <QuickPay
+          enrollmentId={enrollmentId}
+          studentId={studentId}
+          studentName={studentName}
+          remainingCents={leftCents}
+          feeCents={feeCents}
+          paidCents={totalPaidCents}
+          studentEmail={studentEmail}
+          batchCode={batchCode}
+          urgencyTone={urgencyTone}
+          trigger={(open) => (
+            <button
+              type="button"
+              onClick={(e) => open(e)}
+              className="btn-primary"
+            >
+              {payments.length === 0
+                ? "Record first payment"
+                : "Record another payment"}
+            </button>
+          )}
+        />
+      )}
 
       {error ? (
         <p className="text-sm" style={{ color: "var(--hz-danger)" }}>
