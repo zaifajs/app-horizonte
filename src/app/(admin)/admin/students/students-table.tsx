@@ -169,15 +169,18 @@ function TableInner({
                   <SelectAllCheckbox rowIds={visibleIds} />
                 </th>
                 <th style={{ width: 50 }}>#</th>
-                <SortableHeader filters={filters} sort="name">
+                {/* Student column takes whatever's left after the fixed-width
+                    columns below. Used to hog the row because nothing else
+                    had a fixed width. */}
+                <SortableHeader filters={filters} sort="name" className="min-w-[200px]">
                   Student
                 </SortableHeader>
-                <SortableHeader filters={filters} sort="batch" className="w-[100px]">
+                <SortableHeader filters={filters} sort="batch" className="w-[80px]">
                   Batch
                 </SortableHeader>
-                <th style={{ width: 200 }}>Payment</th>
+                <th style={{ width: 180 }}>Payment</th>
                 <th style={{ width: 200 }}>Phone</th>
-                <th style={{ width: 100, textAlign: "right" }}>Actions</th>
+                <th style={{ width: 110, textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -317,8 +320,15 @@ function StudentRowEl({
         )}
       </td>
       <td>
-        <div className="flex items-center gap-2">
-          <span className="hz-mono text-sm">{row.phone}</span>
+        {/* Phone cell is now just the number — wider column lets the typical
+            "+351 92 273 6183" string fit on one line without wrapping. */}
+        <span className="hz-mono text-sm whitespace-nowrap">{row.phone}</span>
+      </td>
+      <td style={{ textAlign: "right" }}>
+        {/* Unified Actions cell: WhatsApp compose + record-payment side by
+            side. Empty row gets a neutral em-dash; rows with neither phone
+            nor outstanding balance fall back to that. */}
+        <div className="flex items-center justify-end gap-1.5">
           {cleanPhone ? (
             <button
               type="button"
@@ -336,34 +346,33 @@ function StudentRowEl({
               </svg>
             </button>
           ) : null}
+          {row.latestEnrollment && row.dueCents > 0 ? (
+            <span onClick={(e) => e.stopPropagation()}>
+              <QuickPay
+                enrollmentId={row.latestEnrollment.id}
+                studentId={row.id}
+                studentName={row.fullName}
+                remainingCents={row.dueCents}
+                feeCents={row.latestEnrollment.feeCents}
+                paidCents={row.paidCents}
+                studentEmail={row.email}
+                batchCode={row.latestEnrollment.batchCode}
+                urgencyTone={
+                  row.urgency === "overdue"
+                    ? "danger"
+                    : row.urgency === "partial"
+                      ? "warning"
+                      : row.urgency === "due_soon"
+                        ? "due"
+                        : "neutral"
+                }
+              />
+            </span>
+          ) : null}
+          {!cleanPhone && (!row.latestEnrollment || row.dueCents <= 0) ? (
+            <span className="hz-mono" style={{ color: "var(--hz-ink-3)" }}>—</span>
+          ) : null}
         </div>
-      </td>
-      <td style={{ textAlign: "right" }}>
-        {row.latestEnrollment && row.dueCents > 0 ? (
-          <span onClick={(e) => e.stopPropagation()}>
-            <QuickPay
-              enrollmentId={row.latestEnrollment.id}
-              studentId={row.id}
-              studentName={row.fullName}
-              remainingCents={row.dueCents}
-              feeCents={row.latestEnrollment.feeCents}
-              paidCents={row.paidCents}
-              studentEmail={row.email}
-              batchCode={row.latestEnrollment.batchCode}
-              urgencyTone={
-                row.urgency === "overdue"
-                  ? "danger"
-                  : row.urgency === "partial"
-                    ? "warning"
-                    : row.urgency === "due_soon"
-                      ? "due"
-                      : "neutral"
-              }
-            />
-          </span>
-        ) : (
-          <span className="hz-mono" style={{ color: "var(--hz-ink-3)" }}>—</span>
-        )}
       </td>
     </tr>
   );
