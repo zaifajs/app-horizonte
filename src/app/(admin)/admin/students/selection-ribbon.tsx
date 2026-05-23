@@ -1,6 +1,9 @@
 "use client";
 
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useSelection } from "./bulk-actions";
+import { provisionStudentAuthBulk } from "@/lib/actions/student-auth";
 
 export function SelectionRibbon({
   visibleCount,
@@ -10,7 +13,44 @@ export function SelectionRibbon({
   onSendWhatsApp: () => void;
 }) {
   const { selected, clear } = useSelection();
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [status, setStatus] = useState<
+    | null
+    | {
+        tone: "success" | "warning" | "danger";
+        text: string;
+      }
+  >(null);
+
   if (selected.size === 0) return null;
+
+  function sendPortalInvites() {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    const confirmMsg =
+      ids.length === 1
+        ? "Send portal invite to 1 selected student?"
+        : `Send portal invites to ${ids.length} selected students?`;
+    if (!window.confirm(confirmMsg)) return;
+    setStatus(null);
+    startTransition(async () => {
+      const result = await provisionStudentAuthBulk({ studentIds: ids });
+      if (!result.ok) {
+        setStatus({ tone: "danger", text: result.error });
+        return;
+      }
+      const parts: string[] = [];
+      if (result.invited > 0) parts.push(`${result.invited} invited`);
+      if (result.alreadyLinked > 0) parts.push(`${result.alreadyLinked} already linked`);
+      if (result.failed.length > 0) parts.push(`${result.failed.length} failed`);
+      setStatus({
+        tone: result.failed.length > 0 ? "warning" : "success",
+        text: parts.length ? parts.join(" · ") : "Nothing to do.",
+      });
+      if (result.invited > 0) router.refresh();
+    });
+  }
 
   return (
     <div
@@ -30,10 +70,41 @@ export function SelectionRibbon({
         </div>
       </div>
 
+      {status ? (
+        <div
+          className="hz-mono text-xs"
+          style={{
+            color:
+              status.tone === "success"
+                ? "var(--hz-success)"
+                : status.tone === "warning"
+                  ? "var(--hz-warning)"
+                  : "var(--hz-danger)",
+          }}
+          role="status"
+        >
+          {status.text}
+        </div>
+      ) : null}
+
       <div className="sm:ml-auto flex items-center gap-1.5 flex-wrap">
         {/* Bulk Record payment / Export / Withdraw are deferred — the
             disabled buttons that lived here were confusing affordances.
             Reintroduce them as enabled actions when the server actions exist. */}
+        <button
+          type="button"
+          onClick={sendPortalInvites}
+          disabled={pending}
+          className="btn-ghost text-xs"
+          style={{ padding: "5px 12px" }}
+          title="Send a portal-access email to the selected students"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+            <polyline points="22,6 12,13 2,6" />
+          </svg>
+          {pending ? "Inviting…" : `Send portal invite (${selected.size})`}
+        </button>
         <button
           type="button"
           onClick={onSendWhatsApp}

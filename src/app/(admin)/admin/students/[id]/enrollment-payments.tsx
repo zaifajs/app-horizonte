@@ -28,6 +28,7 @@ export function EnrollmentPayments({
   batchCode,
   urgencyTone,
   onMutate,
+  readOnly = false,
 }: {
   enrollmentId: string;
   feeCents: number;
@@ -42,6 +43,9 @@ export function EnrollmentPayments({
    *  and need to re-fetch — router.refresh() alone only revalidates server
    *  components, not local useState. */
   onMutate?: () => void;
+  /** Hide Delete + Record-payment affordances. Used by the student-facing
+   *  payments page; server actions still gate on ADMIN/STAFF as defence. */
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -131,14 +135,16 @@ export function EnrollmentPayments({
                     View proof
                   </a>
                 ) : null}
-                <button
-                  type="button"
-                  onClick={() => setConfirmDelete(p.id)}
-                  className="text-muted-foreground hover:text-destructive underline"
-                  disabled={pending}
-                >
-                  Delete
-                </button>
+                {readOnly ? null : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(p.id)}
+                    className="text-muted-foreground hover:text-destructive underline"
+                    disabled={pending}
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
             </li>
           ))}
@@ -159,7 +165,7 @@ export function EnrollmentPayments({
       {/* Once the enrollment is fully paid, the "record another payment"
           affordance is a misclick trap — hide it. Overpayments are rare
           enough to handle by deleting+re-adding a row. */}
-      {fullyPaid ? null : (
+      {readOnly || fullyPaid ? null : (
         <QuickPay
           enrollmentId={enrollmentId}
           studentId={studentId}

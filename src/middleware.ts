@@ -8,6 +8,7 @@ const intl = createIntlMiddleware(routing);
 const NON_LOCALE_PATHS = [
   "/admin",
   "/teacher",
+  "/student",
   "/login",
   "/logout",
   "/forbidden",

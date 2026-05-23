@@ -11,6 +11,7 @@ export default async function LoginPage() {
   if (user) {
     if (user.role === "ADMIN" || user.role === "STAFF") redirect("/admin/today");
     if (user.role === "TEACHER") redirect("/teacher");
+    if (user.role === "STUDENT") redirect("/student");
     redirect("/forbidden");
   }
 
