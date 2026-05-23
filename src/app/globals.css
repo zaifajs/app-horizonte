@@ -1,26 +1,758 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@custom-variant dark (&:is(.dark *));
+
+/* Tailwind v4 preflight removed cursor:pointer on <button>. Restore it. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-display);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ============================================================
+   V3 SLATE MONO — dark theme (single source of truth for now).
+   To add a light variant later, override these vars under .light.
+   ============================================================ */
+:root {
+  /* Brand */
+  --hz-primary: #B6FF3C;
+  --hz-primary-600: #9DE61A;
+  --hz-primary-50: rgba(182, 255, 60, 0.10);
+  --hz-accent: #FF7A45;
+  --hz-accent-50: rgba(255, 122, 69, 0.12);
+
+  /* Surfaces */
+  --hz-bg: #0B0E14;
+  --hz-surface: #131722;
+  --hz-surface-2: #171C2A;
+  --hz-line: #212838;
+
+  /* Ink */
+  --hz-ink: #E6E9EF;
+  --hz-ink-2: #9BA3B4;
+  --hz-ink-3: #5C6478;
+
+  /* Semantic */
+  --hz-success: #34D399;
+  --hz-success-50: rgba(52, 211, 153, 0.12);
+  --hz-warning: #F4B53F;
+  --hz-warning-50: rgba(244, 181, 63, 0.12);
+  --hz-danger: #F87171;
+  --hz-danger-50: rgba(248, 113, 113, 0.12);
+  --hz-info: #60A5FA;
+  --hz-info-50: rgba(96, 165, 250, 0.12);
+  --hz-muted: #5C6478;
+  --hz-muted-50: rgba(92, 100, 120, 0.18);
+
+  /* Shadcn tokens repointed to the dark palette so existing components
+     pick up the right surfaces without touching every callsite. */
+  --background: var(--hz-bg);
+  --foreground: var(--hz-ink);
+  --card: var(--hz-surface);
+  --card-foreground: var(--hz-ink);
+  --popover: var(--hz-surface);
+  --popover-foreground: var(--hz-ink);
+  --primary: var(--hz-primary);
+  --primary-foreground: #0B0E14;
+  --secondary: var(--hz-surface-2);
+  --secondary-foreground: var(--hz-ink);
+  --muted: var(--hz-surface-2);
+  --muted-foreground: var(--hz-ink-2);
+  --accent: var(--hz-surface-2);
+  --accent-foreground: var(--hz-ink);
+  --destructive: var(--hz-danger);
+  --border: var(--hz-line);
+  --input: var(--hz-line);
+  --ring: var(--hz-primary);
+  --chart-1: var(--hz-primary);
+  --chart-2: var(--hz-info);
+  --chart-3: var(--hz-warning);
+  --chart-4: var(--hz-danger);
+  --chart-5: var(--hz-accent);
+  --radius: 0.5rem;
+  --sidebar: var(--hz-surface);
+  --sidebar-foreground: var(--hz-ink);
+  --sidebar-primary: var(--hz-primary);
+  --sidebar-primary-foreground: #0B0E14;
+  --sidebar-accent: var(--hz-surface-2);
+  --sidebar-accent-foreground: var(--hz-ink);
+  --sidebar-border: var(--hz-line);
+  --sidebar-ring: var(--hz-primary);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "ss01" on, "cv11" on;
+  }
+  html {
+    @apply font-sans;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ============================================================
+   V3 utility classes — used directly in JSX to match the
+   designed HTML. Keep names stable; pages reference them.
+   ============================================================ */
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display), ui-sans-serif, sans-serif;
+    letter-spacing: -0.02em;
+  }
+  .hz-mono {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-feature-settings: "zero" on;
+  }
+
+  /* Hairlines */
+  .hair { border-color: var(--hz-line); }
+  .hair-b { border-bottom: 1px solid var(--hz-line); }
+  .hair-t { border-top: 1px solid var(--hz-line); }
+  .hair-r { border-right: 1px solid var(--hz-line); }
+  .hair-l { border-left: 1px solid var(--hz-line); }
+
+  /* Cards & rows */
+  .hz-card {
+    background: var(--hz-surface);
+    border: 1px solid var(--hz-line);
+    border-radius: 8px;
+  }
+  .row-hover:hover { background: rgba(255, 255, 255, 0.025); }
+
+  /* Sidebar nav */
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    color: var(--hz-ink-2);
+    font-weight: 500;
+    font-size: 1rem;
+    font-family: var(--font-sans);
+  }
+  .nav-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--hz-ink);
+  }
+  .nav-item.active {
+    background: var(--hz-surface-2);
+    color: var(--hz-ink);
+    position: relative;
+  }
+  .nav-item.active::before {
+    content: "";
+    position: absolute;
+    left: -12px;
+    top: 7px;
+    bottom: 7px;
+    width: 2px;
+    background: var(--hz-primary);
+    border-radius: 0 2px 2px 0;
+  }
+
+  /* Keyboard hint */
+  .kbd {
+    font-family: var(--font-mono), monospace;
+    font-size: 0.875rem;
+    border: 1px solid var(--hz-line);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--hz-ink-3);
+    background: var(--hz-surface-2);
+  }
+
+  /* Chips */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-mono), monospace;
+    font-size: 0.875rem;
+    line-height: 1;
+    padding: 3px 6px;
+    border-radius: 3px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .chip-danger { background: var(--hz-danger-50); color: var(--hz-danger); }
+  .chip-warning { background: var(--hz-warning-50); color: var(--hz-warning); }
+  .chip-success { background: var(--hz-success-50); color: var(--hz-success); }
+  .chip-info { background: var(--hz-info-50); color: var(--hz-info); }
+  .chip-muted { background: var(--hz-muted-50); color: var(--hz-ink-2); }
+  .chip-accent { background: var(--hz-accent-50); color: var(--hz-accent); }
+  .chip-primary { background: var(--hz-primary-50); color: var(--hz-primary); }
+  .chip-outline {
+    background: transparent;
+    color: var(--hz-ink-2);
+    border: 1px solid var(--hz-line);
+  }
+
+  /* Dot indicator */
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* Stat number */
+  .stat-num {
+    font-family: var(--font-display), sans-serif;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
+  /* Icon button */
+  .ibtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 5px;
+    color: var(--hz-ink-2);
+    background: var(--hz-surface-2);
+    border: 1px solid var(--hz-line);
+  }
+  .ibtn:hover {
+    color: var(--hz-ink);
+    border-color: var(--hz-ink-3);
+  }
+
+  /* Buttons */
+  .btn-primary {
+    background: var(--hz-primary);
+    color: #0B0E14;
+    padding: 7px 13px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-sans);
+  }
+  .btn-primary:hover { background: var(--hz-primary-600); }
+
+  .btn-ghost {
+    background: var(--hz-surface-2);
+    color: var(--hz-ink-2);
+    padding: 6px 11px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--hz-line);
+  }
+  .btn-ghost:hover {
+    color: var(--hz-ink);
+    border-color: var(--hz-ink-3);
+  }
+
+  /* Avatar tile */
+  .avi {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono), monospace;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--hz-ink);
+    flex-shrink: 0;
+    background: var(--hz-surface-2);
+    border: 1px solid var(--hz-line);
+  }
+
+  /* Vertical rail (urgency indicator on left of a row) */
+  .rail {
+    width: 2px;
+    border-radius: 1px;
+    align-self: stretch;
+  }
+
+  /* Data-cells grid look */
+  .grid-cells > * {
+    padding: 14px 16px;
+    border-right: 1px solid var(--hz-line);
+    border-bottom: 1px solid var(--hz-line);
+  }
+  .grid-cells > *:last-child { border-right: none; }
+
+  /* Text-paired status pill */
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono), monospace;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* Section title (uppercase mono small caps) */
+  .section-title {
+    font-family: var(--font-mono), monospace;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--hz-ink-3);
+    font-weight: 600;
+  }
+
+  /* Glow accent */
+  .glow-primary {
+    box-shadow:
+      0 0 0 1px rgba(182, 255, 60, 0.15),
+      0 0 24px -8px rgba(182, 255, 60, 0.4);
+  }
+
+  /* Checkbox (V3 lime) */
+  .hz-cb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--hz-ink-3);
+    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    background: transparent;
+    transition: border-color 0.12s, background 0.12s;
+  }
+  .hz-cb:hover { border-color: var(--hz-ink-2); }
+  .hz-cb:checked {
+    background: var(--hz-primary);
+    border-color: var(--hz-primary-600);
+  }
+  .hz-cb:checked::after {
+    content: "";
+    width: 10px;
+    height: 10px;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%230B0E14' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='3,8 7,12 13,4'/></svg>") center/contain no-repeat;
+  }
+  .hz-cb.indeterminate {
+    background: var(--hz-primary);
+    border-color: var(--hz-primary-600);
+  }
+  .hz-cb.indeterminate::after {
+    content: "";
+    width: 10px;
+    height: 2px;
+    background: #0B0E14;
+    border-radius: 1px;
+  }
+
+  /* Data table */
+  .stbl {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .stbl thead th {
+    position: sticky;
+    top: 0;
+    background: var(--hz-surface-2);
+    text-align: left;
+    padding: 10px 14px;
+    font-family: var(--font-mono), monospace;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--hz-ink-3);
+    font-weight: 600;
+    border-bottom: 1px solid var(--hz-line);
+    white-space: nowrap;
+    z-index: 1;
+  }
+  .stbl tbody td {
+    padding: 13px 14px;
+    border-bottom: 1px solid var(--hz-line);
+    vertical-align: middle;
+    font-size: 0.875rem;
+  }
+  .stbl tbody tr:hover td { background: rgba(255, 255, 255, 0.025); }
+  /* Urgency row tints — subtle flat tint, rail does the heavy lifting */
+  .stbl tbody tr.t-overdue:not(.sel) td { background: rgba(248, 113, 113, 0.05); }
+  .stbl tbody tr.t-partial:not(.sel) td { background: rgba(244, 181, 63, 0.05); }
+  .stbl tbody tr.t-due:not(.sel) td     { background: rgba(251, 146, 60, 0.05); }
+  /* Selected row — lime tint, rail still visible */
+  .stbl tbody tr.sel td { background: var(--hz-primary-50); }
+  .stbl tbody tr.sel td:first-child { box-shadow: inset 2px 0 0 var(--hz-primary); }
+  .rail-cell { position: relative; }
+  .rail-cell .r {
+    position: absolute;
+    left: 0;
+    top: 10px;
+    bottom: 10px;
+    width: 2px;
+    border-radius: 2px;
+  }
+
+  /* Segmented control */
+  .seg {
+    display: inline-flex;
+    background: var(--hz-surface);
+    border: 1px solid var(--hz-line);
+    border-radius: 7px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .seg > button, .seg > a {
+    padding: 6px 11px;
+    border-radius: 5px;
+    font-size: 0.875rem;
+    color: var(--hz-ink-2);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .seg > button:hover, .seg > a:hover { color: var(--hz-ink); }
+  .seg > button.on, .seg > a.on {
+    background: var(--hz-surface-2);
+    color: var(--hz-ink);
+    font-weight: 600;
+    box-shadow: inset 0 0 0 1px var(--hz-line);
+  }
+  .seg .ct {
+    font-family: var(--font-mono), monospace;
+    font-size: 0.75rem;
+    color: var(--hz-ink-3);
+    font-weight: 500;
+  }
+  .seg .on .ct { color: var(--hz-ink-2); }
+
+  /* Field label (uppercase mono small caps) */
+  .field-label {
+    display: block;
+    font-family: var(--font-mono), monospace;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--hz-ink-3);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .field-label .req { color: var(--hz-danger); margin-left: 3px; }
+
+  /* Payment method selector (large icon button with radio dot) */
+  .pay-method {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--hz-line);
+    border-radius: 7px;
+    background: var(--hz-surface-2);
+    cursor: pointer;
+    flex: 1;
+    color: var(--hz-ink-2);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.12s;
+  }
+  .pay-method:hover { border-color: var(--hz-ink-3); color: var(--hz-ink); }
+  .pay-method.on {
+    background: var(--hz-primary-50);
+    border-color: var(--hz-primary);
+    color: var(--hz-ink);
+  }
+  .pay-method .ind {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--hz-ink-3);
+    position: relative;
+    flex-shrink: 0;
+  }
+  .pay-method.on .ind { border-color: var(--hz-primary); }
+  .pay-method.on .ind::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border-radius: 50%;
+    background: var(--hz-primary);
+  }
+
+  /* Large display-font amount input */
+  .pay-amount {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    height: 52px;
+    background: var(--hz-surface-2);
+    border: 1px solid var(--hz-line);
+    border-radius: 7px;
+  }
+  .pay-amount:focus-within {
+    border-color: var(--hz-primary);
+    box-shadow: 0 0 0 3px var(--hz-primary-50);
+    background: var(--hz-surface);
+  }
+  .pay-amount .cur {
+    font-family: var(--font-display), sans-serif;
+    font-size: 1.375rem;
+    font-weight: 500;
+    color: var(--hz-ink-3);
+  }
+  .pay-amount input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--hz-ink);
+    font-family: var(--font-display), sans-serif;
+    font-size: 1.5rem;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    text-align: right;
+    width: 100%;
+  }
+
+  /* Progress bar (used in batches list, payment progress) */
+  .pbar {
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+    display: block;
+  }
+  .pbar > span {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--hz-primary);
+    transition: width 0.2s ease;
+  }
+
+  /* Quick amount preset pill */
+  .quick-amt {
+    display: inline-flex;
+    padding: 5px 10px;
+    border: 1px solid var(--hz-line);
+    border-radius: 5px;
+    background: var(--hz-surface-2);
+    color: var(--hz-ink-2);
+    font-family: var(--font-mono), monospace;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+  .quick-amt:hover { border-color: var(--hz-ink-3); color: var(--hz-ink); }
+  .quick-amt.on {
+    background: var(--hz-primary-50);
+    border-color: var(--hz-primary);
+    color: var(--hz-primary);
+  }
+
+  /* Hide the browser-native calendar/clear/time icons inside .inp — we
+     supply our own leading icon and don't want the duplicate. */
+  .inp input::-webkit-calendar-picker-indicator {
+    display: none;
+    -webkit-appearance: none;
+  }
+  .inp input[type="date"],
+  .inp input[type="time"] {
+    color-scheme: dark;
+  }
+
+  /* Form input pill (used in filter bar) */
+  .inp {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--hz-line);
+    border-radius: 7px;
+    background: var(--hz-surface);
+    color: var(--hz-ink);
+    font-size: 0.875rem;
+    min-width: 0;
+  }
+  .inp:focus-within {
+    border-color: var(--hz-primary);
+    box-shadow: 0 0 0 3px var(--hz-primary-50);
+  }
+  .inp input {
+    outline: none;
+    border: none;
+    background: transparent;
+    flex: 1;
+    font-family: var(--font-sans);
+    min-width: 0;
+    color: var(--hz-ink);
+  }
+  .inp input::placeholder { color: var(--hz-ink-3); }
+}
+
+@keyframes hz-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.hz-pulse { animation: hz-pulse 2s infinite; }
+
+/* Brief flash on the QuickPay amount field after a quick-amount chip click
+   so the user sees their tap landed. */
+@keyframes hzAmountFlash {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--hz-primary) 60%, transparent); border-color: var(--hz-primary); }
+  60% { box-shadow: 0 0 0 6px color-mix(in oklab, var(--hz-primary) 0%, transparent); border-color: var(--hz-primary); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* =========================================================================
+   V3 Select — trigger, popup, item, state dot.
+   These classes live here so the React wrapper stays Tailwind-only and the
+   state-based styling (hover, focus, selected) can use real CSS selectors
+   instead of long Tailwind variant chains.
+   ========================================================================= */
+
+.hz-select-trigger {
+  background: var(--hz-surface-2);
+  border: 1px solid var(--hz-line);
+  color: var(--hz-ink);
+  cursor: pointer;
+}
+.hz-select-trigger:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--hz-surface-2) 70%, var(--hz-primary-50) 30%);
+  border-color: color-mix(in oklab, var(--hz-line) 50%, var(--hz-primary) 50%);
+}
+.hz-select-trigger[data-popup-open] {
+  background: color-mix(in oklab, var(--hz-surface-2) 60%, var(--hz-primary-50) 40%);
+  border-color: var(--hz-primary);
+}
+.hz-select-trigger:focus-visible {
+  outline: none;
+  border-color: var(--hz-primary);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--hz-primary) 35%, transparent);
+}
+
+.hz-select-content {
+  background: var(--hz-surface-2);
+  border: 1px solid var(--hz-line);
+  border-radius: 12px;
+  color: var(--hz-ink);
+  box-shadow:
+    0 1px 0 0 color-mix(in oklab, var(--hz-line) 50%, transparent) inset,
+    0 16px 40px -12px rgba(0, 0, 0, 0.55),
+    0 4px 12px -4px rgba(0, 0, 0, 0.35);
+}
+
+/* Border-on-highlight pattern (GitHub-style "new" dropdown). The hovered or
+   keyboard-focused row gets a 1.5px primary border instead of a fill — feels
+   more deliberate than a flat colour swap. A faint primary-50 background
+   tint underneath keeps the row legible without competing with the border. */
+.hz-select-item {
+  color: var(--hz-ink-2);
+  border: 1.5px solid transparent;
+  transition: background 100ms ease, color 100ms ease, border-color 100ms ease;
+}
+.hz-select-item:hover:not([data-disabled]),
+.hz-select-item[data-highlighted] {
+  background: color-mix(in oklab, transparent 70%, var(--hz-primary-50) 30%);
+  border-color: var(--hz-primary);
+  color: var(--hz-ink);
+}
+.hz-select-item[data-selected] {
+  color: var(--hz-ink);
+  font-weight: 500;
+}
+/* Optional: items can render a small leading icon — give it a consistent
+   colour and align it with the indicator dot. Consumers just include an
+   <svg> or icon as part of children; this rule keeps it visually anchored. */
+.hz-select-item svg {
+  color: var(--hz-ink-3);
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+.hz-select-item[data-highlighted] svg,
+.hz-select-item:hover:not([data-disabled]) svg,
+.hz-select-item[data-selected] svg {
+  color: var(--hz-ink-2);
+}
+
+/* The left-side state dot: hollow ring when unselected, filled lime pill
+   when selected. The indicator <span> is always in the DOM (keepMounted)
+   and renders its child (.hz-select-dot) only when the item is selected. */
+.hz-select-indicator {
+  border: 1px solid color-mix(in oklab, var(--hz-line) 70%, transparent);
+  background: transparent;
+}
+.hz-select-item[data-selected] .hz-select-indicator {
+  border-color: transparent;
+  background: transparent;
+}
+.hz-select-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--hz-primary);
+  box-shadow: 0 0 8px color-mix(in oklab, var(--hz-primary) 70%, transparent);
 }

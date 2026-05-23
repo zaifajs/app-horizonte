@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1280" />
+<title>M32 · Horizonte (Teacher)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#B6FF3C; --primary-600:#9DE61A; --primary-50:rgba(182,255,60,.10);
+    --bg:#0B0E14; --surface:#131722; --surface-2:#171C2A; --line:#212838;
+    --ink:#E6E9EF; --ink-2:#9BA3B4; --ink-3:#5C6478;
+    --success:#34D399; --success-50:rgba(52,211,153,.12);
+    --warning:#F4B53F; --info:#60A5FA; --info-50:rgba(96,165,250,.12); --danger:#F87171;
+  }
+  html,body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .font-disp{font-family:'Space Grotesk',sans-serif;letter-spacing:-.02em}
+  .font-mono{font-family:'IBM Plex Mono',monospace}
+  .hair-b{border-bottom:1px solid var(--line)} .hair-t{border-top:1px solid var(--line)} .hair-r{border-right:1px solid var(--line)}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;color:var(--ink-2);font-weight:500;font-size:13px}
+  .nav-item:hover{background:rgba(255,255,255,.04);color:var(--ink)}
+  .nav-item.active{background:var(--surface-2);color:var(--ink);position:relative}
+  .nav-item.active::before{content:"";position:absolute;left:-12px;top:7px;bottom:7px;width:2px;background:var(--primary);border-radius:0 2px 2px 0}
+  .chip{display:inline-flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;line-height:1;padding:3px 6px;border-radius:3px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+  .chip-primary{background:var(--primary-50);color:var(--primary)}
+  .chip-outline{background:transparent;color:var(--ink-2);border:1px solid var(--line)}
+  .chip-info{background:var(--info-50);color:var(--info)}
+  .dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:8px}
+  .btn-primary{background:var(--primary);color:#0B0E14;padding:8px 13px;border-radius:6px;font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:6px}
+  .btn-ghost{background:var(--surface-2);color:var(--ink-2);padding:7px 11px;border-radius:6px;font-weight:500;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line)}
+  .avi{display:inline-flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:5px}
+  .status-pill{display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+
+  /* Session tile */
+  .stile{background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:10px 11px;display:flex;flex-direction:column;gap:5px;min-height:100px;transition:all .12s}
+  .stile:hover{border-color:var(--ink-3)}
+  .stile .num{font-family:'IBM Plex Mono';font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--ink-3)}
+  .stile .nm{font-size:12px;line-height:1.25;color:var(--ink);font-weight:500}
+  .stile .dt{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--ink-3);margin-top:auto}
+  .stile.held    {background:var(--success-50);border-color:rgba(52,211,153,.3)}
+  .stile.held .num{color:var(--success)}
+  .stile.today   {background:var(--primary-50);border:1.5px solid var(--primary);box-shadow:0 0 24px -12px rgba(182,255,60,.5)}
+  .stile.today .num{color:var(--primary)}
+  .stile.upcoming{}
+  .stile.aut     {background:var(--surface-2);border-style:dashed}
+  .stile.aut .num{color:var(--info)}
+  .stile .badge{position:absolute;top:6px;right:8px;font-family:'IBM Plex Mono';font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+  .stile{position:relative}
+</style>
+</head>
+<body class="min-h-screen">
+<div class="flex min-h-screen">
+
+  <aside class="hair-r flex flex-col" style="width:232px;background:var(--surface);position:sticky;top:0;height:100vh">
+    <div class="px-4 pt-4 pb-4 hair-b">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-md flex items-center justify-center" style="background:var(--primary)"><span class="font-mono text-[12px] font-bold" style="color:#0B0E14">nh</span></div>
+        <div class="leading-tight"><div class="font-mono text-[13px] font-semibold">horizonte<span style="color:var(--primary)">/</span></div><div class="text-[10px] uppercase tracking-[.18em] font-mono" style="color:var(--ink-3)">teacher</div></div>
+      </div>
+    </div>
+    <div class="px-4 pt-4 pb-1.5"><div class="text-[9.5px] uppercase tracking-[.18em] font-mono font-semibold" style="color:var(--ink-3)">Today</div></div>
+    <nav class="px-3 flex flex-col gap-0.5">
+      <a class="nav-item" href="teacher-landing.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>My batches</a>
+    </nav>
+    <div class="px-4 pt-6 pb-1.5"><div class="text-[9.5px] uppercase tracking-[.18em] font-mono font-semibold" style="color:var(--ink-3)">Batches</div></div>
+    <div class="px-3 flex flex-col gap-0.5">
+      <a class="nav-item active" href="#"><span class="font-mono text-[12px] font-semibold" style="color:var(--primary)">M32</span><span class="truncate" style="color:var(--ink-2)">PLA · A2</span><span class="ml-auto status-pill" style="color:var(--success)"><span class="dot" style="background:var(--success)"></span>now</span></a>
+    </div>
+    <div class="mt-auto p-3 hair-t"><button class="w-full flex items-center gap-2 p-1.5 rounded-md" style="background:var(--surface-2)"><span class="avi" style="width:28px;height:28px;font-size:10.5px;color:var(--info);background:var(--info-50);border-color:rgba(96,165,250,.25)">PS</span><span class="text-left leading-tight flex-1 min-w-0"><span class="block text-[12.5px] font-semibold truncate font-mono">Pedro Santos</span><span class="block text-[10px] truncate font-mono" style="color:var(--ink-3)">Teacher</span></span></button></div>
+  </aside>
+
+  <main class="flex-1 flex flex-col min-w-0">
+    <header class="hair-b sticky top-0 z-10" style="background:rgba(11,14,20,.85);backdrop-filter:blur(8px)">
+      <div class="px-8 h-12 flex items-center gap-3">
+        <nav class="flex items-center gap-2 text-[12.5px] font-mono" style="color:var(--ink-3)"><a href="teacher-landing.html" class="hover:text-white">teacher</a><span>/</span><span style="color:var(--ink)">M32</span></nav>
+      </div>
+    </header>
+
+    <div class="px-8 py-7 max-w-[1320px] w-full">
+
+      <!-- Header -->
+      <section class="flex items-end justify-between gap-6 mb-6">
+        <div>
+          <div class="text-[11px] font-mono uppercase tracking-[.18em]" style="color:var(--ink-3)">Batch overview</div>
+          <div class="mt-1 flex items-baseline gap-3 flex-wrap">
+            <h1 class="font-disp text-[34px] font-medium">Batch <span style="color:var(--primary)">M32</span></h1>
+            <span class="chip chip-outline">PLA · A2</span>
+            <span class="text-[14px]" style="color:var(--ink-2)">Português Língua de Acolhimento</span>
+          </div>
+          <div class="mt-1.5 text-[12.5px] font-mono" style="color:var(--ink-2)">10 students · Mon–Fri 18:00–22:00 · today is M2-D5</div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <a href="attendance-matrix.html" class="btn-ghost">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 3v18"/></svg>
+            Attendance matrix
+          </a>
+          <a href="teacher-session.html" class="btn-primary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Mark tonight's session
+          </a>
+        </div>
+      </section>
+
+      <!-- Module grids — 6 modules × 6 tiles -->
+      <section class="space-y-6">
+
+        <!-- MODULE 1 -->
+        <div>
+          <div class="flex items-baseline gap-3 mb-2.5">
+            <span class="font-mono text-[11px] font-semibold uppercase tracking-[.16em]" style="color:var(--success)">Module 01 · Done</span>
+            <span class="font-disp text-[15px] font-medium">Eu e a minha rotina diária</span>
+            <span class="font-mono text-[11px]" style="color:var(--ink-3)">May 18 – 22 · 20 / 20 h</span>
+            <div style="flex:1;height:1px;background:var(--line)"></div>
+          </div>
+          <div class="grid grid-cols-6 gap-2">
+            <div class="stile held"><div class="num">D1</div><div class="nm">Classroom session</div><div class="dt">Mon · 18-22 · 10 P</div></div>
+            <div class="stile held"><div class="num">D2</div><div class="nm">Classroom session</div><div class="dt">Tue · 18-22 · 10 P</div></div>
+            <div class="stile held"><div class="num">D3</div><div class="nm">Classroom session</div><div class="dt">Wed · 18-22 · 9 P · 1 A</div></div>
+            <div class="stile held"><div class="num">D4</div><div class="nm">Classroom session</div><div class="dt">Thu · 18-22 · 8 P · 2 L</div></div>
+            <div class="stile held"><div class="num">D5</div><div class="nm">Classroom session</div><div class="dt">Fri · 18-22 · 9 P · 1 X</div></div>
+            <div class="stile aut"><div class="num">AB</div><div class="nm">Autonomous · self-study</div><div class="dt">4 h · all logged</div></div>
+          </div>
+        </div>
+
+        <!-- MODULE 2 -->
+        <div>
+          <div class="flex items-baseline gap-3 mb-2.5">
+            <span class="font-mono text-[11px] font-semibold uppercase tracking-[.16em]" style="color:var(--primary)">Module 02 · Active</span>
+            <span class="font-disp text-[15px] font-medium">Hábitos alimentares, cultura e lazer</span>
+            <span class="font-mono text-[11px]" style="color:var(--ink-3)">May 25 – 29 · 12 / 20 h</span>
+            <div style="flex:1;height:1px;background:var(--line)"></div>
+          </div>
+          <div class="grid grid-cols-6 gap-2">
+            <div class="stile held"><div class="num">D1</div><div class="nm">Classroom session</div><div class="dt">Mon · 18-22 · 10 P</div></div>
+            <div class="stile held"><div class="num">D2</div><div class="nm">Classroom session</div><div class="dt">Tue · 18-22 · 10 P</div></div>
+            <div class="stile held"><div class="num">D3</div><div class="nm">Classroom session</div><div class="dt">Wed · 18-22 · 9 P · 1 A</div></div>
+            <div class="stile today">
+              <span class="badge" style="color:var(--primary)">TONIGHT</span>
+              <div class="num">D4</div><div class="nm" style="font-weight:600">Classroom · 18:00 tonight</div>
+              <div class="dt" style="color:var(--primary);font-weight:600">Mark attendance ↗</div>
+            </div>
+            <div class="stile upcoming"><div class="num">D5</div><div class="nm">Classroom session</div><div class="dt">Fri · 18-22 · upcoming</div></div>
+            <div class="stile aut"><div class="num">AB</div><div class="nm">Autonomous · self-study</div><div class="dt">4 h · 0 / 10 logged</div></div>
+          </div>
+        </div>
+
+        <!-- MODULE 3 -->
+        <div>
+          <div class="flex items-baseline gap-3 mb-2.5">
+            <span class="font-mono text-[11px] font-semibold uppercase tracking-[.16em]" style="color:var(--ink-3)">Module 03 · Upcoming</span>
+            <span class="font-disp text-[15px] font-medium" style="color:var(--ink-2)">A cidade e os transportes</span>
+            <span class="font-mono text-[11px]" style="color:var(--ink-3)">Jun 1 – 5 · in 10 days</span>
+            <div style="flex:1;height:1px;background:var(--line)"></div>
+          </div>
+          <div class="grid grid-cols-6 gap-2">
+            <div class="stile upcoming" style="opacity:.65"><div class="num">D1</div><div class="nm">Classroom</div><div class="dt">Mon · 18-22</div></div>
+            <div class="stile upcoming" style="opacity:.65"><div class="num">D2</div><div class="nm">Classroom</div><div class="dt">Tue · 18-22</div></div>
+            <div class="stile upcoming" style="opacity:.65"><div class="num">D3</div><div class="nm">Classroom</div><div class="dt">Wed · 18-22</div></div>
+            <div class="stile upcoming" style="opacity:.65"><div class="num">D4</div><div class="nm">Classroom</div><div class="dt">Thu · 18-22</div></div>
+            <div class="stile upcoming" style="opacity:.65"><div class="num">D5</div><div class="nm">Classroom</div><div class="dt">Fri · 18-22</div></div>
+            <div class="stile aut" style="opacity:.65"><div class="num">AB</div><div class="nm">Autonomous</div><div class="dt">4 h</div></div>
+          </div>
+        </div>
+
+        <!-- M4-M6 collapsed -->
+        <details class="card">
+          <summary class="px-5 py-3 cursor-pointer list-none flex items-center gap-3">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ink-3)"><path d="m9 18 6-6-6-6"/></svg>
+            <span class="font-mono text-[11px] font-semibold uppercase tracking-[.16em]" style="color:var(--ink-3)">Modules 04 – 06 · Upcoming</span>
+            <span class="font-mono text-[11px]" style="color:var(--ink-3)">18 sessions · Jun 8 – 26</span>
+            <div style="flex:1"></div>
+            <span class="chip chip-outline">Expand to view</span>
+          </summary>
+        </details>
+
+      </section>
+
+    </div>
+  </main>
+</div>
+  <script src="sidebar-collapse.js"></script>
+</body>
+</html>

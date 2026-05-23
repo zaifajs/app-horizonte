@@ -1,0 +1,54 @@
+name: Deploy
+
+on:
+  push:
+    branches: [develop, master]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve target environment
+        id: target
+        run: |
+          if [ "${GITHUB_REF}" = "refs/heads/master" ]; then
+            echo "site_user=nhorizonte-app"  >> "$GITHUB_OUTPUT"
+            echo "site_path=/home/nhorizonte-app/htdocs/app.nhorizonte.pt" >> "$GITHUB_OUTPUT"
+            echo "pm2_name=horizonte-prod"   >> "$GITHUB_OUTPUT"
+            echo "branch=master"             >> "$GITHUB_OUTPUT"
+            echo "label=PRODUCTION"          >> "$GITHUB_OUTPUT"
+          else
+            echo "site_user=nhorizonte-stage" >> "$GITHUB_OUTPUT"
+            echo "site_path=/home/nhorizonte-stage/htdocs/stage.nhorizonte.pt" >> "$GITHUB_OUTPUT"
+            echo "pm2_name=horizonte-stage"   >> "$GITHUB_OUTPUT"
+            echo "branch=develop"             >> "$GITHUB_OUTPUT"
+            echo "label=STAGING"              >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to ${{ steps.target.outputs.label }}
+        env:
+          SITE_PATH: ${{ steps.target.outputs.site_path }}
+          SITE_USER: ${{ steps.target.outputs.site_user }}
+          PM2_NAME:  ${{ steps.target.outputs.pm2_name }}
+          BRANCH:    ${{ steps.target.outputs.branch }}
+          GIT_SHA:   ${{ github.sha }}
+          VPS_HOST:  ${{ secrets.VPS_HOST }}
+        run: |
+          # Run the deploy script as the site user. The script is sent over stdin
+          # so it doesn't need to exist on the VPS first.
+          ssh -i ~/.ssh/id_ed25519 "root@${VPS_HOST}" \
+            "sudo -u ${SITE_USER} -H bash -s -- '${SITE_PATH}' '${BRANCH}' '${GIT_SHA}' '${PM2_NAME}'" \
+            < scripts/deploy-on-vps.sh

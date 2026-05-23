@@ -1,0 +1,1107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1280" />
+<title>Students · Horizonte CRM</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* === V3 dark tokens === */
+  :root{
+    --primary:#B6FF3C; --primary-600:#9DE61A; --primary-50:rgba(182,255,60,.10);
+    --accent:#FF7A45; --accent-50:rgba(255,122,69,.12);
+    --bg:#0B0E14; --surface:#131722; --surface-2:#171C2A; --line:#212838; --line-2:#1A1F2D;
+    --ink:#E6E9EF; --ink-2:#9BA3B4; --ink-3:#5C6478;
+    --success:#34D399; --success-50:rgba(52,211,153,.12);
+    --warning:#F4B53F; --warning-50:rgba(244,181,63,.12);
+    --due:#FB923C;     --due-50:rgba(251,146,60,.14);
+    --danger:#F87171;  --danger-50:rgba(248,113,113,.13);
+    --info:#60A5FA;    --info-50:rgba(96,165,250,.12);
+    --muted:#5C6478;   --muted-50:rgba(92,100,120,.18);
+  }
+  html,body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-feature-settings:"ss01" on,"cv11" on}
+  .font-disp{font-family:'Space Grotesk',ui-sans-serif,sans-serif;letter-spacing:-.02em}
+  .font-mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-feature-settings:"zero" on}
+  .hair{border-color:var(--line)}
+  .hair-b{border-bottom:1px solid var(--line)}
+  .hair-t{border-top:1px solid var(--line)}
+  .hair-r{border-right:1px solid var(--line)}
+  .hair-l{border-left:1px solid var(--line)}
+  .row-hover:hover{background:rgba(255,255,255,.025)}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;color:var(--ink-2);font-weight:500;font-size:13px}
+  .nav-item:hover{background:rgba(255,255,255,.04);color:var(--ink)}
+  .nav-item.active{background:var(--surface-2);color:var(--ink);position:relative}
+  .nav-item.active::before{content:"";position:absolute;left:-12px;top:7px;bottom:7px;width:2px;background:var(--primary);border-radius:0 2px 2px 0}
+  .kbd{font-family:'IBM Plex Mono',monospace;font-size:10.5px;border:1px solid var(--line);padding:1px 5px;border-radius:3px;color:var(--ink-3);background:var(--surface-2)}
+  .chip{display:inline-flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;line-height:1;padding:3px 6px;border-radius:3px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+  .chip-danger { background:var(--danger-50); color:var(--danger);}
+  .chip-warning{ background:var(--warning-50); color:var(--warning);}
+  .chip-due    { background:var(--due-50); color:var(--due);}
+  .chip-success{ background:var(--success-50); color:var(--success);}
+  .chip-info   { background:var(--info-50); color:var(--info);}
+  .chip-muted  { background:var(--muted-50); color:var(--ink-2);}
+  .chip-primary{ background:var(--primary-50); color:var(--primary);}
+  .chip-outline{ background:transparent; color:var(--ink-2); border:1px solid var(--line);}
+  .dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:8px}
+  .ibtn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:5px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line)}
+  .ibtn:hover{color:var(--ink);border-color:var(--ink-3)}
+  .btn-primary{background:var(--primary);color:#0B0E14;padding:8px 13px;border-radius:6px;font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:6px}
+  .btn-primary:hover{background:var(--primary-600)}
+  .btn-ghost{background:var(--surface-2);color:var(--ink-2);padding:7px 11px;border-radius:6px;font-weight:500;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line)}
+  .btn-ghost:hover{color:var(--ink);border-color:var(--ink-3)}
+  .avi{width:28px;height:28px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.04em;color:var(--ink);flex-shrink:0;background:var(--surface-2);border:1px solid var(--line)}
+  .status-pill{display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+
+  /* CHECKBOX */
+  .cb{appearance:none;width:14px;height:14px;border:1.5px solid var(--ink-3);border-radius:3px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:transparent}
+  .cb:hover{border-color:var(--ink-2)}
+  .cb:checked{background:var(--primary);border-color:var(--primary-600)}
+  .cb:checked::after{content:"";width:8px;height:8px;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%230B0E14' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='3,8 7,12 13,4'/></svg>") center/contain no-repeat}
+  .cb.indeterminate{background:var(--primary);border-color:var(--primary-600)}
+  .cb.indeterminate::after{content:"";width:8px;height:2px;background:#0B0E14;border-radius:1px}
+
+  /* TABLE */
+  .stbl{width:100%;border-collapse:separate;border-spacing:0}
+  .stbl thead th{position:sticky;top:0;background:var(--surface-2);text-align:left;padding:9px 12px;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--ink-3);font-weight:600;border-bottom:1px solid var(--line);white-space:nowrap;z-index:1}
+  .stbl tbody td{padding:11px 12px;border-bottom:1px solid var(--line-2);vertical-align:middle;font-size:13px}
+  .stbl tbody tr:hover td{background:rgba(255,255,255,.025)}
+  /* urgency tints (flat — no gradient). Urgency reads via rail + status pill */
+  .stbl tbody tr.t-overdue:not(.sel) td{background:rgba(248,113,113,.05)}
+  .stbl tbody tr.t-partial:not(.sel) td{background:rgba(244,181,63,.05)}
+  .stbl tbody tr.t-due:not(.sel) td    {background:rgba(251,146,60,.05)}
+  /* selected — flat lime tint, urgency still readable via the left rail */
+  .stbl tbody tr.sel td{background:var(--primary-50)}
+  .stbl tbody tr.sel td:first-child{box-shadow:inset 2px 0 0 var(--primary)}
+  .rail-cell{position:relative}
+  .rail-cell .r{position:absolute;left:0;top:8px;bottom:8px;width:2px;border-radius:2px}
+
+  /* Segmented */
+  .seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:3px;gap:2px}
+  .seg button{padding:5px 10px;border-radius:5px;font-size:12px;color:var(--ink-2);display:inline-flex;align-items:center;gap:6px;font-weight:500}
+  .seg button:hover{color:var(--ink)}
+  .seg button.on{background:var(--surface-2);color:var(--ink);font-weight:600;box-shadow:inset 0 0 0 1px var(--line)}
+  .seg .ct{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink-3);font-weight:500}
+  .seg button.on .ct{color:var(--ink-2)}
+
+  .inp{display:flex;align-items:center;gap:7px;height:34px;padding:0 11px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink);font-size:13px;min-width:0}
+  .inp:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-50)}
+  .inp input{outline:none;border:none;background:transparent;flex:1;font-family:'IBM Plex Sans';min-width:0;color:var(--ink)}
+  .inp input::placeholder{color:var(--ink-3)}
+
+  /* Payment modal */
+  .modal-back{position:fixed;inset:0;background:rgba(11,14,20,.75);backdrop-filter:blur(4px);z-index:50;display:flex;align-items:center;justify-content:center;padding:24px}
+  .modal{width:520px;max-width:100%;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:0 24px 60px -16px rgba(0,0,0,.6)}
+  .field-label{display:block;font-family:'IBM Plex Mono';font-size:10.5px;text-transform:uppercase;letter-spacing:.14em;color:var(--ink-3);font-weight:600;margin-bottom:6px}
+  .field-label .req{color:var(--danger);margin-left:3px}
+  .pay-method{display:flex;align-items:center;gap:8px;padding:11px 13px;border:1px solid var(--line);border-radius:7px;background:var(--surface-2);cursor:pointer;flex:1;color:var(--ink-2);font-size:13px;font-weight:500;transition:all .12s}
+  .pay-method:hover{border-color:var(--ink-3);color:var(--ink)}
+  .pay-method.on{background:var(--primary-50);border-color:var(--primary);color:var(--ink)}
+  .pay-method .ind{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink-3);position:relative;flex-shrink:0}
+  .pay-method.on .ind{border-color:var(--primary)}
+  .pay-method.on .ind::after{content:"";position:absolute;inset:2px;border-radius:50%;background:var(--primary)}
+  .pay-amount{display:flex;align-items:center;gap:10px;padding:0 14px;height:50px;background:var(--surface-2);border:1px solid var(--line);border-radius:7px}
+  .pay-amount:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-50);background:var(--surface)}
+  .pay-amount .cur{font-family:'Space Grotesk';font-size:22px;font-weight:500;color:var(--ink-3)}
+  .pay-amount input{flex:1;background:transparent;border:none;outline:none;color:var(--ink);font-family:'Space Grotesk';font-size:24px;font-weight:500;letter-spacing:-.02em;text-align:right;width:100%}
+  .quick-amt{display:inline-flex;padding:4px 9px;border:1px solid var(--line);border-radius:5px;background:var(--surface-2);color:var(--ink-2);font-family:'IBM Plex Mono';font-size:11.5px;cursor:pointer}
+  .quick-amt:hover{border-color:var(--ink-3);color:var(--ink)}
+  .quick-amt.on{background:var(--primary-50);border-color:var(--primary);color:var(--primary)}
+</style>
+</head>
+<body class="min-h-screen">
+
+<div class="flex min-h-screen">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="hair-r flex flex-col" style="width:232px;background:var(--surface);position:sticky;top:0;height:100vh">
+    <div class="px-4 pt-4 pb-4 hair-b">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-md flex items-center justify-center" style="background:var(--primary);box-shadow:0 0 16px -4px rgba(182,255,60,.5)">
+          <span class="font-mono text-[12px] font-bold" style="color:#0B0E14">nh</span>
+        </div>
+        <div class="leading-tight">
+          <div class="font-mono text-[13px] font-semibold" style="letter-spacing:-.005em">horizonte<span style="color:var(--primary)">/</span></div>
+          <div class="text-[10px] uppercase tracking-[.18em] font-mono" style="color:var(--ink-3)">admin · v26.05</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="px-3 pt-3 pb-2">
+      <button class="w-full flex items-center gap-2 h-8 px-2 rounded-md text-[12.5px]" style="border:1px solid var(--line);color:var(--ink-3);background:var(--bg)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <span class="font-mono">Search...</span>
+        <span class="ml-auto kbd">⌘K</span>
+      </button>
+    </div>
+
+    <div class="px-4 pt-3 pb-1.5">
+      <div class="text-[9.5px] uppercase tracking-[.18em] font-mono font-semibold" style="color:var(--ink-3)">Workspace</div>
+    </div>
+    <nav class="px-3 flex flex-col gap-0.5">
+      <a class="nav-item" href="today-v3.html">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Today
+        <span class="ml-auto chip chip-danger">3</span>
+      </a>
+      <a class="nav-item active" href="#">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Students
+        <span class="ml-auto font-mono text-[10.5px]" style="color:var(--ink-3)">87</span>
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 4v4"/><path d="M16 4v4"/></svg>
+        Batches
+        <span class="ml-auto font-mono text-[10.5px]" style="color:var(--ink-3)">4</span>
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Users
+      </a>
+    </nav>
+
+    <div class="px-4 pt-6 pb-1.5">
+      <div class="text-[9.5px] uppercase tracking-[.18em] font-mono font-semibold" style="color:var(--ink-3)">Pinned</div>
+    </div>
+    <div class="px-3 flex flex-col gap-0.5">
+      <a class="nav-item" href="#">
+        <span class="font-mono text-[12px] font-semibold" style="color:var(--primary)">M32</span>
+        <span class="truncate" style="color:var(--ink-2)">PLA · P. Santos</span>
+        <span class="ml-auto status-pill" style="color:var(--success)"><span class="dot" style="background:var(--success)"></span>active</span>
+      </a>
+      <a class="nav-item" href="#">
+        <span class="font-mono text-[12px] font-semibold" style="color:var(--primary)">J5</span>
+        <span class="truncate" style="color:var(--ink-2)">PLA · unassigned</span>
+        <span class="ml-auto status-pill" style="color:var(--warning)"><span class="dot" style="background:var(--warning)"></span>up</span>
+      </a>
+    </div>
+
+    <div class="mt-auto px-4 pt-3 pb-2 text-[10px] font-mono" style="color:var(--ink-3)">
+      <div class="flex items-center gap-1.5"><span class="dot" style="background:var(--success);box-shadow:0 0 6px var(--success)"></span> All systems normal</div>
+      <div class="mt-0.5">Last sync 2026-05-22 · 09:14</div>
+    </div>
+
+    <div class="p-3 hair-t">
+      <button class="w-full flex items-center gap-2 p-1.5 rounded-md" style="background:var(--surface-2)">
+        <span class="avi">HA</span>
+        <span class="text-left leading-tight flex-1 min-w-0">
+          <span class="block text-[12.5px] font-semibold truncate font-mono">Huzaifa Ahmed</span>
+          <span class="block text-[10px] truncate font-mono" style="color:var(--ink-3)">Admin</span>
+        </span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ink-3)"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="flex-1 flex flex-col min-w-0">
+
+    <header class="hair-b sticky top-0 z-10" style="background:rgba(11,14,20,.85);backdrop-filter:saturate(140%) blur(8px)">
+      <div class="px-8 h-12 flex items-center gap-3">
+        <nav class="flex items-center gap-2 text-[12.5px] font-mono" style="color:var(--ink-3)">
+          <a href="#" class="hover:text-white">admin</a>
+          <span>/</span>
+          <span style="color:var(--ink)">students</span>
+        </nav>
+        <span class="chip chip-outline ml-2"><span class="dot" style="background:var(--primary);box-shadow:0 0 6px var(--primary)"></span>87 rows · live</span>
+
+        <div class="ml-auto flex items-center gap-1.5">
+          <button class="ibtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16"/><path d="M3 21v-5h5"/></svg></button>
+          <button class="ibtn" style="position:relative">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            <span style="position:absolute;top:5px;right:5px;width:5px;height:5px;background:var(--danger);border-radius:50%;border:1px solid var(--surface)"></span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Body -->
+    <div class="flex-1 flex min-w-0">
+
+      <div class="flex-1 min-w-0 px-8 py-7">
+
+        <!-- Page header -->
+        <section class="flex items-end justify-between gap-6 mb-5">
+          <div>
+            <div class="text-[11px] font-mono uppercase tracking-[.18em]" style="color:var(--ink-3)">All students</div>
+            <div class="mt-1 flex items-baseline gap-3">
+              <h1 class="font-disp text-[32px] font-medium">Students</h1>
+              <span class="font-mono text-[14px]" style="color:var(--ink-3)">87 total</span>
+            </div>
+            <div class="mt-1.5 text-[12.5px] font-mono" style="color:var(--ink-2)">
+              78 active · 6 pending · 2 withdrawn · 1 completed
+            </div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button class="btn-ghost">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              export.csv
+            </button>
+            <button class="btn-ghost">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+              columns
+            </button>
+            <button class="btn-primary">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+              New student
+            </button>
+          </div>
+        </section>
+
+        <!-- Status segmented strip -->
+        <div class="mb-4 flex items-center gap-2 flex-wrap">
+          <div class="seg">
+            <button class="on">All <span class="ct">87</span></button>
+            <button>Active <span class="ct">78</span></button>
+            <button>Pending <span class="ct">6</span></button>
+            <button>Withdrawn <span class="ct">2</span></button>
+            <button>Completed <span class="ct">1</span></button>
+          </div>
+          <div class="seg ml-auto">
+            <button>
+              <span class="dot" style="background:var(--success)"></span>
+              Paid <span class="ct">61</span>
+            </button>
+            <button>
+              <span class="dot" style="background:var(--warning)"></span>
+              Partial <span class="ct">14</span>
+            </button>
+            <button>
+              <span class="dot" style="background:var(--due)"></span>
+              Due soon <span class="ct">9</span>
+            </button>
+            <button class="on">
+              <span class="dot" style="background:var(--danger);box-shadow:0 0 4px var(--danger)"></span>
+              Overdue <span class="ct">3</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filters row -->
+        <div class="mb-4 flex items-center gap-2">
+          <label class="inp" style="flex:1;max-width:380px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ink-3)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input placeholder="Search name, email, phone, NIF…" />
+            <span class="kbd">/</span>
+          </label>
+          <button class="btn-ghost">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/></svg>
+            Batch
+            <span class="font-mono text-[10.5px] px-1.5 py-0.5 rounded" style="background:var(--primary-50);color:var(--primary)">M32</span>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <button class="btn-ghost">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+            Filter
+            <span class="font-mono text-[10.5px]" style="color:var(--ink-3)">+2</span>
+          </button>
+          <div class="ml-auto flex items-center gap-2">
+            <span class="font-mono text-[11px]" style="color:var(--ink-3)">Sort:</span>
+            <button class="btn-ghost text-[12px]" style="padding:6px 9px">
+              Enrolled ↓
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Selection bar (hidden when nothing selected) -->
+        <div class="card mb-3 px-4 py-2.5 flex items-center gap-3" style="border-color:var(--primary);background:var(--primary-50);display:none">
+          <input type="checkbox" class="cb indeterminate" checked />
+          <span class="font-mono text-[12.5px] font-semibold" style="color:var(--ink)">3 selected</span>
+          <span class="font-mono text-[11px]" style="color:var(--ink-2)">of 10 visible · all overdue</span>
+          <div class="ml-auto flex items-center gap-1.5">
+            <button class="btn-ghost text-[11.5px]" style="padding:5px 9px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+              Record payment (3)
+            </button>
+            <button class="btn-ghost text-[11.5px]" style="padding:5px 9px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              export
+            </button>
+            <button class="btn-ghost text-[11.5px]" style="padding:5px 9px;color:var(--danger);border-color:rgba(248,113,113,.3)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>
+              withdraw
+            </button>
+            <button class="btn-primary text-[11.5px]" style="padding:5px 10px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              Send WhatsApp (3)
+            </button>
+            <span style="width:1px;height:18px;background:var(--primary);opacity:.3"></span>
+            <button class="ibtn" style="border-color:transparent;background:transparent">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="card overflow-hidden">
+          <table class="stbl">
+            <thead>
+              <tr>
+                <th style="width:36px;padding-right:0"><input type="checkbox" class="cb" /></th>
+                <th style="width:42px">#</th>
+                <th>Student</th>
+                <th style="width:90px">Batch</th>
+                <th style="width:160px">Payment</th>
+                <th style="width:170px">Phone</th>
+                <th style="width:120px">Enrolled</th>
+                <th style="width:90px" class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+
+              <!-- 1 — overdue -->
+              <tr class="t-overdue">
+                <td><input type="checkbox" class="cb" /></td>
+                <td class="rail-cell"><span class="r" style="background:var(--danger)"></span><span class="font-mono text-[12px]" style="color:var(--ink-3)">01</span></td>
+                <td>
+                  <div class="flex items-center gap-2.5">
+                    <span class="avi" style="color:var(--danger);background:var(--danger-50);border-color:rgba(248,113,113,.25)">AM</span>
+                    <div>
+                      <div class="font-semibold">Aisha Martins</div>
+                      <div class="text-[11px] font-mono" style="color:var(--ink-3)">aisha@example.com · BD</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="font-mono text-[12px] font-semibold" style="color:var(--primary)">M32</span></td>
+                <td>
+                  <div class="status-pill" style="color:var(--danger)"><span class="dot" style="background:var(--danger)"></span>OVERDUE · +12d</div>
+                  <div class="text-[11px] font-mono mt-0.5" style="color:var(--ink-2)">€225 / €450 paid</div>
+                </td>
+                <td>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-mono text-[12.5px]">+351 912 345 678</span>
+                    <a href="#" class="ibtn" style="width:22px;height:22px" title="wa.me">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color:var(--success)"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                    </a>
+                  </div>
+                </td>
+                <td class="font-mono text-[12px]" style="color:var(--ink-2)">2026-04-12<br/><span class="text-[10.5px]" style="color:var(--ink-3)">40d ago</span></td>
+                <td class="text-right">
+                  <div class="inline-flex items-center gap-1">
+                    <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></button>
+                    <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- 2 — paid -->
+              <tr>
+                <td><input type="checkbox" class="cb" /></td>
+                <td class="rail-cell"><span class="r" style="background:var(--success);opacity:.6"></span><span class="font-mono text-[12px]" style="color:var(--ink-3)">02</span></td>
+                <td>
+                  <div class="flex items-center gap-2.5">
+                    <span class="avi">OA</span>
+                    <div>
+                      <div class="font-semibold">Omar Almeida</div>
+                      <div class="text-[11px] font-mono" style="color:var(--ink-3)">omar.a@example.com</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="font-mono text-[12px] font-semibold" style="color:var(--primary)">M32</span></td>
+                <td>
+                  <div class="status-pill" style="color:var(--success)"><span class="dot" style="background:var(--success)"></span>PAID</div>
+                  <div class="text-[11px] font-mono mt-0.5" style="color:var(--ink-2)">€450 / €450</div>
+                </td>
+                <td>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-mono text-[12.5px]">+351 912 000 222</span>
+                    <a href="#" class="ibtn" style="width:22px;height:22px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color:var(--success)"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></a>
+                  </div>
+                </td>
+                <td class="font-mono text-[12px]" style="color:var(--ink-2)">2026-04-13<br/><span class="text-[10.5px]" style="color:var(--ink-3)">39d ago</span></td>
+                <td class="text-right">
+                  <div class="inline-flex items-center gap-1">
+                    <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></button>
+                    <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- 3 — partial -->
+              <tr class="t-partial">
+                <td><input type="checkbox" class="cb" /></td>
+                <td class="rail-cell"><span class="r" style="background:var(--warning)"></span><span class="font-mono text-[12px]" style="color:var(--ink-3)">03</span></td>
+                <td>
+                  <div class="flex items-center gap-2.5">
+                    <span class="avi" style="color:var(--warning);background:var(--warning-50);border-color:rgba(244,181,63,.25)">MA</span>
+                    <div>
+                      <div class="font-semibold">Mariana Ahmed</div>
+                      <div class="text-[11px] font-mono" style="color:var(--ink-3)">mariana.a@example.com</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="font-mono text-[12px] font-semibold" style="color:var(--primary)">M32</span></td>
+                <td>
+                  <div class="status-pill" style="color:var(--warning)"><span class="dot" style="background:var(--warning)"></span>PARTIAL</div>
+                  <div class="text-[11px] font-mono mt-0.5" style="color:var(--ink-2)">€225 / €450 · half</div>
+                </td>
+                <td>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-mono text-[12.5px]">+351 911 223 344</span>
+                    <a href="#" class="ibtn" style="width:22px;height:22px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color:var(--success)"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></a>
+                  </div>
+                </td>
+                <td class="font-mono text-[12px]" style="color:var(--ink-2)">2026-04-15<br/><span class="text-[10.5px]" style="color:var(--ink-3)">37d ago</span></td>
+                <td class="text-right">
+                  <div class="inline-flex items-center gap-1">
+                    <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></button>
+                    <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- 4 — overdue -->
+              <tr class="t-overdue">
+                <td><input type="checkbox" class="cb" /></td>
+                <td class="rail-cell"><span class="r" style="background:var(--danger)"></span><span class="font-mono text-[12px]" style="color:var(--ink-3)">04</span></td>
+                <td>
+                  <div class="flex items-center gap-2.5">
+                    <span class="avi" style="color:var(--danger);background:var(--danger-50);border-color:rgba(248,113,113,.25)">HO</span>
+                    <div>
+                      <div class="font-semibold">Hassan Oliveira</div>
+                      <div class="text-[11px] font-mono" style="color:var(--ink-3)">hassan.o@example.com · PK</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="font-mono text-[12px] font-semibold" style="color:var(--primary)">M32</span></td>
+                <td>
+                  <div class="status-pill" style="color:var(--danger)"><span class="dot" style="background:var(--danger)"></span>OVERDUE · +5d</div>
+                  <div class="text-[11px] font-mono mt-0.5" style="color:var(--ink-2)">€225 / €450 paid</div>
+                </td>
+                <td>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-mono text-[12.5px]">+351 933 112 233</span>
+                    <a href="#" class="ibtn" style="width:22px;height:22px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color:var(--success)"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></a>
+                  </div>
+                </td>
+                <td class="font-mono text-[12px]" style="color:var(--ink-2)">2026-04-15<br/><span class="text-[10.5px]" style="color:var(--ink-3)">37d ago</span></td>
+                <td class="text-right">
+                  <div class="inline-flex items-center gap-1">
+                    <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></button>
+                    <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- 5 — paid -->
+              <tr>
+                <td><input type="checkbox" class="cb" /></td>
+                <td class="rail-cell"><span class="r" style="background:var(--success);opacity:.6"></span><span class="font-mono text-[12px]" style="color:var(--ink-3)">05</span></td>
+                <td>
+                  <div class="flex items-center gap-2.5">
+                    <span class="avi">OH</span>
+                    <div>
+                      <div class="font-semibold">Omar Hussain</div>
+                      <div class="text-[11px] font-mono" style="color:var(--ink-3)">omar.h@example.com · PK</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="font-mono text-[12px] font-semibold" style="color:var(--primary)">M32</span></td>
+                <td>
+                  <div class="status-pill" style="color:var(--success)"><span class="dot" style="background:var(--success)"></span>PAID</div>
+                  <div class="text-[11px] font-mono mt-0.5" style="color:var(--ink-2)">€450 / €450</div>
+                </td>
+                <td>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-mono text-[12.5px]">+351 966 554 433</span>
+                    <a href="#" class="ibtn" style="width:22px;height:22px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color:var(--success)"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></a>
+                  </div>
+                </td>
+                <td class="font-mono text-[12px]" style="color:var(--ink-2)">2026-04-16<br/><span class="text-[10.5px]" style="color:var(--ink-3)">36d ago</span></td>
+                <td class="text-right">
+                  <div class="inline-flex items-center gap-1">
+                    <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></button>
+                    <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- 6 — paid (passport exp inline tag) -->
+              <tr>
+                <td><input type="checkbox" class="cb" /></td>
+                <td class="rail-cell"><span class="r" style="background:var(--success);opacity:.6"></span><span class="font-mono text-[12px]" style="color:var(--ink-3)">06</span></td>
+                <td>
+                  <div class="flex items-center gap-2.5">
+                    <span class="avi">NK</span>
+                    <div>
+                      <div class="font-semibold">Nadia Khan</div>
+                      <div class="flex items-center gap-1.5 text-[11px] font-mono mt-0.5" style="color:var(--ink-3)">
+                        <span>nadia.k@example.com</span>
+                        <span class="chip chip-warning" style="font-size:9.5px;padding:1.5px 4px">PASSPORT EXP 41d</span>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="font-mono text-[12px] font-semibold" style="color:var(--primary)">M32</span></td>
+                <td>
+                  <div class="status-pill" style="color:var(--success)"><span class="dot" style="background:var(--success)"></span>PAID</div>
+                  <div class="text-[11px] font-mono mt-0.5" style="color:var(--ink-2)">€450 / €450</div>
+                </td>
+                <td>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-mono text-[12.5px]">+351 912 777 111</span>
+                    <a href="#" class="ibtn" style="width:22px;height:22px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color:var(--success)"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></a>
+                  </div>
+                </td>
+                <td class="font-mono text-[12px]" style="color:var(--ink-2)">2026-04-17<br/><span class="text-[10.5px]" style="color:var(--ink-3)">35d ago</span></td>
+                <td class="text-right">
+                  <div class="inline-flex items-center gap-1">
+                    <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></button>
+                    <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- 7 — partial -->
+              <tr class="t-partial">
+                <td><input type="checkbox" class="cb" /></td>
+                <td class="rail-cell"><span class="r" style="background:var(--warning)"></span><span class="font-mono text-[12px]" style="color:var(--ink-3)">07</span></td>
+                <td>
+                  <div class="flex items-center gap-2.5">
+                    <span class="avi" style="color:var(--warning);background:var(--warning-50);border-color:rgba(244,181,63,.25)">AH</span>
+                    <div>
+                      <div class="font-semibold">Aisha Hossain</div>
+                      <div class="text-[11px] font-mono" style="color:var(--ink-3)">aisha.h@example.com · BD</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="font-mono text-[12px] font-semibold" style="color:var(--primary)">M32</span></td>
+                <td>
+                  <div class="status-pill" style="color:var(--warning)"><span class="dot" style="background:var(--warning)"></span>PARTIAL</div>
+                  <div class="text-[11px] font-mono mt-0.5" style="color:var(--ink-2)">€225 / €450 · half</div>
+                </td>
+                <td>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-mono text-[12.5px]">+351 933 888 222</span>
+                    <a href="#" class="ibtn" style="width:22px;height:22px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color:var(--success)"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></a>
+                  </div>
+                </td>
+                <td class="font-mono text-[12px]" style="color:var(--ink-2)">2026-04-18<br/><span class="text-[10.5px]" style="color:var(--ink-3)">34d ago</span></td>
+                <td class="text-right">
+                  <div class="inline-flex items-center gap-1">
+                    <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></button>
+                    <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- 8 — paid -->
+              <tr>
+                <td><input type="checkbox" class="cb" /></td>
+                <td class="rail-cell"><span class="r" style="background:var(--success);opacity:.6"></span><span class="font-mono text-[12px]" style="color:var(--ink-3)">08</span></td>
+                <td>
+                  <div class="flex items-center gap-2.5">
+                    <span class="avi">AC</span>
+                    <div>
+                      <div class="font-semibold">Aisha Costa</div>
+                      <div class="text-[11px] font-mono" style="color:var(--ink-3)">aisha.c@example.com</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="font-mono text-[12px] font-semibold" style="color:var(--primary)">M32</span></td>
+                <td>
+                  <div class="status-pill" style="color:var(--success)"><span class="dot" style="background:var(--success)"></span>PAID</div>
+                  <div class="text-[11px] font-mono mt-0.5" style="color:var(--ink-2)">€450 / €450</div>
+                </td>
+                <td>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-mono text-[12.5px]">+351 966 444 555</span>
+                    <a href="#" class="ibtn" style="width:22px;height:22px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color:var(--success)"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></a>
+                  </div>
+                </td>
+                <td class="font-mono text-[12px]" style="color:var(--ink-2)">2026-04-18<br/><span class="text-[10.5px]" style="color:var(--ink-3)">34d ago</span></td>
+                <td class="text-right">
+                  <div class="inline-flex items-center gap-1">
+                    <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></button>
+                    <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- batch boundary -->
+              <tr><td colspan="8" style="padding:8px 12px;background:var(--surface-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+                <div class="flex items-center gap-2 text-[10.5px] font-mono uppercase tracking-[.14em]" style="color:var(--ink-3)">
+                  <span class="dot" style="background:var(--warning)"></span>
+                  Batch J5 · upcoming · starts 2026-06-08 · trainer unassigned · 2/25
+                </div>
+              </td></tr>
+
+              <!-- 9 — due_soon -->
+              <tr class="t-due">
+                <td><input type="checkbox" class="cb" /></td>
+                <td class="rail-cell"><span class="r" style="background:var(--due)"></span><span class="font-mono text-[12px]" style="color:var(--ink-3)">01</span></td>
+                <td>
+                  <div class="flex items-center gap-2.5">
+                    <span class="avi" style="color:var(--due);background:var(--due-50);border-color:rgba(251,146,60,.25)">LO</span>
+                    <div>
+                      <div class="flex items-center gap-1.5">
+                        <span class="font-semibold">Luísa Oliveira</span>
+                        <span class="chip chip-info">PENDING</span>
+                      </div>
+                      <div class="text-[11px] font-mono" style="color:var(--ink-3)">luisa.o@example.com · PT</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="font-mono text-[12px] font-semibold" style="color:var(--primary)">J5</span></td>
+                <td>
+                  <div class="status-pill" style="color:var(--due)"><span class="dot" style="background:var(--due)"></span>DUE SOON · 5d</div>
+                  <div class="text-[11px] font-mono mt-0.5" style="color:var(--ink-2)">€0 / €450 · awaiting 1st</div>
+                </td>
+                <td>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-mono text-[12.5px]">+351 911 999 000</span>
+                    <a href="#" class="ibtn" style="width:22px;height:22px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color:var(--success)"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></a>
+                  </div>
+                </td>
+                <td class="font-mono text-[12px]" style="color:var(--ink-2)">2026-05-12<br/><span class="text-[10.5px]" style="color:var(--ink-3)">10d ago</span></td>
+                <td class="text-right">
+                  <div class="inline-flex items-center gap-1">
+                    <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></button>
+                    <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- 10 — overdue -->
+              <tr class="t-due">
+                <td><input type="checkbox" class="cb" /></td>
+                <td class="rail-cell"><span class="r" style="background:var(--danger)"></span><span class="font-mono text-[12px]" style="color:var(--ink-3)">02</span></td>
+                <td>
+                  <div class="flex items-center gap-2.5">
+                    <span class="avi" style="color:var(--danger);background:var(--danger-50);border-color:rgba(248,113,113,.25)">IP</span>
+                    <div>
+                      <div class="flex items-center gap-1.5">
+                        <span class="font-semibold">Inês Pereira</span>
+                        <span class="chip chip-info">PENDING</span>
+                      </div>
+                      <div class="text-[11px] font-mono" style="color:var(--ink-3)">ines.p@example.com · PT</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="font-mono text-[12px] font-semibold" style="color:var(--primary)">J5</span></td>
+                <td>
+                  <div class="status-pill" style="color:var(--danger)"><span class="dot" style="background:var(--danger)"></span>OVERDUE · +2d</div>
+                  <div class="text-[11px] font-mono mt-0.5" style="color:var(--ink-2)">€0 / €450 paid</div>
+                </td>
+                <td>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-mono text-[12.5px]">+351 922 888 777</span>
+                    <a href="#" class="ibtn" style="width:22px;height:22px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color:var(--success)"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></a>
+                  </div>
+                </td>
+                <td class="font-mono text-[12px]" style="color:var(--ink-2)">2026-05-13<br/><span class="text-[10.5px]" style="color:var(--ink-3)">9d ago</span></td>
+                <td class="text-right">
+                  <div class="inline-flex items-center gap-1">
+                    <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></button>
+                    <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+                  </div>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+
+          <!-- pagination -->
+          <div class="px-4 py-3 hair-t flex items-center justify-between" style="background:var(--surface-2)">
+            <div class="text-[11.5px] font-mono" style="color:var(--ink-3)">Showing 1–10 of 87</div>
+            <div class="flex items-center gap-1">
+              <button class="ibtn" disabled style="opacity:.4"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
+              <button class="ibtn" style="background:var(--primary);color:#0B0E14;border-color:var(--primary-600);font-family:'IBM Plex Mono';font-size:11px;font-weight:600">1</button>
+              <button class="ibtn" style="font-family:'IBM Plex Mono';font-size:11px">2</button>
+              <button class="ibtn" style="font-family:'IBM Plex Mono';font-size:11px">3</button>
+              <span class="font-mono text-[11px]" style="color:var(--ink-3)">…</span>
+              <button class="ibtn" style="font-family:'IBM Plex Mono';font-size:11px">9</button>
+              <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============ WhatsApp queue panel (collapsed when nothing selected) ============ -->
+      <aside class="hair-l flex flex-col panel-shadow" style="width:340px;background:var(--surface);position:sticky;top:48px;height:calc(100vh - 48px);flex-shrink:0;display:none">
+        <header class="px-4 py-3 hair-b flex items-center gap-2">
+          <span class="status-pill" style="color:var(--success)"><span class="dot" style="background:var(--success);box-shadow:0 0 6px var(--success);animation:pulse 2s infinite"></span>WhatsApp queue</span>
+          <span class="font-mono text-[11px]" style="color:var(--ink-3)">3 recipients</span>
+          <button class="ibtn ml-auto" style="border:none;background:transparent">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </header>
+
+        <div class="flex-1 overflow-auto">
+          <!-- Recipients -->
+          <div class="px-4 py-3 hair-b">
+            <div class="text-[10px] font-mono uppercase tracking-[.16em] mb-2" style="color:var(--ink-3)">Recipients</div>
+            <div class="space-y-1.5">
+              <div class="flex items-center gap-2.5 px-2 py-1.5 rounded-md" style="background:var(--surface-2);border:1px solid var(--line)">
+                <span class="avi" style="color:var(--danger);background:var(--danger-50);border-color:rgba(248,113,113,.25)">AM</span>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] font-semibold truncate">Aisha Martins</div>
+                  <div class="text-[10.5px] font-mono" style="color:var(--ink-3)">+351 912 345 678 · €225</div>
+                </div>
+                <button class="ibtn" style="width:22px;height:22px;border:none;background:transparent"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+              </div>
+              <div class="flex items-center gap-2.5 px-2 py-1.5 rounded-md" style="background:var(--surface-2);border:1px solid var(--line)">
+                <span class="avi" style="color:var(--danger);background:var(--danger-50);border-color:rgba(248,113,113,.25)">HO</span>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] font-semibold truncate">Hassan Oliveira</div>
+                  <div class="text-[10.5px] font-mono" style="color:var(--ink-3)">+351 933 112 233 · €225</div>
+                </div>
+                <button class="ibtn" style="width:22px;height:22px;border:none;background:transparent"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+              </div>
+              <div class="flex items-center gap-2.5 px-2 py-1.5 rounded-md" style="background:var(--surface-2);border:1px solid var(--line)">
+                <span class="avi" style="color:var(--danger);background:var(--danger-50);border-color:rgba(248,113,113,.25)">IP</span>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] font-semibold truncate">Inês Pereira</div>
+                  <div class="text-[10.5px] font-mono" style="color:var(--ink-3)">+351 922 888 777 · €450</div>
+                </div>
+                <button class="ibtn" style="width:22px;height:22px;border:none;background:transparent"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Template -->
+          <div class="px-4 py-3 hair-b">
+            <div class="text-[10px] font-mono uppercase tracking-[.16em] mb-2" style="color:var(--ink-3)">Template</div>
+            <button class="w-full flex items-center justify-between px-3 py-2 rounded-md text-[12.5px]" style="border:1px solid var(--line);background:var(--surface-2);color:var(--ink)">
+              <span class="flex items-center gap-2">
+                <span class="dot" style="background:var(--danger)"></span>
+                <span class="font-medium">Payment reminder · 2nd installment</span>
+              </span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="seg mt-2.5 w-full" style="display:grid;grid-template-columns:repeat(5,1fr)">
+              <button class="on" style="font-family:'IBM Plex Mono';font-size:11px">PT</button>
+              <button style="font-family:'IBM Plex Mono';font-size:11px">EN</button>
+              <button style="font-family:'IBM Plex Mono';font-size:11px">BN</button>
+              <button style="font-family:'IBM Plex Mono';font-size:11px">UR</button>
+              <button style="font-family:'IBM Plex Mono';font-size:11px">HI</button>
+            </div>
+          </div>
+
+          <!-- Preview -->
+          <div class="px-4 py-3">
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-[10px] font-mono uppercase tracking-[.16em]" style="color:var(--ink-3)">Preview · pt-PT</div>
+              <span class="font-mono text-[10px]" style="color:var(--ink-3)">vars: 4</span>
+            </div>
+            <div class="wa-bubble rounded-md p-3 text-[12.5px] leading-[1.55]" style="font-family:'IBM Plex Sans'">
+              Olá <span class="px-1 rounded font-mono text-[11px]" style="background:rgba(52,211,153,.15);border:1px dashed rgba(52,211,153,.4);color:var(--success)">{name}</span>,
+              passamos pela secretaria e vimos que a sua <b>segunda prestação</b> de
+              <span class="px-1 rounded font-mono text-[11px]" style="background:rgba(52,211,153,.15);border:1px dashed rgba(52,211,153,.4);color:var(--success)">€{amount}</span>
+              referente à turma <span class="px-1 rounded font-mono text-[11px]" style="background:rgba(52,211,153,.15);border:1px dashed rgba(52,211,153,.4);color:var(--success)">{batch}</span>
+              está atrasada há
+              <span class="px-1 rounded font-mono text-[11px]" style="background:rgba(52,211,153,.15);border:1px dashed rgba(52,211,153,.4);color:var(--success)">{days}</span>
+              dias. Pode passar pela escola ou fazer transferência. Obrigada!
+            </div>
+            <button class="mt-2 text-[11.5px] font-mono underline" style="color:var(--ink-2)">Edit template</button>
+          </div>
+
+          <!-- Channel -->
+          <div class="px-4 py-3 hair-t">
+            <div class="text-[10px] font-mono uppercase tracking-[.16em] mb-2" style="color:var(--ink-3)">Send via</div>
+            <div class="flex items-center gap-2 text-[12px]">
+              <label class="flex items-center gap-1.5 px-2 py-1 rounded-md" style="border:1px solid var(--success);background:var(--success-50);color:var(--success);font-weight:600">
+                <input type="checkbox" class="cb" checked />
+                WhatsApp
+              </label>
+              <label class="flex items-center gap-1.5 px-2 py-1 rounded-md" style="border:1px solid var(--line);color:var(--ink-2)">
+                <input type="checkbox" class="cb" />
+                Email cc
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <footer class="hair-t p-3 flex flex-col gap-2" style="background:var(--surface-2)">
+          <div class="flex items-center justify-between text-[11px] font-mono" style="color:var(--ink-3)">
+            <span>Est. ~6s · opens 3 WhatsApp tabs</span>
+            <span style="color:var(--primary)">Ready ✓</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="btn-ghost flex-1 justify-center">Save draft</button>
+            <button class="btn-primary flex-1 justify-center">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Send to 3
+            </button>
+          </div>
+        </footer>
+      </aside>
+
+    </div>
+
+  </main>
+</div>
+
+<style>
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+</style>
+
+<script>
+  // === Row selection wiring ===
+  const selBar  = document.querySelector('.card[style*="display:none"][style*="--primary-50"]') ||
+                  document.querySelector('div.card.mb-3.px-4');
+  const waPanel = document.querySelector('aside.hair-l');
+  const headerCb = document.querySelector('thead input.cb');
+  const rowCbs   = [...document.querySelectorAll('tbody tr input.cb')];
+  const countEl  = selBar?.querySelector('span.font-mono.text-\\[12\\.5px\\]') ||
+                   selBar?.querySelector('.font-semibold');
+  const waCountEl = waPanel?.querySelector('header span.font-mono');
+  const waSendBtn = [...(waPanel?.querySelectorAll('button.btn-primary')||[])].pop();
+  // Cache action buttons in the selection bar so we can update counts
+  const recordBtn = selBar?.querySelector('button:nth-of-type(1)');
+  const sendBtn   = selBar?.querySelector('button.btn-primary');
+
+  function refresh(){
+    const checked = rowCbs.filter(cb => cb.checked);
+    const n = checked.length;
+    rowCbs.forEach(cb => cb.closest('tr').classList.toggle('sel', cb.checked));
+
+    if (n > 0) {
+      selBar.style.display = 'flex';
+      waPanel.style.display = 'flex';
+      if (countEl) countEl.textContent = n + ' selected';
+      if (recordBtn) {
+        const lbl = recordBtn.querySelector('svg').nextSibling;
+        if (lbl && lbl.nodeType === 3) lbl.nodeValue = ' Record payment (' + n + ')';
+      }
+      if (sendBtn) {
+        const lbl = sendBtn.querySelector('svg').nextSibling;
+        if (lbl && lbl.nodeType === 3) lbl.nodeValue = ' Send WhatsApp (' + n + ')';
+      }
+      if (waCountEl) waCountEl.textContent = n + ' recipient' + (n>1?'s':'');
+      if (waSendBtn) {
+        const lbl = waSendBtn.querySelector('svg').nextSibling;
+        if (lbl && lbl.nodeType === 3) lbl.nodeValue = ' Send to ' + n;
+      }
+      // Header checkbox state
+      if (headerCb) {
+        if (n === rowCbs.length) { headerCb.checked = true;  headerCb.classList.remove('indeterminate'); }
+        else                     { headerCb.checked = false; headerCb.classList.add('indeterminate'); }
+      }
+    } else {
+      selBar.style.display = 'none';
+      waPanel.style.display = 'none';
+      if (headerCb) { headerCb.checked = false; headerCb.classList.remove('indeterminate'); }
+    }
+  }
+
+  rowCbs.forEach(cb => cb.addEventListener('change', refresh));
+
+  if (headerCb) {
+    headerCb.addEventListener('change', () => {
+      const target = headerCb.checked;
+      rowCbs.forEach(cb => { cb.checked = target; });
+      refresh();
+    });
+  }
+
+  // Selection-bar close button (the small × on the far right)
+  selBar?.querySelector('.ibtn')?.addEventListener('click', () => {
+    rowCbs.forEach(cb => cb.checked = false);
+    refresh();
+  });
+  // WA panel close button
+  waPanel?.querySelector('header .ibtn')?.addEventListener('click', () => {
+    waPanel.style.display = 'none';
+  });
+</script>
+
+<!-- ============ RECORD PAYMENT MODAL ============ -->
+<div id="pay-modal" class="modal-back" style="display:none">
+  <div class="modal">
+    <!-- Header with student context -->
+    <header class="px-5 py-4 hair-b flex items-center gap-3">
+      <span id="pay-avi" class="avi" style="width:38px;height:38px;font-size:13px;color:var(--danger);background:var(--danger-50);border-color:rgba(248,113,113,.25)">AM</span>
+      <div class="flex-1 min-w-0">
+        <div class="text-[11px] font-mono uppercase tracking-[.16em]" style="color:var(--ink-3)">Record payment</div>
+        <div class="mt-0.5 font-disp text-[18px] font-medium" id="pay-name">Aisha Martins</div>
+        <div class="text-[11.5px] font-mono mt-0.5" style="color:var(--ink-3)">
+          Batch <span style="color:var(--primary)" id="pay-batch">M32</span>
+          · Outstanding <span style="color:var(--ink)" id="pay-due">€225 of €450</span>
+        </div>
+      </div>
+      <button id="pay-close" class="ibtn" style="border:none;background:transparent" title="Close (Esc)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </header>
+
+    <div class="px-5 py-5 flex flex-col gap-4">
+
+      <!-- Amount -->
+      <div>
+        <label class="field-label">Amount <span class="req">*</span></label>
+        <label class="pay-amount">
+          <span class="cur">€</span>
+          <input id="pay-amount" type="text" inputmode="decimal" value="225.00" />
+        </label>
+        <div class="mt-2 flex items-center gap-1.5 flex-wrap">
+          <button type="button" class="quick-amt on" data-amt="225.00">€225 · 2nd installment</button>
+          <button type="button" class="quick-amt" data-amt="450.00">€450 · full</button>
+          <button type="button" class="quick-amt" data-amt="100.00">€100</button>
+        </div>
+      </div>
+
+      <!-- Method -->
+      <div>
+        <label class="field-label">Method <span class="req">*</span></label>
+        <div class="flex items-center gap-2">
+          <button type="button" class="pay-method on" data-method="bank">
+            <span class="ind"></span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 18 0"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg>
+            Bank transfer
+          </button>
+          <button type="button" class="pay-method" data-method="cash">
+            <span class="ind"></span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01"/><path d="M18 12h.01"/></svg>
+            Cash
+          </button>
+        </div>
+      </div>
+
+      <!-- Date + Reference -->
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="field-label">Paid on <span class="req">*</span></label>
+          <label class="inp has-value" style="height:38px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" style="color:var(--ink-3)"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 4v4"/><path d="M16 4v4"/></svg><input value="2026-05-22" /></label>
+        </div>
+        <div>
+          <label class="field-label">Reference <span style="color:var(--ink-3);font-weight:500;font-family:'IBM Plex Sans';font-size:11px;text-transform:none;letter-spacing:0;margin-left:5px">Optional</span></label>
+          <label class="inp" style="height:38px"><input placeholder="TRX-… or invoice #" /></label>
+        </div>
+      </div>
+
+      <!-- Note -->
+      <div>
+        <label class="field-label">Note <span style="color:var(--ink-3);font-weight:500;font-family:'IBM Plex Sans';font-size:11px;text-transform:none;letter-spacing:0;margin-left:5px">Optional · staff-only</span></label>
+        <textarea class="inp" rows="2" style="height:auto;padding:9px 12px;font-family:'IBM Plex Sans';line-height:1.4;resize:vertical" placeholder="e.g. paid at reception by mother"></textarea>
+      </div>
+
+      <!-- Outcome preview -->
+      <div class="card p-3" style="background:var(--surface-2);border-style:dashed">
+        <div class="flex items-center gap-2 mb-1.5">
+          <span class="status-pill" style="color:var(--success)"><span class="dot" style="background:var(--success)"></span>After this payment</span>
+        </div>
+        <div class="grid grid-cols-3 gap-3 text-[12px] font-mono">
+          <div>
+            <div class="text-[10px] uppercase tracking-[.14em]" style="color:var(--ink-3)">Total paid</div>
+            <div class="mt-0.5"><span style="color:var(--ink-3)">€225</span> <span style="color:var(--ink-3)">→</span> <span style="color:var(--ink);font-weight:600">€450</span></div>
+          </div>
+          <div>
+            <div class="text-[10px] uppercase tracking-[.14em]" style="color:var(--ink-3)">Outstanding</div>
+            <div class="mt-0.5"><span style="color:var(--ink-3)">€225</span> <span style="color:var(--ink-3)">→</span> <span style="color:var(--success);font-weight:600">€0</span></div>
+          </div>
+          <div>
+            <div class="text-[10px] uppercase tracking-[.14em]" style="color:var(--ink-3)">Status</div>
+            <div class="mt-0.5"><span style="color:var(--danger)">Overdue</span> <span style="color:var(--ink-3)">→</span> <span style="color:var(--success);font-weight:600">Paid</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Receipt option -->
+      <label class="flex items-center gap-2.5 cursor-pointer">
+        <input type="checkbox" class="cb" checked />
+        <span class="text-[12.5px]">Email receipt to <span class="font-mono" style="color:var(--ink-2)">aisha@example.com</span></span>
+      </label>
+
+    </div>
+
+    <footer class="hair-t px-5 py-3.5 flex items-center justify-between" style="background:var(--surface-2)">
+      <span class="text-[11px] font-mono" style="color:var(--ink-3)">Esc to cancel · ⌘↵ to save</span>
+      <div class="flex items-center gap-2">
+        <button id="pay-cancel" class="btn-ghost">Cancel</button>
+        <button class="btn-primary">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save payment
+        </button>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<script>
+  // ===== Payment modal wiring =====
+  (function(){
+    const modal = document.getElementById('pay-modal');
+    if (!modal) return;
+    const closeBtn  = document.getElementById('pay-close');
+    const cancelBtn = document.getElementById('pay-cancel');
+    const nameEl   = document.getElementById('pay-name');
+    const aviEl    = document.getElementById('pay-avi');
+    const batchEl  = document.getElementById('pay-batch');
+    const dueEl    = document.getElementById('pay-due');
+    const amountIn = document.getElementById('pay-amount');
+
+    function open(ctx){
+      ctx = ctx || {};
+      nameEl.textContent  = ctx.name  || 'Aisha Martins';
+      aviEl.textContent   = ctx.initials || (ctx.name ? ctx.name.split(' ').map(s=>s[0]).join('').slice(0,2).toUpperCase() : 'AM');
+      batchEl.textContent = ctx.batch || 'M32';
+      dueEl.textContent   = ctx.due   || '€225 of €450';
+      if (ctx.amount) {
+        amountIn.value = ctx.amount;
+        modal.querySelectorAll('.quick-amt').forEach(b => b.classList.toggle('on', b.dataset.amt === ctx.amount));
+      }
+      modal.style.display = 'flex';
+    }
+    function close(){ modal.style.display = 'none'; }
+
+    closeBtn.addEventListener('click', close);
+    cancelBtn.addEventListener('click', close);
+    modal.addEventListener('click', e => { if (e.target === modal) close(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.style.display !== 'none') close(); });
+
+    // Quick amount chips
+    modal.querySelectorAll('.quick-amt').forEach(b => {
+      b.addEventListener('click', () => {
+        modal.querySelectorAll('.quick-amt').forEach(x => x.classList.remove('on'));
+        b.classList.add('on');
+        amountIn.value = b.dataset.amt;
+      });
+    });
+    // Method radio
+    modal.querySelectorAll('.pay-method').forEach(b => {
+      b.addEventListener('click', () => {
+        modal.querySelectorAll('.pay-method').forEach(x => x.classList.remove('on'));
+        b.classList.add('on');
+      });
+    });
+
+    // === Trigger sources ===
+    // Row action: any credit-card icon in tbody (3rd icon button in the action group)
+    document.querySelectorAll('tbody tr').forEach(tr => {
+      const ccBtn = tr.querySelector('td:last-child button.ibtn:first-of-type');
+      if (!ccBtn) return;
+      ccBtn.addEventListener('click', () => {
+        const name   = tr.querySelector('.font-semibold')?.textContent.trim();
+        const initials = tr.querySelector('.avi')?.textContent.trim();
+        const batch  = tr.querySelector('td:nth-child(4)')?.textContent.trim();
+        const due    = tr.querySelector('td:nth-child(5) .text-\\[11px\\]')?.textContent.replace(/paid|·.*$/g,'').trim() || '';
+        open({ name, initials, batch, due });
+      });
+    });
+
+    // Selection bar: "Record payment" button (first ghost button)
+    const selBar = document.querySelector('div.card.mb-3.px-4');
+    if (selBar) {
+      const recBtn = selBar.querySelector('button.btn-ghost');
+      recBtn?.addEventListener('click', () => open({
+        name: '3 students',
+        initials: '3',
+        batch: 'mixed',
+        due: 'batch payment'
+      }));
+    }
+
+    // expose globally for ad-hoc demoing
+    window.openPaymentModal = open;
+  })();
+</script>
+
+  <script src="sidebar-collapse.js"></script>
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1280" />
+<title>Horizonte CRM · All screens</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#B6FF3C; --primary-600:#9DE61A; --primary-50:rgba(182,255,60,.10);
+    --bg:#0B0E14; --surface:#131722; --surface-2:#171C2A; --line:#212838;
+    --ink:#E6E9EF; --ink-2:#9BA3B4; --ink-3:#5C6478;
+    --info:#60A5FA; --info-50:rgba(96,165,250,.12);
+    --success:#34D399; --warning:#F4B53F;
+  }
+  html,body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .font-disp{font-family:'Space Grotesk',sans-serif;letter-spacing:-.02em}
+  .font-mono{font-family:'IBM Plex Mono',monospace}
+  .card-link{display:flex;align-items:center;gap:14px;padding:16px 18px;background:var(--surface);border:1px solid var(--line);border-radius:8px;color:var(--ink);transition:all .12s}
+  .card-link:hover{border-color:var(--primary);background:var(--surface-2)}
+  .num-tag{font-family:'IBM Plex Mono';font-size:11px;color:var(--ink-3);font-weight:600;min-width:32px}
+  .chip{display:inline-flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:10px;line-height:1;padding:3px 6px;border-radius:3px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+  .chip-admin{background:var(--primary-50);color:var(--primary)}
+  .chip-teacher{background:var(--info-50);color:var(--info)}
+  .chip-key{background:var(--primary);color:#0B0E14}
+  .section-title{font-family:'IBM Plex Mono';font-size:11px;text-transform:uppercase;letter-spacing:.16em;color:var(--ink-3);font-weight:600}
+  .chev{color:var(--ink-3)}
+</style>
+</head>
+<body class="min-h-screen">
+
+<div class="max-w-[920px] mx-auto px-8 py-12">
+
+  <header class="mb-10">
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-10 h-10 rounded-md flex items-center justify-center" style="background:var(--primary)">
+        <span class="font-mono text-[14px] font-bold" style="color:#0B0E14">nh</span>
+      </div>
+      <div>
+        <div class="font-mono text-[15px] font-semibold">horizonte<span style="color:var(--primary)">/</span></div>
+        <div class="text-[11px] uppercase tracking-[.18em] font-mono" style="color:var(--ink-3)">CRM · redesign</div>
+      </div>
+    </div>
+    <h1 class="font-disp text-[44px] font-medium leading-[1.05] mt-6">Horizonte CRM<br/><span style="color:var(--ink-3)">all screens.</span></h1>
+    <p class="mt-3 text-[14px] max-w-[560px]" style="color:var(--ink-2)">
+      13 screens across the Admin and Teacher experiences. Built in the V3 Slate Mono direction —
+      <span class="font-mono" style="color:var(--ink)">#0B0E14</span> base,
+      <span class="font-mono" style="color:var(--primary)">lime</span> accent,
+      Space Grotesk + IBM Plex.
+    </p>
+    <p class="mt-2 text-[12.5px] font-mono" style="color:var(--ink-3)">Tip: every screen has a collapsible sidebar — toggle pill at top-right, or press <span class="chip" style="background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)">[</span> / <span class="chip" style="background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)">]</span>.</p>
+  </header>
+
+  <!-- ADMIN -->
+  <section class="mb-10">
+    <div class="flex items-center gap-3 mb-4">
+      <h2 class="section-title">Admin</h2>
+      <span class="chip chip-admin">English UI · staff &amp; admins</span>
+      <div style="flex:1;height:1px;background:var(--line)"></div>
+      <span class="font-mono text-[11px]" style="color:var(--ink-3)">10 screens</span>
+    </div>
+    <div class="grid gap-2">
+
+      <a class="card-link" href="today-v3.html">
+        <span class="num-tag">01</span>
+        <div class="flex-1 min-w-0">
+          <div class="font-disp text-[16px] font-medium">Today dashboard</div>
+          <div class="text-[11.5px] font-mono mt-0.5" style="color:var(--ink-3)">/admin/today · overdue, docs expiring, pending enrollments, live activity</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="chev"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+
+      <a class="card-link" href="students.html">
+        <span class="num-tag">02</span>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <div class="font-disp text-[16px] font-medium">Students list</div>
+            <span class="chip chip-admin">Interactive</span>
+          </div>
+          <div class="text-[11.5px] font-mono mt-0.5" style="color:var(--ink-3)">/admin/students · selectable rows, bulk WhatsApp queue, record-payment modal</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="chev"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+
+      <a class="card-link" href="student-detail.html">
+        <span class="num-tag">03</span>
+        <div class="flex-1 min-w-0">
+          <div class="font-disp text-[16px] font-medium">Student detail · Aisha Martins</div>
+          <div class="text-[11.5px] font-mono mt-0.5" style="color:var(--ink-3)">/admin/students/[id] · profile, payment timeline, attendance, documents, activity</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="chev"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+
+      <a class="card-link" href="student-new.html">
+        <span class="num-tag">04</span>
+        <div class="flex-1 min-w-0">
+          <div class="font-disp text-[16px] font-medium">Enroll student</div>
+          <div class="text-[11.5px] font-mono mt-0.5" style="color:var(--ink-3)">/admin/students/new · 4-step form with batch picker + invoice toggle</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="chev"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+
+      <a class="card-link" href="student-edit.html">
+        <span class="num-tag">05</span>
+        <div class="flex-1 min-w-0">
+          <div class="font-disp text-[16px] font-medium">Edit student · Aisha Martins</div>
+          <div class="text-[11.5px] font-mono mt-0.5" style="color:var(--ink-3)">/admin/students/[id]/edit · TOC, diff markers per field, danger zone</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="chev"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+
+      <a class="card-link" href="batches.html">
+        <span class="num-tag">06</span>
+        <div class="flex-1 min-w-0">
+          <div class="font-disp text-[16px] font-medium">Batches list</div>
+          <div class="text-[11.5px] font-mono mt-0.5" style="color:var(--ink-3)">/admin/batches · code, course, trainer, capacity progress, status</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="chev"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+
+      <a class="card-link" href="batch-detail.html">
+        <span class="num-tag">07</span>
+        <div class="flex-1 min-w-0">
+          <div class="font-disp text-[16px] font-medium">Batch detail · M32</div>
+          <div class="text-[11.5px] font-mono mt-0.5" style="color:var(--ink-3)">/admin/batches/[id] · today card, stats, cronograma, sessions per module</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="chev"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+
+      <a class="card-link" href="batch-new.html">
+        <span class="num-tag">08</span>
+        <div class="flex-1 min-w-0">
+          <div class="font-disp text-[16px] font-medium">New batch</div>
+          <div class="text-[11.5px] font-mono mt-0.5" style="color:var(--ink-3)">/admin/batches/new · form with live cronograma preview</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="chev"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+
+      <a class="card-link" href="attendance-matrix.html">
+        <span class="num-tag">09</span>
+        <div class="flex-1 min-w-0">
+          <div class="font-disp text-[16px] font-medium">Attendance matrix · M32</div>
+          <div class="text-[11.5px] font-mono mt-0.5" style="color:var(--ink-3)">/admin/batches/[id]/attendance · students × 30 sessions, sticky cols, per-student rate</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="chev"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+
+      <a class="card-link" href="users.html">
+        <span class="num-tag">10</span>
+        <div class="flex-1 min-w-0">
+          <div class="font-disp text-[16px] font-medium">Users &amp; access</div>
+          <div class="text-[11.5px] font-mono mt-0.5" style="color:var(--ink-3)">/admin/users · roles, status toggle, delete confirm modal with blockers</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="chev"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- TEACHER -->
+  <section class="mb-10">
+    <div class="flex items-center gap-3 mb-4">
+      <h2 class="section-title">Teacher</h2>
+      <span class="chip chip-teacher">English UI · classroom / tablet</span>
+      <div style="flex:1;height:1px;background:var(--line)"></div>
+      <span class="font-mono text-[11px]" style="color:var(--ink-3)">3 screens</span>
+    </div>
+    <div class="grid gap-2">
+
+      <a class="card-link" href="teacher-landing.html">
+        <span class="num-tag">11</span>
+        <div class="flex-1 min-w-0">
+          <div class="font-disp text-[16px] font-medium">My batches</div>
+          <div class="text-[11.5px] font-mono mt-0.5" style="color:var(--ink-3)">/teacher · today's session card + assigned batch grid</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="chev"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+
+      <a class="card-link" href="teacher-batch.html">
+        <span class="num-tag">12</span>
+        <div class="flex-1 min-w-0">
+          <div class="font-disp text-[16px] font-medium">Teacher batch view · M32</div>
+          <div class="text-[11.5px] font-mono mt-0.5" style="color:var(--ink-3)">/teacher/batches/[id] · all 36 sessions, today highlighted with one-tap mark CTA</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" class="chev"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+
+      <a class="card-link" href="teacher-session.html" style="border-color:var(--primary)">
+        <span class="num-tag" style="color:var(--primary)">13</span>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <div class="font-disp text-[16px] font-medium">Mark attendance</div>
+            <span class="chip chip-key">Key flow</span>
+          </div>
+          <div class="text-[11.5px] font-mono mt-0.5" style="color:var(--ink-3)">/teacher/sessions/[id] · 10 students × 5 statuses, "mark all" toolbar, dashed unmarked cards</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" style="color:var(--primary)"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+
+    </div>
+  </section>
+
+  <footer class="mt-12 pt-6 text-[11.5px] font-mono flex items-center gap-2" style="color:var(--ink-3);border-top:1px solid var(--line)">
+    <span>13 screens · V3 Slate Mono · same shell on every page</span>
+    <span class="ml-auto">Horizonte Admin · v26.05.22</span>
+  </footer>
+
+</div>
+</body>
+</html>

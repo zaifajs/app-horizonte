@@ -8,35 +8,38 @@ Source of truth for what's left. Tick boxes as work completes. Full context in `
 
 ## Phase 1: Foundation (local + deploy infra)
 - [x] 1.1 Upgrade Node 16 → 22 (local) — already on v22.21.1
-- [ ] 1.2 Scaffold Next.js 15 + git + push to GitHub (master + develop branches, master protected)
+- [~] 1.2 Scaffold Next.js 16 + git + push to GitHub — master + develop pushed; **master protection pending** (UI or `gh auth login`)
 - [ ] 1.3 shadcn/ui + base layout
-- [ ] 1.4 Create horizonte-dev + horizonte-prod Supabase projects + Storage buckets + env
-- [ ] 1.5 CloudPanel: create stage.nhorizonte.pt + app.nhorizonte.pt Node sites with SSL + env files
-- [ ] 1.6 GitHub Actions: CI workflow + deploy workflow (SSH to VPS on push to develop/master)
-- [ ] 1.7 Prisma schema (full v1 data model) + initial migration → auto-applies on deploy
-- [ ] 1.8 Seed: PLA + 6 modules + dev admin (dev only)
-- [ ] 1.9 Auth + role-based route guards
-- [ ] **Checkpoint: Foundation — push to develop deploys to stage.nhorizonte.pt with working login; human review**
+- [x] 1.4 horizonte-dev + horizonte-prod Supabase projects created (eu-west-1); student-documents bucket created; .env.local wired; stage + prod .env files staged in /tmp
+- [x] 1.5 CloudPanel: stage.nhorizonte.pt + app.nhorizonte.pt Node sites created with SSL + env files
+- [x] 1.6 GitHub Actions: CI workflow + deploy workflow (SSH to VPS on push to develop/master)
+- [x] 1.7 Prisma schema (13 tables) + initial migration applied to dev DB
+- [x] 1.8 Seed: PLA + 6 modules on dev DB + dev admin user (huzaifa.wp@gmail.com)
+- [x] 1.9 Auth + role-based route guards (Supabase Auth + middleware)
+- [x] **Checkpoint: Foundation complete — push to develop deploys to stage.nhorizonte.pt with working login**
 
 ## Phase 2: Batch lifecycle
-- [ ] 2.1 BatchSession generator (pure fn + unit tests, holiday-aware)
-- [ ] 2.2 Create-batch form (admin + staff)
-- [ ] 2.3a Cronograma journey grid (6 module cards)
-- [ ] 2.3b Today card (floating, when a session is today)
-- [ ] 2.3c Module drill-in (sessions + attendance placeholder)
-- [ ] 2.4 Schedule-table view + print export
-- [ ] 2.5 Per-session reschedule (single date edit, no cascade)
+- [x] 2.1 BatchSession generator (pure fn + 9 unit tests, holiday-aware; PT calendar by default, injectable for tests)
+- [x] 2.2 Create-batch form (admin + staff) — /admin/batches list + /admin/batches/new form; creates Batch + 36 BatchSessions + audit log
+- [x] 2.3a Cronograma journey grid (6 module cards w/ status, dates, hours)
+- [x] 2.3b Today card (floating dark card when a session is today)
+- [x] 2.3c Module drill-in (per-module session table below cards)
+- [x] 2.4 Schedule-table view (?view=table) + print export (?print=1)
+- [x] 2.5 Per-session reschedule (Edit dialog, audit-logged, cancel requires note)
 - [ ] **Checkpoint: Batch lifecycle — human review**
 
 ## Phase 3: Student lifecycle
-- [ ] 3.1 Document upload helper (Supabase Storage, signed URLs)
-- [ ] 3.2a Public registration form UI + Zod validation
-- [ ] 3.2b Public registration server action (create Student + dormant User + Enrollment + 2 Payments)
-- [ ] 3.3 Staff "Add student" page
-- [ ] 3.4a Student detail page layout (info, docs, enrollments, payments, messages, notes)
-- [ ] 3.4b logChange() helper + wire into mutations
-- [ ] 3.4c Audit log activity stream UI
-- [ ] **Checkpoint: Student lifecycle — human review**
+- [x] 3.1 Document upload helper (Supabase Storage, signed URLs)
+- [x] 3.2a Public registration form UI + Zod validation (bilingual, all 4 locales)
+- [x] 3.2b Public registration server action — creates Student + Enrollment (PENDING). No prefilled Payments — staff records them ad-hoc.
+- [x] 3.3 Staff "Add student" page
+- [x] 3.4a Student detail page layout (info, docs, enrollments, payments, notes)
+- [x] 3.4b logChange() helper wired into every mutation
+- [x] 3.4c Audit log activity stream UI
+- [x] **Bonus:** PENDING enrollment status + auto-activate on first payment
+- [x] **Bonus:** Simplified payment model (no fixed installments; partial payments via N Payment rows under one Enrollment; Course.feeCents = total target)
+- [x] **Bonus:** Paid/Due columns in students list
+- [x] **Checkpoint: Student lifecycle — human review**
 
 ## Phase 4: Master table + payment flow
 - [ ] 4.1 Master student table (TanStack, sortable, paginated server-side)

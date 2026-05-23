@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1280" />
+<title>Edit · Aisha Martins · Horizonte CRM</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#B6FF3C; --primary-600:#9DE61A; --primary-50:rgba(182,255,60,.10);
+    --bg:#0B0E14; --surface:#131722; --surface-2:#171C2A; --surface-3:#1C2335; --line:#212838; --line-2:#1A1F2D;
+    --ink:#E6E9EF; --ink-2:#9BA3B4; --ink-3:#5C6478;
+    --success:#34D399; --success-50:rgba(52,211,153,.12);
+    --warning:#F4B53F; --warning-50:rgba(244,181,63,.12);
+    --info:#60A5FA; --info-50:rgba(96,165,250,.12); --danger:#F87171; --danger-50:rgba(248,113,113,.13);
+  }
+  html,body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .font-disp{font-family:'Space Grotesk',sans-serif;letter-spacing:-.02em}
+  .font-mono{font-family:'IBM Plex Mono',monospace}
+  .hair-b{border-bottom:1px solid var(--line)} .hair-t{border-top:1px solid var(--line)} .hair-r{border-right:1px solid var(--line)}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;color:var(--ink-2);font-weight:500;font-size:13px}
+  .nav-item:hover{background:rgba(255,255,255,.04);color:var(--ink)}
+  .nav-item.active{background:var(--surface-2);color:var(--ink);position:relative}
+  .nav-item.active::before{content:"";position:absolute;left:-12px;top:7px;bottom:7px;width:2px;background:var(--primary);border-radius:0 2px 2px 0}
+  .chip{display:inline-flex;align-items:center;gap:4px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;line-height:1;padding:3px 6px;border-radius:3px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+  .chip-danger{background:var(--danger-50);color:var(--danger)}
+  .chip-warning{background:var(--warning-50);color:var(--warning)}
+  .chip-success{background:var(--success-50);color:var(--success)}
+  .chip-primary{background:var(--primary-50);color:var(--primary)}
+  .chip-outline{background:transparent;color:var(--ink-2);border:1px solid var(--line)}
+  .dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:8px}
+  .ibtn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:5px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line)}
+  .btn-primary{background:var(--primary);color:#0B0E14;padding:9px 16px;border-radius:6px;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:7px}
+  .btn-primary:disabled{opacity:.45;cursor:not-allowed}
+  .btn-ghost{background:var(--surface-2);color:var(--ink-2);padding:8px 13px;border-radius:6px;font-weight:500;font-size:13px;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line)}
+  .btn-danger{background:transparent;color:var(--danger);padding:8px 13px;border-radius:6px;font-weight:500;font-size:13px;display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(248,113,113,.3)}
+  .btn-danger:hover{background:var(--danger-50)}
+  .avi{display:inline-flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:5px}
+  .status-pill{display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+  .field-label{display:block;font-family:'IBM Plex Mono';font-size:10.5px;text-transform:uppercase;letter-spacing:.14em;color:var(--ink-3);font-weight:600;margin-bottom:6px}
+  .field-label .req{color:var(--danger);margin-left:3px}
+  .field-label .opt{color:var(--ink-3);margin-left:6px;font-weight:500;text-transform:none;letter-spacing:0;font-size:11px;font-family:'IBM Plex Sans'}
+  .field-label .changed{margin-left:8px;font-family:'IBM Plex Mono';font-size:9.5px;color:#0B0E14;background:var(--primary);padding:1.5px 5px;border-radius:3px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+  .inp{display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;border:1px solid var(--line);border-radius:7px;background:var(--surface-2);font-size:13.5px;color:var(--ink);transition:all .15s}
+  .inp:hover{border-color:var(--ink-3)}
+  .inp:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-50);background:var(--surface)}
+  .inp input,.inp select,.inp textarea{outline:none;border:none;background:transparent;flex:1;color:var(--ink);font-size:13.5px;font-family:'IBM Plex Sans';width:100%}
+  .inp.has-value{background:var(--surface)}
+  .inp .pre{color:var(--ink-3);font-family:'IBM Plex Mono';font-size:13px}
+  .inp.dirty{background:var(--surface);border-color:var(--primary);box-shadow:inset 3px 0 0 var(--primary)}
+  .help-msg{font-size:11.5px;color:var(--ink-3);margin-top:5px}
+  .doc-row{background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:10px 12px;display:flex;align-items:center;gap:10px}
+  .toc{position:sticky;top:60px}
+  .toc a{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:6px;color:var(--ink-2);font-size:12.5px;font-weight:500}
+  .toc a:hover{background:var(--surface-2);color:var(--ink)}
+  .toc a.on{background:var(--primary-50);color:var(--ink)}
+  .toc a .ix{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--ink-3);min-width:18px}
+  .toc a.on .ix{color:var(--primary)}
+</style>
+</head>
+<body class="min-h-screen">
+<div class="flex min-h-screen">
+
+  <aside class="hair-r flex flex-col" style="width:232px;background:var(--surface);position:sticky;top:0;height:100vh">
+    <div class="px-4 pt-4 pb-4 hair-b">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-md flex items-center justify-center" style="background:var(--primary)"><span class="font-mono text-[12px] font-bold" style="color:#0B0E14">nh</span></div>
+        <div class="leading-tight"><div class="font-mono text-[13px] font-semibold">horizonte<span style="color:var(--primary)">/</span></div><div class="text-[10px] uppercase tracking-[.18em] font-mono" style="color:var(--ink-3)">admin · v26.05</div></div>
+      </div>
+    </div>
+    <div class="px-4 pt-4 pb-1.5"><div class="text-[9.5px] uppercase tracking-[.18em] font-mono font-semibold" style="color:var(--ink-3)">Workspace</div></div>
+    <nav class="px-3 flex flex-col gap-0.5">
+      <a class="nav-item" href="today-v3.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Today<span class="ml-auto chip chip-danger">3</span></a>
+      <a class="nav-item active" href="students.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Students</a>
+      <a class="nav-item" href="batches.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/></svg>Batches</a>
+      <a class="nav-item" href="users.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Users</a>
+    </nav>
+    <div class="mt-auto p-3 hair-t"><button class="w-full flex items-center gap-2 p-1.5 rounded-md" style="background:var(--surface-2)"><span class="avi" style="width:28px;height:28px;font-size:10.5px">HA</span><span class="text-left leading-tight flex-1 min-w-0"><span class="block text-[12.5px] font-semibold truncate font-mono">Huzaifa Ahmed</span><span class="block text-[10px] truncate font-mono" style="color:var(--ink-3)">Admin</span></span></button></div>
+  </aside>
+
+  <main class="flex-1 flex flex-col min-w-0">
+    <header class="hair-b sticky top-0 z-10" style="background:rgba(11,14,20,.85);backdrop-filter:blur(8px)">
+      <div class="px-8 h-12 flex items-center gap-3">
+        <nav class="flex items-center gap-2 text-[12.5px] font-mono" style="color:var(--ink-3)"><a href="#" class="hover:text-white">admin</a><span>/</span><a href="students.html" class="hover:text-white">students</a><span>/</span><a href="student-detail.html" class="hover:text-white">Aisha Martins</a><span>/</span><span style="color:var(--ink)">edit</span></nav>
+        <span class="chip chip-warning ml-2"><span class="dot" style="background:var(--warning)"></span>Unsaved changes</span>
+      </div>
+    </header>
+
+    <div class="px-8 py-7 max-w-[1200px] w-full">
+
+      <!-- Page header -->
+      <section class="flex items-end justify-between gap-6 mb-6">
+        <div class="flex items-center gap-4">
+          <div class="avi" style="width:56px;height:56px;font-size:18px;color:var(--danger);background:var(--danger-50);border-color:rgba(248,113,113,.25);border-radius:8px">AM</div>
+          <div>
+            <div class="text-[11px] font-mono uppercase tracking-[.18em]" style="color:var(--ink-3)">Edit student</div>
+            <div class="flex items-baseline gap-3 mt-1">
+              <h1 class="font-disp text-[28px] font-medium">Aisha Martins</h1>
+              <span class="chip chip-primary">M32 · seq 01</span>
+              <span class="chip chip-danger">Overdue · +12d</span>
+            </div>
+            <div class="text-[12.5px] font-mono mt-1" style="color:var(--ink-3)">Enrolled 2026-04-12 · 40 days ago</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <a href="student-detail.html" class="btn-ghost"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>Back to profile</a>
+        </div>
+      </section>
+
+      <!-- Two-col: TOC + form -->
+      <div class="grid gap-6" style="grid-template-columns:200px 1fr">
+
+        <!-- TOC -->
+        <div>
+          <div class="toc card p-2 flex flex-col gap-0.5">
+            <a class="on" href="#personal"><span class="ix">01</span>Personal</a>
+            <a href="#contact"><span class="ix">02</span>Contact</a>
+            <a href="#documents"><span class="ix">03</span>Documents</a>
+            <a href="#batch"><span class="ix">04</span>Batch &amp; payment</a>
+            <a href="#danger" style="color:var(--danger)"><span class="ix" style="color:var(--danger)">!</span>Danger zone</a>
+          </div>
+        </div>
+
+        <!-- Form -->
+        <div class="flex flex-col gap-5">
+
+          <!-- 01 Personal -->
+          <section id="personal" class="card p-6">
+            <div class="flex items-center gap-3 mb-5">
+              <span class="status-pill" style="color:var(--primary)"><span class="dot" style="background:var(--primary)"></span>01 · Personal</span>
+              <div style="flex:1;height:1px;background:var(--line)"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="field-label">First name <span class="req">*</span></label>
+                <label class="inp has-value"><input value="Aisha" /></label>
+              </div>
+              <div>
+                <label class="field-label">Last name <span class="req">*</span></label>
+                <label class="inp has-value"><input value="Martins" /></label>
+              </div>
+              <div>
+                <label class="field-label">Date of birth <span class="req">*</span></label>
+                <label class="inp has-value"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" style="color:var(--ink-3)"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 4v4"/><path d="M16 4v4"/></svg><input value="1998-03-21" /></label>
+              </div>
+              <div>
+                <label class="field-label">Nationality <span class="req">*</span></label>
+                <label class="inp has-value"><select><option>Bangladesh · BD</option><option>Portugal · PT</option><option>Pakistan · PK</option><option>India · IN</option></select><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ink-3)"><path d="m6 9 6 6 6-6"/></svg></label>
+              </div>
+              <div>
+                <label class="field-label">NIF</label>
+                <label class="inp dirty"><input value="312 456 789" /></label>
+                <div class="help-msg" style="color:var(--primary)">Changed from <span class="font-mono" style="color:var(--ink-3);text-decoration:line-through">312 456 700</span></div>
+              </div>
+              <div>
+                <label class="field-label">Gender <span class="opt">For records only</span></label>
+                <label class="inp has-value"><select><option>Female</option><option>Prefer not to say</option><option>Male</option><option>Other</option></select><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ink-3)"><path d="m6 9 6 6 6-6"/></svg></label>
+              </div>
+            </div>
+          </section>
+
+          <!-- 02 Contact -->
+          <section id="contact" class="card p-6">
+            <div class="flex items-center gap-3 mb-5">
+              <span class="status-pill" style="color:var(--ink-3)">02 · Contact</span>
+              <div style="flex:1;height:1px;background:var(--line)"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="field-label">Email <span class="req">*</span></label>
+                <label class="inp has-value">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" style="color:var(--ink-3)"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  <input value="aisha@example.com" />
+                </label>
+              </div>
+              <div>
+                <label class="field-label">Phone <span class="req">*</span><span class="changed">Edited</span></label>
+                <label class="inp dirty">
+                  <span class="pre">+351</span>
+                  <input value="912 345 678" />
+                </label>
+                <div class="help-msg" style="color:var(--primary)">Changed from <span class="font-mono" style="color:var(--ink-3);text-decoration:line-through">+351 912 345 600</span></div>
+              </div>
+              <div class="col-span-2">
+                <label class="field-label">Address</label>
+                <label class="inp has-value"><input value="Rua de Cedofeita 142, 4050-180 Porto" /></label>
+              </div>
+              <div>
+                <label class="field-label">Emergency contact <span class="opt">Optional</span></label>
+                <label class="inp"><input placeholder="Name" /></label>
+              </div>
+              <div>
+                <label class="field-label">Emergency phone <span class="opt">Optional</span></label>
+                <label class="inp"><span class="pre">+351</span><input placeholder="0 0 0 0 0 0 0 0 0" /></label>
+              </div>
+            </div>
+          </section>
+
+          <!-- 03 Documents -->
+          <section id="documents" class="card p-6">
+            <div class="flex items-center gap-3 mb-5">
+              <span class="status-pill" style="color:var(--ink-3)">03 · Documents</span>
+              <span class="chip chip-warning">1 expiring</span>
+              <div style="flex:1;height:1px;background:var(--line)"></div>
+              <button class="text-[11.5px] font-mono underline" style="color:var(--ink-2)">Upload new</button>
+            </div>
+            <div class="flex flex-col gap-2">
+              <div class="doc-row">
+                <div class="w-9 h-9 rounded-md flex items-center justify-center shrink-0" style="background:var(--info-50);color:var(--info)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-[13.5px]">Passport · front</div>
+                  <div class="text-[11px] font-mono mt-0.5" style="color:var(--ink-3)">passport_front.jpg · 2.1 MB · expires 2028-09-14</div>
+                </div>
+                <span class="status-pill" style="color:var(--success)"><span class="dot" style="background:var(--success)"></span>Valid</span>
+                <button class="ibtn" title="Replace"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
+                <button class="ibtn" style="color:var(--danger)" title="Remove"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+              </div>
+              <div class="doc-row">
+                <div class="w-9 h-9 rounded-md flex items-center justify-center shrink-0" style="background:var(--info-50);color:var(--info)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-[13.5px]">Passport · back</div>
+                  <div class="text-[11px] font-mono mt-0.5" style="color:var(--ink-3)">passport_back.jpg · 1.8 MB</div>
+                </div>
+                <span class="status-pill" style="color:var(--success)"><span class="dot" style="background:var(--success)"></span>Valid</span>
+                <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
+                <button class="ibtn" style="color:var(--danger)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+              </div>
+              <div class="doc-row" style="border-color:rgba(244,181,63,.3);background:var(--warning-50)">
+                <div class="w-9 h-9 rounded-md flex items-center justify-center shrink-0" style="background:rgba(244,181,63,.2);color:var(--warning)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+                <div class="flex-1 min-w-0">
+                  <div class="font-semibold text-[13.5px]">Residence permit</div>
+                  <div class="text-[11px] font-mono mt-0.5" style="color:var(--ink-3)">permit_2024.pdf · expires 2026-08-04 · in 74 days</div>
+                </div>
+                <span class="status-pill" style="color:var(--warning)"><span class="dot" style="background:var(--warning)"></span>Expiring</span>
+                <button class="ibtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
+                <button class="ibtn" style="color:var(--danger)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg></button>
+              </div>
+            </div>
+          </section>
+
+          <!-- 04 Batch & payment -->
+          <section id="batch" class="card p-6">
+            <div class="flex items-center gap-3 mb-5">
+              <span class="status-pill" style="color:var(--ink-3)">04 · Batch &amp; payment</span>
+              <div style="flex:1;height:1px;background:var(--line)"></div>
+              <span class="font-mono text-[10.5px]" style="color:var(--ink-3)">Reassigning requires confirmation</span>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="field-label">Batch <span class="req">*</span></label>
+                <label class="inp has-value">
+                  <span class="font-mono font-semibold" style="color:var(--primary)">M32</span>
+                  <span class="font-mono text-[11px]" style="color:var(--ink-3)">·</span>
+                  <span style="color:var(--ink-2)">PLA · A2 · Pedro Santos</span>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ink-3);margin-left:auto"><path d="m6 9 6 6 6-6"/></svg>
+                </label>
+                <div class="help-msg">Started May 18 · seq 01 of 10</div>
+              </div>
+              <div>
+                <label class="field-label">Status</label>
+                <label class="inp has-value"><select><option>Active</option><option>Pending</option><option>Withdrawn</option><option>Completed</option></select><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ink-3)"><path d="m6 9 6 6 6-6"/></svg></label>
+              </div>
+              <div>
+                <label class="field-label">Total fee</label>
+                <label class="inp has-value"><span class="pre">€</span><input value="450.00" /></label>
+              </div>
+              <div>
+                <label class="field-label">Plan</label>
+                <label class="inp has-value"><select><option>2 installments (€225 + €225)</option><option>1 payment (€450)</option><option>3 installments (€150 each)</option></select><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ink-3)"><path d="m6 9 6 6 6-6"/></svg></label>
+              </div>
+            </div>
+            <div class="mt-4 card p-3 flex items-center gap-3" style="background:var(--surface-2);border-style:dashed">
+              <span class="status-pill" style="color:var(--danger)"><span class="dot" style="background:var(--danger)"></span>Overdue · +12d</span>
+              <span class="text-[12.5px] font-mono" style="color:var(--ink-2)">€225 of €450 paid · 2nd installment due 2026-05-10</span>
+              <a href="#" class="ml-auto text-[12px] font-mono underline" style="color:var(--primary)">Record payment</a>
+            </div>
+          </section>
+
+          <!-- DANGER ZONE -->
+          <section id="danger" class="card p-6" style="border-color:rgba(248,113,113,.3)">
+            <div class="flex items-center gap-3 mb-5">
+              <span class="status-pill" style="color:var(--danger)"><span class="dot" style="background:var(--danger)"></span>Danger zone</span>
+              <div style="flex:1;height:1px;background:rgba(248,113,113,.25)"></div>
+            </div>
+            <div class="flex flex-col gap-3">
+              <div class="flex items-center gap-4 py-3 hair-b">
+                <div class="flex-1">
+                  <div class="font-semibold text-[14px]">Withdraw enrollment</div>
+                  <div class="text-[12px] mt-0.5" style="color:var(--ink-2)">Mark Aisha as withdrawn. Attendance and payment history are kept but she'll no longer appear in active rosters.</div>
+                </div>
+                <button class="btn-danger"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>Withdraw</button>
+              </div>
+              <div class="flex items-center gap-4 pt-1">
+                <div class="flex-1">
+                  <div class="font-semibold text-[14px]">Delete student permanently</div>
+                  <div class="text-[12px] mt-0.5" style="color:var(--ink-2)">Erases the profile and all related records. <b style="color:var(--danger)">Cannot be undone.</b> Requires re-typing the name.</div>
+                </div>
+                <button class="btn-danger" style="background:var(--danger-50)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>Delete student</button>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+
+      <!-- Sticky save bar -->
+      <section class="card p-4 flex items-center gap-3 mt-6 sticky bottom-3 z-20" style="background:var(--surface);box-shadow:0 -1px 0 var(--line), 0 -16px 32px -16px rgba(0,0,0,.6)">
+        <div class="flex items-center gap-3 text-[12.5px]">
+          <span class="status-pill" style="color:var(--warning)"><span class="dot" style="background:var(--warning)"></span>2 fields changed</span>
+          <span class="font-mono" style="color:var(--ink-3)">· Phone · NIF</span>
+        </div>
+        <div class="ml-auto flex items-center gap-2">
+          <button class="btn-ghost">Discard</button>
+          <button class="btn-ghost">View diff</button>
+          <button class="btn-primary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save changes
+            <span class="font-mono text-[11px]" style="opacity:.6">⌘S</span>
+          </button>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  // Smooth scroll for TOC + active highlight
+  document.querySelectorAll('.toc a').forEach(a=>{
+    a.addEventListener('click', e=>{
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) target.scrollIntoView({behavior:'smooth', block:'start'});
+      document.querySelectorAll('.toc a').forEach(x=>x.classList.remove('on'));
+      a.classList.add('on');
+    });
+  });
+</script>
+<script src="sidebar-collapse.js"></script>
+</body>
+</html>

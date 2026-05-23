@@ -1,0 +1,492 @@
+// Horizonte CRM — v1 data model
+// See docs/ideas/horizonte-crm-v1.md for the spec this implements.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------- enums
+
+enum UserRole {
+  ADMIN
+  STAFF
+  TEACHER
+  STUDENT
+}
+
+enum BatchStatus {
+  UPCOMING
+  ACTIVE
+  FINISHED
+  CANCELLED
+}
+
+enum SessionKind {
+  CLASSROOM
+  AUTONOMOUS
+  // An exam session pinned to a Module's Exam definition (via
+  // BatchSession.examId). Honour-system timed; students take it in
+  // /student/* (P4).
+  EXAM
+}
+
+enum ExamQuestionType {
+  // Multiple choice — one correct index out of choices[].
+  MC
+  // Free-text matched server-side against acceptedAnswers[] (trim + lowercase).
+  FILL
+  // Open-text response, teacher-graded.
+  OPEN
+}
+
+enum ExamSubmissionStatus {
+  IN_PROGRESS
+  SUBMITTED
+  GRADED
+}
+
+enum SessionStatus {
+  SCHEDULED
+  HELD
+  CANCELLED
+  RESCHEDULED
+}
+
+enum DocType {
+  PASSPORT
+  RESIDENCE_PERMIT
+  ID_CARD
+}
+
+enum DocumentKind {
+  PASSPORT_FRONT
+  PASSPORT_BACK
+  RESIDENCE_PERMIT_FRONT
+  RESIDENCE_PERMIT_BACK
+  ID_CARD_FRONT
+  ID_CARD_BACK
+  OTHER
+}
+
+enum EnrollmentStatus {
+  PENDING
+  ACTIVE
+  WITHDRAWN
+  COMPLETED
+}
+
+enum PaymentMethod {
+  BANK
+  CASH
+}
+
+enum AttendanceState {
+  PRESENT
+  LATE
+  LEFT_EARLY
+  EXCUSED_ABSENCE
+  UNEXCUSED_ABSENCE
+}
+
+enum MessageChannel {
+  WA_ME
+  WA_CLOUD
+  EMAIL
+}
+
+enum MessageStatus {
+  SENT
+  FAILED
+  BOUNCED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+// ---------------------------------------------------------------- core
+
+// One row per application user. id mirrors the Supabase auth.users.id (UUID).
+// Created via Supabase Auth invite; our row carries the role + display name.
+model User {
+  id        String   @id @db.Uuid
+  email     String   @unique
+  name      String
+  role      UserRole @default(STUDENT)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  studentProfile Student?
+  batchesTaught  Batch[]        @relation("BatchTrainer")
+  sessionsOver   BatchSession[] @relation("SessionTrainer")
+  paymentsTaken  Payment[]      @relation("PaymentCollector")
+  notesAuthored  Note[]         @relation("NoteAuthor")
+  messagesSent   MessageLog[]   @relation("MessageSender")
+  auditEntries   AuditLog[]     @relation("AuditActor")
+  examsGraded    ExamSubmission[] @relation("ExamGrader")
+
+  @@map("users")
+}
+
+model Course {
+  id         String   @id @default(uuid()) @db.Uuid
+  code       String   @unique
+  name       String
+  level      String
+  totalHours Int
+  feeCents   Int      @default(45000)
+  createdAt  DateTime @default(now())
+
+  modules Module[]
+  batches Batch[]
+  exams   Exam[]
+
+  @@map("courses")
+}
+
+model Module {
+  id              String @id @default(uuid()) @db.Uuid
+  courseId        String @db.Uuid
+  number          Int
+  name            String
+  classroomDays   Int    @default(5)
+  hoursPerDay     Int    @default(4)
+  autonomousHours Int    @default(5)
+
+  course   Course         @relation(fields: [courseId], references: [id])
+  sessions BatchSession[]
+  exams    Exam[]
+
+  @@unique([courseId, number])
+  @@map("modules")
+}
+
+model Batch {
+  id            String      @id @default(uuid()) @db.Uuid
+  code          String      @unique
+  courseId      String      @db.Uuid
+  trainerId     String?     @db.Uuid
+  startDate     DateTime    @db.Date
+  startTime     String
+  durationHours Int         @default(4)
+  capacity      Int         @default(25)
+  status        BatchStatus @default(UPCOMING)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  course      Course         @relation(fields: [courseId], references: [id])
+  trainer     User?          @relation("BatchTrainer", fields: [trainerId], references: [id])
+  sessions    BatchSession[]
+  enrollments Enrollment[]
+
+  @@map("batches")
+}
+
+model BatchSession {
+  id                String        @id @default(uuid()) @db.Uuid
+  batchId           String        @db.Uuid
+  moduleId          String        @db.Uuid
+  sequenceInModule  Int
+  scheduledDate     DateTime      @db.Date
+  startTime         String?
+  endTime           String?
+  hours             Int
+  kind              SessionKind
+  status            SessionStatus @default(SCHEDULED)
+  trainerOverrideId String?       @db.Uuid
+  // For kind=EXAM: which exam definition this session is administering.
+  // Null for CLASSROOM and AUTONOMOUS.
+  examId            String?       @db.Uuid
+  notes             String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  batch           Batch             @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  module          Module            @relation(fields: [moduleId], references: [id])
+  trainerOverride User?             @relation("SessionTrainer", fields: [trainerOverrideId], references: [id])
+  attendances     Attendance[]
+  exam            Exam?             @relation(fields: [examId], references: [id])
+  submissions     ExamSubmission[]
+
+  @@unique([batchId, moduleId, sequenceInModule, kind])
+  @@index([scheduledDate])
+  @@index([examId])
+  @@map("batch_sessions")
+}
+
+model Student {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String?  @unique @db.Uuid
+  fullName      String
+  email         String   @unique
+  phone         String
+  docType       DocType
+  docNumber     String
+  dob           DateTime @db.Date
+  docExpiry     DateTime @db.Date
+  nationality   String
+  nif           String
+  niss          String?
+  address       String
+  city          String
+  gdprConsentAt DateTime
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user            User?            @relation(fields: [userId], references: [id])
+  enrollments     Enrollment[]
+  documents       Document[]
+  messageLog      MessageLog[]
+  auditLog        AuditLog[]
+  noteEntries     Note[]
+  examSubmissions ExamSubmission[]
+
+  @@map("students")
+}
+
+model Document {
+  id          String       @id @default(uuid()) @db.Uuid
+  studentId   String       @db.Uuid
+  kind        DocumentKind
+  storagePath String
+  expiresAt   DateTime?    @db.Date
+  uploadedAt  DateTime     @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}
+
+model Enrollment {
+  id         String           @id @default(uuid()) @db.Uuid
+  studentId  String           @db.Uuid
+  batchId    String           @db.Uuid
+  enrolledAt DateTime         @default(now())
+  status     EnrollmentStatus @default(PENDING)
+
+  student     Student      @relation(fields: [studentId], references: [id])
+  batch       Batch        @relation(fields: [batchId], references: [id])
+  payments    Payment[]
+  attendances Attendance[]
+
+  @@unique([studentId, batchId])
+  @@map("enrollments")
+}
+
+// One Payment row = one money-received event. Multiple payments may exist
+// under an Enrollment (partial / staggered payments). The total target is
+// Enrollment.batch.feeCents.
+model Payment {
+  id               String        @id @default(uuid()) @db.Uuid
+  enrollmentId     String        @db.Uuid
+  amountCents      Int
+  currency         String        @default("EUR")
+  paidAt           DateTime
+  method           PaymentMethod
+  proofStoragePath String?
+  collectedById    String?       @db.Uuid
+  notes            String?
+  isVerified       Boolean       @default(false)
+  verifiedAt       DateTime?
+  verifiedById     String?       @db.Uuid
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  enrollment  Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  collectedBy User?      @relation("PaymentCollector", fields: [collectedById], references: [id])
+
+  @@index([paidAt])
+  @@index([enrollmentId])
+  @@map("payments")
+}
+
+model Attendance {
+  id           String          @id @default(uuid()) @db.Uuid
+  sessionId    String          @db.Uuid
+  enrollmentId String          @db.Uuid
+  state        AttendanceState
+  notes        String?
+  markedAt     DateTime        @default(now())
+  markedById   String?         @db.Uuid
+
+  session    BatchSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  enrollment Enrollment   @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, enrollmentId])
+  @@map("attendances")
+}
+
+model MessageLog {
+  id           String         @id @default(uuid()) @db.Uuid
+  studentId    String         @db.Uuid
+  templateKey  String
+  body         String
+  sentVia      MessageChannel
+  sentById     String?        @db.Uuid
+  sentAt       DateTime       @default(now())
+  status       MessageStatus  @default(SENT)
+  errorMessage String?
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  sentBy  User?   @relation("MessageSender", fields: [sentById], references: [id])
+
+  @@index([studentId, sentAt(sort: Desc)])
+  @@map("message_logs")
+}
+
+model AuditLog {
+  id          String      @id @default(uuid()) @db.Uuid
+  actorUserId String?     @db.Uuid
+  studentId   String?     @db.Uuid
+  action      AuditAction
+  entityType  String
+  entityId    String      @db.Uuid
+  changes     Json?
+  createdAt   DateTime    @default(now())
+
+  actor   User?    @relation("AuditActor", fields: [actorUserId], references: [id])
+  student Student? @relation(fields: [studentId], references: [id])
+
+  @@index([studentId, createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+model Note {
+  id        String   @id @default(uuid()) @db.Uuid
+  studentId String   @db.Uuid
+  authorId  String?  @db.Uuid
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  author  User?   @relation("NoteAuthor", fields: [authorId], references: [id])
+
+  @@map("notes")
+}
+
+model MessageTemplate {
+  id          String   @id @default(uuid()) @db.Uuid
+  // For system templates (welcome/payment_reminder/class_reminder/cronograma)
+  // this is the stable key automated flows reference. NULL for user-created.
+  key         String?  @unique
+  name        String
+  isSystem    Boolean  @default(false)
+  // { en: "...", pt: "...", bn: "...", ur: "...", hi: "..." }
+  bodies      Json     @default("{}")
+  subjects    Json     @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  updatedById String?  @db.Uuid
+
+  @@map("message_templates")
+}
+
+// =========================================================================
+// Exams — module assessments. One Exam per (courseId, moduleId); reused
+// across every batch that runs that module. Teacher schedules an EXAM-kind
+// BatchSession pointing at the Exam definition; students submit; MC + FILL
+// auto-grade on submit; OPEN goes to a teacher grading queue.
+// =========================================================================
+
+model Exam {
+  id              String @id @default(uuid()) @db.Uuid
+  courseId        String @db.Uuid
+  moduleId        String @db.Uuid
+  title           String
+  // 0..100 — what fraction of total points is a pass.
+  passingScore    Int    @default(60)
+  durationMinutes Int    @default(45)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  course    Course         @relation(fields: [courseId], references: [id])
+  module    Module         @relation(fields: [moduleId], references: [id])
+  questions ExamQuestion[]
+  sessions  BatchSession[]
+
+  // One exam per (course, module). Authored once, reused everywhere.
+  @@unique([courseId, moduleId])
+  @@map("exams")
+}
+
+model ExamQuestion {
+  id       String           @id @default(uuid()) @db.Uuid
+  examId   String           @db.Uuid
+  // Ordering within the exam. Editor drags rewrite this densely.
+  position Int
+  type     ExamQuestionType
+  prompt   String
+  points   Int              @default(1)
+  // MC: string[] of choice labels. Empty array for FILL/OPEN.
+  choices         Json    @default("[]")
+  // MC: index into choices that is correct. NULL for FILL/OPEN.
+  correctIndex    Int?
+  // FILL: string[] of accepted answers (matched after trim + lowercase).
+  // Empty array for MC/OPEN.
+  acceptedAnswers Json    @default("[]")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  exam    Exam          @relation(fields: [examId], references: [id], onDelete: Cascade)
+  answers ExamAnswer[]
+
+  @@index([examId, position])
+  @@map("exam_questions")
+}
+
+model ExamSubmission {
+  id              String                @id @default(uuid()) @db.Uuid
+  studentId       String                @db.Uuid
+  batchSessionId  String                @db.Uuid
+  startedAt       DateTime              @default(now())
+  submittedAt     DateTime?
+  // Sum of points awarded for auto-graded (MC + FILL) questions.
+  autoScore       Int?
+  // Sum of points awarded by teacher for OPEN questions.
+  teacherScore    Int?
+  status          ExamSubmissionStatus  @default(IN_PROGRESS)
+  gradedById      String?               @db.Uuid
+  gradedAt        DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  student      Student        @relation(fields: [studentId], references: [id])
+  batchSession BatchSession   @relation(fields: [batchSessionId], references: [id], onDelete: Cascade)
+  gradedBy     User?          @relation("ExamGrader", fields: [gradedById], references: [id])
+  answers      ExamAnswer[]
+
+  // One submission per student per scheduled exam session.
+  @@unique([studentId, batchSessionId])
+  @@index([batchSessionId])
+  @@map("exam_submissions")
+}
+
+model ExamAnswer {
+  id             String   @id @default(uuid()) @db.Uuid
+  submissionId   String   @db.Uuid
+  questionId     String   @db.Uuid
+  // MC: chosen index. NULL when student left it blank.
+  answerIndex    Int?
+  // FILL / OPEN: typed response.
+  answerText     String?
+  // Points awarded. Auto-set on submit for MC + FILL; teacher sets for OPEN
+  // via the grading queue. Null = not yet graded.
+  pointsAwarded  Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  submission ExamSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  question   ExamQuestion   @relation(fields: [questionId], references: [id])
+
+  @@unique([submissionId, questionId])
+  @@map("exam_answers")
+}
