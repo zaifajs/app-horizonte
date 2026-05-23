@@ -341,7 +341,7 @@ export default async function TodayPage() {
       </section>
 
       {/* ============ MAIN GRID ============ */}
-      <div className="grid gap-5" style={{ gridTemplateColumns: "minmax(0, 1.55fr) minmax(0, 1fr)" }}>
+      <div className="grid gap-5 grid-cols-1 lg:[grid-template-columns:minmax(0,1.55fr)_minmax(0,1fr)]">
         {/* OVERDUE TABLE */}
         <section className="hz-card overflow-hidden">
           <header className="px-4 py-3 hair-b flex items-center gap-3" style={{ background: "var(--hz-surface-2)" }}>
