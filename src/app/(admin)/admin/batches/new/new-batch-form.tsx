@@ -44,6 +44,10 @@ export function NewBatchForm({
   const [durationHours, setDurationHours] = useState("4");
   const [capacity, setCapacity] = useState("25");
   const [trainerId, setTrainerId] = useState<string>(UNASSIGNED);
+  // Delivery mode + meeting link for ONLINE batches. Default IN_HOUSE so
+  // most batches require no extra input; toggling ONLINE reveals the URL.
+  const [deliveryMode, setDeliveryMode] = useState<"IN_HOUSE" | "ONLINE">("IN_HOUSE");
+  const [meetingUrl, setMeetingUrl] = useState("");
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,6 +62,8 @@ export function NewBatchForm({
         durationHours: Number(durationHours),
         capacity: Number(capacity),
         trainerId: trainerId === UNASSIGNED ? null : trainerId,
+        deliveryMode,
+        meetingUrl: deliveryMode === "ONLINE" ? meetingUrl.trim() || null : null,
       });
       if (!result.ok) {
         setError(result.error);
@@ -179,6 +185,52 @@ export function NewBatchForm({
           />
         </Field>
       </div>
+
+      <Field
+        label="Delivery"
+        htmlFor="deliveryMode"
+        error={fieldErrors.deliveryMode}
+        hint={
+          deliveryMode === "ONLINE"
+            ? "Students see the meeting link on their schedule + welcome message."
+            : "Sessions happen at the school."
+        }
+      >
+        <Select
+          value={deliveryMode}
+          onValueChange={(v) => v && setDeliveryMode(v as "IN_HOUSE" | "ONLINE")}
+        >
+          <SelectTrigger id="deliveryMode">
+            <SelectValue>
+              {(v: string) =>
+                v === "ONLINE" ? "Online" : "In-house (at the school)"
+              }
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="IN_HOUSE">In-house (at the school)</SelectItem>
+            <SelectItem value="ONLINE">Online</SelectItem>
+          </SelectContent>
+        </Select>
+      </Field>
+
+      {deliveryMode === "ONLINE" ? (
+        <Field
+          label="Meeting link"
+          htmlFor="meetingUrl"
+          error={fieldErrors.meetingUrl}
+          hint="Google Meet / Zoom / any URL. Reused across every session."
+        >
+          <Input
+            id="meetingUrl"
+            type="url"
+            value={meetingUrl}
+            onChange={(e) => setMeetingUrl(e.target.value)}
+            placeholder="https://meet.google.com/abc-defg-hij"
+            required
+          />
+        </Field>
+      ) : null}
 
       <Field
         label="Trainer"

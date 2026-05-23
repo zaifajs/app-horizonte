@@ -16,6 +16,8 @@ export function EditBatchTrigger({
     durationHours: number;
     capacity: number;
     status: Status;
+    deliveryMode: "IN_HOUSE" | "ONLINE";
+    meetingUrl: string | null;
   };
 }) {
   const [open, setOpen] = useState(false);

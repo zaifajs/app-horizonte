@@ -96,9 +96,15 @@ function SelectContent({
   children,
   side = "bottom",
   sideOffset = 6,
-  align = "center",
+  align = "start",
   alignOffset = 0,
-  alignItemWithTrigger = true,
+  // Base UI's `alignItemWithTrigger` mimics a native <select> by lifting the
+  // popup so the currently-selected row sits directly over the trigger.
+  // That works for short value sets, but for things like "Vasco Rego Leitão"
+  // it puts the popup half-over the controls beside the trigger AND clips
+  // the longest item to the trigger's width. Default to false so the popup
+  // consistently drops below the trigger and can grow wider than it.
+  alignItemWithTrigger = false,
   ...props
 }: SelectPrimitive.Popup.Props &
   Pick<
@@ -119,7 +125,11 @@ function SelectContent({
           data-slot="select-content"
           data-align-trigger={alignItemWithTrigger}
           className={cn(
-            "hz-select-content relative isolate z-[120] max-h-(--available-height) min-w-(--anchor-width) w-(--anchor-width) origin-(--transform-origin) overflow-x-hidden overflow-y-auto p-1.5",
+            // No fixed `w-`: the popup is at *least* as wide as the trigger
+            // (min-w-(--anchor-width)) but can grow to fit longer item
+            // labels without clipping. overflow-y-auto handles the height
+            // overflow when many items render.
+            "hz-select-content relative isolate z-[120] max-h-(--available-height) min-w-(--anchor-width) w-max max-w-[min(420px,calc(100vw-24px))] origin-(--transform-origin) overflow-y-auto p-1.5",
             // Animation
             "data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 duration-150",
             className,

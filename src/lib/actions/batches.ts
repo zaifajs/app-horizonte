@@ -81,6 +81,11 @@ export async function createBatchAction(
           durationHours: input.durationHours,
           capacity: input.capacity,
           status: "UPCOMING",
+          deliveryMode: input.deliveryMode,
+          // Clear the meeting URL for IN_HOUSE so the DB doesn't carry a
+          // stale link if the form had one in flight.
+          meetingUrl:
+            input.deliveryMode === "ONLINE" ? input.meetingUrl ?? null : null,
         },
       });
 
@@ -237,11 +242,17 @@ export async function updateBatchAction(
       durationHours: true,
       capacity: true,
       status: true,
+      deliveryMode: true,
+      meetingUrl: true,
     },
   });
   if (!existing) return { ok: false, error: "Batch not found." };
 
   const nextStartDate = new Date(`${input.startDate}T00:00:00.000Z`);
+  // Clear the meeting URL when switching to IN_HOUSE so the DB doesn't carry
+  // a stale link that no longer applies.
+  const nextMeetingUrl =
+    input.deliveryMode === "ONLINE" ? input.meetingUrl ?? null : null;
   const changes: Record<string, { from: unknown; to: unknown }> = {};
   if (existing.code !== input.code) changes.code = { from: existing.code, to: input.code };
   if (existing.startDate.toISOString().slice(0, 10) !== input.startDate)
@@ -254,6 +265,10 @@ export async function updateBatchAction(
     changes.capacity = { from: existing.capacity, to: input.capacity };
   if (existing.status !== input.status)
     changes.status = { from: existing.status, to: input.status };
+  if (existing.deliveryMode !== input.deliveryMode)
+    changes.deliveryMode = { from: existing.deliveryMode, to: input.deliveryMode };
+  if (existing.meetingUrl !== nextMeetingUrl)
+    changes.meetingUrl = { from: existing.meetingUrl, to: nextMeetingUrl };
 
   if (Object.keys(changes).length === 0) {
     return { ok: true, id: input.id };
@@ -270,6 +285,8 @@ export async function updateBatchAction(
           durationHours: input.durationHours,
           capacity: input.capacity,
           status: input.status,
+          deliveryMode: input.deliveryMode,
+          meetingUrl: nextMeetingUrl,
         },
       });
       await logChange({

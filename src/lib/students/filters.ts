@@ -35,7 +35,11 @@ export type StudentFilters = {
     | "batchSeq"
     | "paid"
     | "due"
-    | "lastPaid";
+    | "lastPaid"
+    // Group-by-urgency-tier so rows with the same payment status sit
+    // together (overdue / partial / due_soon / pre_start / paid /
+    // withdrawn). Used by the Payment column header.
+    | "payment";
   dir: "asc" | "desc";
 };
 
@@ -55,7 +59,20 @@ const URGENCY_VALUES: Urgency[] = [
   "paid", "partial", "due_soon", "overdue", "pre_start", "withdrawn",
 ];
 
-const SORT_VALUES = ["registered", "name", "batch", "batchSeq", "paid", "due", "lastPaid"] as const;
+const SORT_VALUES = ["registered", "name", "batch", "batchSeq", "paid", "due", "lastPaid", "payment"] as const;
+
+// Order used by sort="payment". Lower rank = more actionable, so asc lands
+// overdue-first (matches SortableHeader's first-click default direction).
+// Secondary ordering inside a tier is daysToDeadline asc so the closest
+// dunning lands at the very top.
+const URGENCY_RANK: Record<string, number> = {
+  overdue: 0,
+  partial: 1,
+  due_soon: 2,
+  pre_start: 3,
+  paid: 4,
+  withdrawn: 5,
+};
 const STATUS_VALUES: EnrollmentStatus[] = ["PENDING", "ACTIVE", "WITHDRAWN", "COMPLETED"];
 const PROGRESS_VALUES: PaymentProgress[] = ["unpaid", "partial", "full"];
 
@@ -269,6 +286,22 @@ export function sortRows(rows: StudentRow[], f: StudentFilters): StudentRow[] {
       break;
     case "due":
       out.sort((a, b) => dir * cmp(a.dueCents, b.dueCents));
+      break;
+    case "payment":
+      // Primary: urgency tier rank. Secondary (same tier): daysToDeadline
+      // asc so the closest dunning surfaces first within an "overdue" cluster.
+      // Tertiary: dueCents desc so bigger debts beat smaller ones at a tie.
+      out.sort((a, b) => {
+        const aRank = URGENCY_RANK[a.urgency] ?? 99;
+        const bRank = URGENCY_RANK[b.urgency] ?? 99;
+        const primary = dir * cmp(aRank, bRank);
+        if (primary !== 0) return primary;
+        const aDays = a.daysToDeadline ?? null;
+        const bDays = b.daysToDeadline ?? null;
+        const secondary = cmp(aDays, bDays);
+        if (secondary !== 0) return secondary;
+        return cmp(b.dueCents, a.dueCents);
+      });
       break;
     case "lastPaid":
       out.sort((a, b) =>

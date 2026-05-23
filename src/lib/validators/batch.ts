@@ -29,6 +29,25 @@ export const batchCreateSchema = z.object({
     .optional()
     .nullable()
     .transform((v) => (v === "" || v == null ? null : v)),
+  deliveryMode: z.enum(["IN_HOUSE", "ONLINE"]).default("IN_HOUSE"),
+  // Free-form URL — Google Meet most often, but any URL works. Only
+  // meaningful for ONLINE batches; superRefine below clears it for
+  // IN_HOUSE to keep the DB tidy.
+  meetingUrl: z
+    .string()
+    .trim()
+    .max(500, "URL is too long.")
+    .optional()
+    .nullable()
+    .transform((v) => (v === "" || v == null ? null : v)),
+}).superRefine((val, ctx) => {
+  if (val.deliveryMode === "ONLINE" && !val.meetingUrl) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Online batches need a meeting link.",
+      path: ["meetingUrl"],
+    });
+  }
 });
 
 export type BatchCreateInput = z.infer<typeof batchCreateSchema>;
@@ -60,6 +79,22 @@ export const batchUpdateSchema = z.object({
     .min(1, "Must be at least 1.")
     .max(200, "Above 200 looks like a typo."),
   status: z.enum(["UPCOMING", "ACTIVE", "FINISHED", "CANCELLED"]),
+  deliveryMode: z.enum(["IN_HOUSE", "ONLINE"]).default("IN_HOUSE"),
+  meetingUrl: z
+    .string()
+    .trim()
+    .max(500, "URL is too long.")
+    .optional()
+    .nullable()
+    .transform((v) => (v === "" || v == null ? null : v)),
+}).superRefine((val, ctx) => {
+  if (val.deliveryMode === "ONLINE" && !val.meetingUrl) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Online batches need a meeting link.",
+      path: ["meetingUrl"],
+    });
+  }
 });
 
 export type BatchUpdateInput = z.infer<typeof batchUpdateSchema>;

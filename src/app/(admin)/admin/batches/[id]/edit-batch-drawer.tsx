@@ -38,6 +38,8 @@ export function EditBatchDrawer({
     durationHours: number;
     capacity: number;
     status: Status;
+    deliveryMode: "IN_HOUSE" | "ONLINE";
+    meetingUrl: string | null;
   };
 }) {
   const router = useRouter();
@@ -51,6 +53,10 @@ export function EditBatchDrawer({
   const [durationHours, setDurationHours] = useState(String(initial.durationHours));
   const [capacity, setCapacity] = useState(String(initial.capacity));
   const [status, setStatus] = useState<Status>(initial.status);
+  const [deliveryMode, setDeliveryMode] = useState<"IN_HOUSE" | "ONLINE">(
+    initial.deliveryMode,
+  );
+  const [meetingUrl, setMeetingUrl] = useState(initial.meetingUrl ?? "");
 
   // Reset fields whenever the drawer opens against a different batch.
   useEffect(() => {
@@ -61,6 +67,8 @@ export function EditBatchDrawer({
     setDurationHours(String(initial.durationHours));
     setCapacity(String(initial.capacity));
     setStatus(initial.status);
+    setDeliveryMode(initial.deliveryMode);
+    setMeetingUrl(initial.meetingUrl ?? "");
     setError(null);
     setFieldErrors({});
   }, [open, initial]);
@@ -87,6 +95,8 @@ export function EditBatchDrawer({
         durationHours: Number(durationHours),
         capacity: Number(capacity),
         status,
+        deliveryMode,
+        meetingUrl: deliveryMode === "ONLINE" ? meetingUrl.trim() || null : null,
       });
       if (!result.ok) {
         setError(result.error);
@@ -255,6 +265,50 @@ export function EditBatchDrawer({
                 </SelectContent>
               </Select>
             </Field>
+
+            <Field
+              label="Delivery"
+              htmlFor="batch-delivery"
+              error={fieldErrors.deliveryMode}
+              hint={
+                deliveryMode === "ONLINE"
+                  ? "Students see the meeting link on their schedule."
+                  : "Sessions happen at the school."
+              }
+            >
+              <Select
+                value={deliveryMode}
+                onValueChange={(v) => v && setDeliveryMode(v as "IN_HOUSE" | "ONLINE")}
+              >
+                <SelectTrigger id="batch-delivery">
+                  <SelectValue>
+                    {(v: string) => (v === "ONLINE" ? "Online" : "In-house (at the school)")}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="IN_HOUSE">In-house (at the school)</SelectItem>
+                  <SelectItem value="ONLINE">Online</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+
+            {deliveryMode === "ONLINE" ? (
+              <Field
+                label="Meeting link"
+                htmlFor="batch-meeting-url"
+                error={fieldErrors.meetingUrl}
+                hint="Google Meet / Zoom / any URL."
+              >
+                <Input
+                  id="batch-meeting-url"
+                  type="url"
+                  value={meetingUrl}
+                  onChange={(e) => setMeetingUrl(e.target.value)}
+                  placeholder="https://meet.google.com/abc-defg-hij"
+                  required
+                />
+              </Field>
+            ) : null}
 
             <p
               className="hz-mono text-xs"

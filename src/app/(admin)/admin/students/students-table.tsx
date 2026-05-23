@@ -62,7 +62,7 @@ function SortableHeader({
   children,
 }: {
   filters: ReturnType<typeof parseFilters>;
-  sort: "name" | "batch" | "batchSeq" | "paid" | "due" | "lastPaid" | "registered";
+  sort: "name" | "batch" | "batchSeq" | "paid" | "due" | "lastPaid" | "registered" | "payment";
   align?: "left" | "right";
   className?: string;
   children: React.ReactNode;
@@ -178,7 +178,9 @@ function TableInner({
                 <SortableHeader filters={filters} sort="batch" className="w-[80px]">
                   Batch
                 </SortableHeader>
-                <th style={{ width: 180 }}>Payment</th>
+                <SortableHeader filters={filters} sort="payment" className="w-[180px]">
+                  Payment
+                </SortableHeader>
                 <th style={{ width: 200 }}>Phone</th>
                 <th style={{ width: 110, textAlign: "right" }}>Actions</th>
               </tr>

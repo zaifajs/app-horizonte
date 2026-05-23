@@ -34,6 +34,13 @@ enum SessionKind {
   EXAM
 }
 
+// Whether a batch meets in the physical school or as an online session.
+// Drives display chips and (later) per-batch meeting-link fields.
+enum BatchDeliveryMode {
+  IN_HOUSE
+  ONLINE
+}
+
 enum ExamQuestionType {
   // Multiple choice — one correct index out of choices[].
   MC
@@ -170,17 +177,24 @@ model Module {
 }
 
 model Batch {
-  id            String      @id @default(uuid()) @db.Uuid
-  code          String      @unique
-  courseId      String      @db.Uuid
-  trainerId     String?     @db.Uuid
-  startDate     DateTime    @db.Date
+  id            String            @id @default(uuid()) @db.Uuid
+  code          String            @unique
+  courseId      String            @db.Uuid
+  trainerId     String?           @db.Uuid
+  startDate     DateTime          @db.Date
   startTime     String
-  durationHours Int         @default(4)
-  capacity      Int         @default(25)
-  status        BatchStatus @default(UPCOMING)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  durationHours Int               @default(4)
+  capacity      Int               @default(25)
+  status        BatchStatus       @default(UPCOMING)
+  // IN_HOUSE = meets at the school; ONLINE = remote via meetingUrl below.
+  // Defaults IN_HOUSE so pre-existing rows back-fill safely.
+  deliveryMode  BatchDeliveryMode @default(IN_HOUSE)
+  // Persistent meeting URL for ONLINE batches (typically Google Meet, but
+  // any URL works). Null for IN_HOUSE batches; ignored when mode is
+  // IN_HOUSE even if set.
+  meetingUrl    String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 
   course      Course         @relation(fields: [courseId], references: [id])
   trainer     User?          @relation("BatchTrainer", fields: [trainerId], references: [id])

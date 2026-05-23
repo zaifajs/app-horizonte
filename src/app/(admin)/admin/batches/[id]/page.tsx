@@ -155,6 +155,8 @@ export default async function BatchDetailPage({
     durationHours: batch.durationHours,
     capacity: batch.capacity,
     status: batch.status,
+    deliveryMode: batch.deliveryMode,
+    meetingUrl: batch.meetingUrl,
   };
 
   // Auto-expand the in-progress module + today's module (if different) so the
