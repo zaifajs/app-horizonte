@@ -112,17 +112,6 @@ export function TemplatesEditor({ initial }: { initial: ResolvedTemplate[] }) {
     });
   }
 
-  function insertVar(id: string, field: "body" | "subject", varName: string) {
-    const tokenToInsert = `{{${varName}}}`;
-    const t = drafts.get(id);
-    if (!t) return;
-    if (field === "body") {
-      updateBody(id, (t.bodies[locale] ?? "") + tokenToInsert);
-    } else {
-      updateSubject(id, (t.subjects[locale] ?? "") + tokenToInsert);
-    }
-  }
-
   function saveAll() {
     setError(null);
     setSavedAt(null);
@@ -378,15 +367,16 @@ export function TemplatesEditor({ initial }: { initial: ResolvedTemplate[] }) {
             </p>
           );
         }
+        const orig = originalList.find((o) => o.id === t.id) ?? null;
         return (
           <TemplateCard
             template={t}
+            original={orig}
             locale={locale}
             isDirty={dirtyIds.has(t.id)}
             onUpdateBody={(v) => updateBody(t.id, v)}
             onUpdateSubject={(v) => updateSubject(t.id, v)}
             onUpdateName={(v) => updateName(t.id, v)}
-            onInsertVar={(field, name) => insertVar(t.id, field, name)}
             onReset={
               t.isSystem && t.isCustomised
                 ? () => setResetTarget({ key: t.key!, name: t.name })
@@ -455,32 +445,37 @@ export function TemplatesEditor({ initial }: { initial: ResolvedTemplate[] }) {
 
 function TemplateCard({
   template,
+  original,
   locale,
   isDirty,
   onUpdateBody,
   onUpdateSubject,
   onUpdateName,
-  onInsertVar,
   onReset,
   onDelete,
 }: {
   template: ResolvedTemplate;
+  original: ResolvedTemplate | null;
   locale: Locale;
   isDirty: boolean;
   onUpdateBody: (v: string) => void;
   onUpdateSubject: (v: string) => void;
   onUpdateName: (v: string) => void;
-  onInsertVar: (field: "body" | "subject", name: string) => void;
   onReset: null | (() => void);
   onDelete: null | (() => void);
 }) {
   const [editingName, setEditingName] = useState(false);
+  const [showDiff, setShowDiff] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const subjectRef = useRef<HTMLInputElement>(null);
 
   const body = template.bodies[locale] ?? "";
   const subject = template.subjects[locale] ?? "";
+  const origBody = original?.bodies[locale] ?? "";
+  const origSubject = original?.subjects[locale] ?? "";
   const preview = interpolate(body);
+  const bodyChanged = origBody !== body;
+  const subjectChanged = origSubject !== subject;
 
   return (
     <section className="hz-card overflow-hidden" style={{ textAlign: "left" }}>
@@ -575,8 +570,7 @@ function TemplateCard({
           </label>
           <VariableChips
             onPick={(name) => {
-              onInsertVar("subject", name);
-              subjectRef.current?.focus();
+              insertAtCursor(subjectRef.current, subject, name, onUpdateSubject);
             }}
           />
         </div>
@@ -603,36 +597,151 @@ function TemplateCard({
           />
           <VariableChips
             onPick={(name) => {
-              onInsertVar("body", name);
-              bodyRef.current?.focus();
+              insertAtCursor(bodyRef.current, body, name, onUpdateBody);
             }}
           />
         </div>
 
-        {/* Preview */}
+        {/* Preview / Diff toggle */}
         {body ? (
           <div>
-            <div
-              className="text-xs hz-mono uppercase tracking-[.14em] mb-1.5"
-              style={{ color: "var(--hz-ink-3)" }}
-            >
-              Preview with sample data
+            <div className="flex items-baseline justify-between mb-1.5">
+              <div
+                className="text-xs hz-mono uppercase tracking-[.14em]"
+                style={{ color: "var(--hz-ink-3)" }}
+              >
+                {showDiff ? "Changes since last save" : "Preview with sample data"}
+              </div>
+              {isDirty && original ? (
+                <button
+                  type="button"
+                  onClick={() => setShowDiff((v) => !v)}
+                  className="text-xs underline hz-mono"
+                  style={{ color: "var(--hz-ink-2)" }}
+                >
+                  {showDiff ? "Show preview" : "View diff"}
+                </button>
+              ) : null}
             </div>
-            <div
-              className="p-3 rounded-md text-sm leading-relaxed whitespace-pre-wrap"
-              style={{
-                background: "var(--hz-surface-2)",
-                border: "1px solid var(--hz-line)",
-                color: "var(--hz-ink)",
-              }}
-            >
-              {preview}
-            </div>
+            {showDiff && original ? (
+              <DiffPanel
+                subjectBefore={origSubject}
+                subjectAfter={subject}
+                bodyBefore={origBody}
+                bodyAfter={body}
+                subjectChanged={subjectChanged}
+                bodyChanged={bodyChanged}
+              />
+            ) : (
+              <div
+                className="p-3 rounded-md text-sm leading-relaxed whitespace-pre-wrap"
+                style={{
+                  background: "var(--hz-surface-2)",
+                  border: "1px solid var(--hz-line)",
+                  color: "var(--hz-ink)",
+                }}
+              >
+                {preview}
+              </div>
+            )}
           </div>
         ) : null}
       </div>
     </section>
   );
+}
+
+function DiffPanel({
+  subjectBefore,
+  subjectAfter,
+  bodyBefore,
+  bodyAfter,
+  subjectChanged,
+  bodyChanged,
+}: {
+  subjectBefore: string;
+  subjectAfter: string;
+  bodyBefore: string;
+  bodyAfter: string;
+  subjectChanged: boolean;
+  bodyChanged: boolean;
+}) {
+  if (!subjectChanged && !bodyChanged) {
+    return (
+      <p className="hz-mono text-xs" style={{ color: "var(--hz-ink-3)" }}>
+        No changes in this language.
+      </p>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      {subjectChanged ? (
+        <DiffBlock label="Subject" before={subjectBefore} after={subjectAfter} />
+      ) : null}
+      {bodyChanged ? (
+        <DiffBlock label="Body" before={bodyBefore} after={bodyAfter} />
+      ) : null}
+    </div>
+  );
+}
+
+function DiffBlock({ label, before, after }: { label: string; before: string; after: string }) {
+  return (
+    <div className="rounded-md overflow-hidden" style={{ border: "1px solid var(--hz-line)" }}>
+      <div
+        className="px-3 py-1 hz-mono text-xs uppercase tracking-[.14em]"
+        style={{ background: "var(--hz-surface-2)", color: "var(--hz-ink-3)" }}
+      >
+        {label}
+      </div>
+      <div className="grid grid-cols-2 hz-mono text-xs leading-relaxed">
+        <pre
+          className="p-3 m-0 whitespace-pre-wrap"
+          style={{ background: "color-mix(in oklab, var(--hz-danger) 8%, transparent)", color: "var(--hz-ink-2)" }}
+        >
+          {before || "(empty)"}
+        </pre>
+        <pre
+          className="p-3 m-0 whitespace-pre-wrap"
+          style={{ background: "color-mix(in oklab, var(--hz-success) 10%, transparent)", color: "var(--hz-ink)" }}
+        >
+          {after || "(empty)"}
+        </pre>
+      </div>
+    </div>
+  );
+}
+
+// Insert the {{name}} token at the current cursor position of the given
+// input/textarea (defaulting to end of value if no selection). Updates state
+// via `setValue`, then re-focuses and places the caret right after the
+// inserted token.
+function insertAtCursor(
+  el: HTMLInputElement | HTMLTextAreaElement | null,
+  current: string,
+  varName: string,
+  setValue: (next: string) => void,
+) {
+  const token = `{{${varName}}}`;
+  if (!el) {
+    setValue(current + token);
+    return;
+  }
+  const start = el.selectionStart ?? current.length;
+  const end = el.selectionEnd ?? current.length;
+  const next = current.slice(0, start) + token + current.slice(end);
+  setValue(next);
+  // Set cursor right after the inserted token on the next tick (after React
+  // commits the controlled value).
+  const cursor = start + token.length;
+  requestAnimationFrame(() => {
+    el.focus();
+    try {
+      el.setSelectionRange(cursor, cursor);
+    } catch {
+      // Some input types (e.g. type=email) don't support selection ranges.
+    }
+  });
 }
 
 function VariableChips({ onPick }: { onPick: (name: string) => void }) {
