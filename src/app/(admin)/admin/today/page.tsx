@@ -23,6 +23,7 @@ type AuditEntry = {
   entityType: string;
   action: "CREATE" | "UPDATE" | "DELETE";
   actorName: string | null;
+  studentName: string | null;
   changes: unknown;
 };
 
@@ -36,11 +37,20 @@ function describeAudit(a: AuditEntry): { label: string; tone: string; body: stri
     BatchSession: { label: "Session", tone: "var(--hz-warning)" },
     Student: { label: "Student", tone: "var(--hz-ink-2)" },
     User: { label: "User", tone: "var(--hz-accent)" },
+    MessageLog: { label: "Message", tone: "var(--hz-info)" },
+    Messaging: { label: "Message", tone: "var(--hz-info)" },
+    MessageTemplate: { label: "Template", tone: "var(--hz-accent)" },
   };
   const meta = map[a.entityType] ?? { label: a.entityType, tone: "var(--hz-ink-2)" };
   const verb =
     a.action === "CREATE" ? "added" : a.action === "UPDATE" ? "changed" : "removed";
-  return { label: meta.label, tone: meta.tone, body: `${verb} by ${actor}` };
+  // Put the student name front and centre — it's the thing you actually
+  // care about ("Aisha paid …", not "you logged a payment").
+  const who = a.studentName ?? actor;
+  const body = a.studentName
+    ? `for ${a.studentName} · ${verb} by ${actor}`
+    : `${verb} by ${who}`;
+  return { label: meta.label, tone: meta.tone, body };
 }
 
 export default async function TodayPage() {
@@ -93,7 +103,10 @@ export default async function TodayPage() {
     prisma.auditLog.findMany({
       take: 8,
       orderBy: { createdAt: "desc" },
-      include: { actor: { select: { name: true } } },
+      include: {
+        actor: { select: { name: true } },
+        student: { select: { id: true, fullName: true } },
+      },
     }),
     prisma.batchSession.findFirst({
       where: { kind: "CLASSROOM", scheduledDate: { gte: today }, status: "SCHEDULED" },
@@ -375,7 +388,8 @@ export default async function TodayPage() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="ibtn"
-                            title="Send WhatsApp"
+                            title={`Send WhatsApp to ${r.studentName}`}
+                            aria-label={`Send WhatsApp to ${r.studentName}`}
                           >
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
@@ -385,7 +399,8 @@ export default async function TodayPage() {
                         <Link
                           href={`/admin/students/${r.studentId}`}
                           className="ibtn"
-                          title="Record payment"
+                          title={`Record payment for ${r.studentName}`}
+                          aria-label={`Record payment for ${r.studentName}`}
                         >
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                             <rect x="2" y="5" width="20" height="14" rx="2" />
@@ -558,6 +573,7 @@ export default async function TodayPage() {
                     entityType: a.entityType,
                     action: a.action,
                     actorName: a.actor?.name ?? null,
+                    studentName: a.student?.fullName ?? null,
                     changes: a.changes,
                   });
                   return (
