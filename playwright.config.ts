@@ -27,6 +27,9 @@ export default defineConfig({
   fullyParallel: false,
   retries: 0,
   workers: 1,
+  // Tour spec walks 10+ screens with networkidle waits at each — way past
+  // the default 30s test timeout.
+  timeout: 5 * 60_000,
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
     baseURL: BASE_URL,

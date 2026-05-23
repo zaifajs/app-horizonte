@@ -54,11 +54,23 @@ test.describe("Admin tour @admin", () => {
     }
 
     await page.goto("/admin/batches");
+    await page.waitForLoadState("networkidle").catch(() => {});
     await snap(page, "admin-08-batches-list");
 
-    const firstBatchLink = page.locator('a[href^="/admin/batches/"]').first();
+    // The sidebar also renders /admin/batches/<id> links (pinned batches), so
+    // we must scope the click to the main content area, not anchor first().
+    const firstBatchLink = page
+      .locator('main, [role="main"], table.stbl, table')
+      .locator('a[href^="/admin/batches/"]')
+      .filter({ hasNotText: /new/i })
+      .first();
     if (await firstBatchLink.isVisible().catch(() => false)) {
-      await firstBatchLink.click();
+      const href = await firstBatchLink.getAttribute("href");
+      if (href) {
+        await page.goto(href);
+      } else {
+        await firstBatchLink.click();
+      }
       await page.waitForLoadState("networkidle").catch(() => {});
       await snap(page, "admin-09-batch-detail");
 
@@ -66,6 +78,7 @@ test.describe("Admin tour @admin", () => {
       const attendanceLink = page.getByRole("link", { name: /attendance/i }).first();
       if (await attendanceLink.isVisible().catch(() => false)) {
         await attendanceLink.click();
+        await page.waitForLoadState("networkidle").catch(() => {});
         await snap(page, "admin-10-batch-attendance");
       }
     }
