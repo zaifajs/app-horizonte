@@ -350,43 +350,104 @@ function KpiTile({
   tone,
 }: {
   label: string;
+  // Strings produced by eur() — "€1,234". Split on the symbol so we can
+  // render the prefix smaller and inline-baseline with the big number.
   value: string;
   sub?: string;
   progress?: { pct: number; color: string };
   tone?: "success" | "danger" | "muted";
 }) {
-  const toneColor =
-    tone === "success"
-      ? "var(--hz-success)"
-      : tone === "danger"
-        ? "var(--hz-danger)"
-        : "var(--hz-ink)";
+  const isSuccess = tone === "success";
+  const isDanger = tone === "danger";
+  // Strip a leading "€" so we can render the symbol smaller in IBM Plex Mono.
+  const amount = value.startsWith("€") ? value.slice(1) : value;
+  const showCurrencyPrefix = value.startsWith("€");
+
+  // Tinted variants (Collected, Outstanding) lift their background + border
+  // to the variant colour at low opacity. Default variants stay neutral.
+  const cardStyle: React.CSSProperties = isSuccess
+    ? {
+        background: "color-mix(in oklab, var(--hz-success) 4%, var(--hz-surface))",
+        borderColor: "color-mix(in oklab, var(--hz-success) 30%, var(--hz-line))",
+      }
+    : isDanger
+      ? {
+          background: "color-mix(in oklab, var(--hz-danger) 5%, var(--hz-surface))",
+          borderColor: "color-mix(in oklab, var(--hz-danger) 35%, var(--hz-line))",
+        }
+      : {};
+  const numberColor = isSuccess
+    ? "var(--hz-success)"
+    : isDanger
+      ? "var(--hz-danger)"
+      : "var(--hz-ink)";
+  const labelColor = isSuccess
+    ? "var(--hz-success)"
+    : isDanger
+      ? "var(--hz-danger)"
+      : "var(--hz-ink-3)";
+  // Meta-line dot mirrors the tone. Default falls back to ink-3.
+  const dotColor = isSuccess
+    ? "var(--hz-success)"
+    : isDanger
+      ? "var(--hz-danger)"
+      : progress?.color ?? "var(--hz-ink-3)";
+
   return (
-    <div className="hz-card p-3">
+    <div className="hz-card" style={{ padding: "18px 20px", ...cardStyle }}>
       <div
-        className="text-xs hz-mono uppercase tracking-[.16em]"
-        style={{ color: "var(--hz-ink-3)" }}
+        className="hz-mono"
+        style={{
+          color: labelColor,
+          fontSize: "10px",
+          textTransform: "uppercase",
+          letterSpacing: "0.16em",
+        }}
       >
         {label}
       </div>
-      <div
-        className="mt-1 stat-num"
-        style={{
-          color: toneColor,
-          fontSize: "1.5rem",
-          fontFamily: "var(--font-display)",
-          lineHeight: 1.15,
-        }}
-      >
-        {value}
+      <div className="mt-1.5 flex items-baseline gap-1.5">
+        {showCurrencyPrefix ? (
+          <span
+            className="hz-mono"
+            style={{
+              fontSize: "14px",
+              color: "var(--hz-ink-3)",
+              fontWeight: 600,
+            }}
+          >
+            €
+          </span>
+        ) : null}
+        <span
+          className="stat-num"
+          style={{
+            color: numberColor,
+            fontFamily: "var(--font-display)",
+            fontSize: "2.25rem",
+            fontWeight: 500,
+            letterSpacing: "-0.03em",
+            lineHeight: 1,
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {amount}
+        </span>
       </div>
       {sub ? (
-        <div className="mt-0.5 text-xs hz-mono" style={{ color: "var(--hz-ink-3)" }}>
-          {sub}
+        <div
+          className="mt-2 flex items-center gap-1.5 hz-mono"
+          style={{ fontSize: "10.5px", color: "var(--hz-ink-3)" }}
+        >
+          <span
+            className="dot"
+            style={{ background: dotColor, flexShrink: 0 }}
+          />
+          <span>{sub}</span>
         </div>
       ) : null}
       {progress ? (
-        <div className="pbar mt-2">
+        <div className="pbar mt-3">
           <span style={{ width: `${progress.pct}%`, background: progress.color }} />
         </div>
       ) : null}
