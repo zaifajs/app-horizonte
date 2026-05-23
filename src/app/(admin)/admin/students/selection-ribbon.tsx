@@ -43,7 +43,19 @@ export function SelectionRibbon({
       const parts: string[] = [];
       if (result.invited > 0) parts.push(`${result.invited} invited`);
       if (result.alreadyLinked > 0) parts.push(`${result.alreadyLinked} already linked`);
-      if (result.failed.length > 0) parts.push(`${result.failed.length} failed`);
+      if (result.failed.length > 0) {
+        // Surface the actual Supabase rejection reason so the user can see
+        // *why* the invite failed (most common cause: undeliverable email
+        // domains like @example.test). Show the first failure inline and
+        // collapse the rest behind a count.
+        const first = result.failed[0];
+        const rest = result.failed.length > 1
+          ? ` (+${result.failed.length - 1} more)`
+          : "";
+        parts.push(
+          `failed for ${first.email}: ${first.reason}${rest}`,
+        );
+      }
       setStatus({
         tone: result.failed.length > 0 ? "warning" : "success",
         text: parts.length ? parts.join(" · ") : "Nothing to do.",

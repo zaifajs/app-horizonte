@@ -25,9 +25,22 @@ export type ProvisionStudentAuthBulkInput = z.input<typeof schema>;
 export type ProvisionStudentAuthBulkResult = {
   ok: true;
   invited: number;
+  // Bumped when the student's Student.userId was already linked AND when
+  // the Supabase auth user existed but we had to back-link it on this call.
   alreadyLinked: number;
   failed: { id: string; email: string; reason: string }[];
 };
+
+// Best-effort lookup for an existing Supabase auth user by email. Supabase's
+// admin SDK paginates listUsers; for our scale (<1000 users) a single page
+// is enough.
+async function findAuthUserByEmail(
+  supabase: ReturnType<typeof supabaseAdmin>,
+  email: string,
+) {
+  const { data } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+  return data?.users.find((u) => u.email?.toLowerCase() === email.toLowerCase()) ?? null;
+}
 
 export async function provisionStudentAuthBulk(
   raw: ProvisionStudentAuthBulkInput,
@@ -60,16 +73,44 @@ export async function provisionStudentAuthBulk(
 
     const email = s.email.toLowerCase();
 
+    let userId: string | null = null;
+    let mode: "invited" | "linked-existing" = "invited";
+
     const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
       data: { name: s.fullName, role: "STUDENT" },
       redirectTo,
     });
-    if (error || !data.user) {
-      failed.push({ id: s.id, email, reason: error?.message ?? "Couldn't send the invite." });
+    if (data?.user) {
+      userId = data.user.id;
+    } else if (error) {
+      // "User already registered" is the typical message; match defensively
+      // on the substring so a Supabase wording change doesn't break us.
+      const msg = (error.message ?? "").toLowerCase();
+      const alreadyExists =
+        msg.includes("already") ||
+        msg.includes("exists") ||
+        msg.includes("registered");
+      if (alreadyExists) {
+        // Look up the existing Supabase user so we can back-link
+        // Student.userId rather than mark this as a failure.
+        const existing = await findAuthUserByEmail(supabase, email);
+        if (existing) {
+          userId = existing.id;
+          mode = "linked-existing";
+        }
+      }
+      if (!userId) {
+        failed.push({
+          id: s.id,
+          email,
+          reason: error.message || "Couldn't send the invite.",
+        });
+        continue;
+      }
+    } else {
+      failed.push({ id: s.id, email, reason: "Couldn't send the invite." });
       continue;
     }
-
-    const userId = data.user.id;
 
     try {
       await prisma.$transaction(async (tx) => {
@@ -103,16 +144,27 @@ export async function provisionStudentAuthBulk(
             email,
             name: s.fullName,
             role: "STUDENT",
-            via: "student-portal-invite",
+            via: mode === "linked-existing"
+              ? "student-portal-link-existing"
+              : "student-portal-invite",
           } as Prisma.InputJsonValue,
         });
       });
-      invited++;
+      if (mode === "linked-existing") {
+        alreadyLinked++;
+      } else {
+        invited++;
+      }
     } catch (err) {
       console.error("provisionStudentAuthBulk DB write failed:", err);
-      await supabase.auth.admin.deleteUser(userId).catch((e) =>
-        console.error("cleanup: failed to delete Supabase user", e),
-      );
+      // Only delete the Supabase user if we created it on this call. A
+      // pre-existing user shouldn't be cleaned up just because a follow-on
+      // DB write failed — it may belong to someone else's flow.
+      if (mode === "invited") {
+        await supabase.auth.admin.deleteUser(userId).catch((e) =>
+          console.error("cleanup: failed to delete Supabase user", e),
+        );
+      }
       failed.push({ id: s.id, email, reason: "Failed to save the user record." });
     }
   }
