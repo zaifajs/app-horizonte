@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   buildWaMeLink,
@@ -51,12 +51,17 @@ function majorityLocale(rows: BulkRow[]): Locale {
 }
 
 // Render the rendered-template body with {{var}} segments highlighted as chips.
+// `recipients` is used to build a hover tooltip showing what each chip becomes
+// for the other recipients in the send — so users see the per-recipient
+// rendering without having to send first.
 function PreviewBody({
   body,
   vars,
+  recipients,
 }: {
   body: string;
   vars: TemplateVars;
+  recipients: BulkRow[];
 }) {
   // The body has already been interpolated, so we instead detect the values
   // and visually mark them. Build a list of (value, varName) replacements.
@@ -65,6 +70,29 @@ function PreviewBody({
     if (val == null || String(val).length === 0) continue;
     replacements.push({ value: String(val), name });
   }
+
+  // For each variable name, gather the distinct resolved values across all
+  // recipients (so the tooltip can show "becomes: Aisha · Maria · …").
+  function tooltipFor(varName: string): string {
+    const key = varName as keyof TemplateVars;
+    const seen = new Set<string>();
+    const values: string[] = [];
+    for (const r of recipients) {
+      const v = r.vars[key];
+      if (v == null || String(v).length === 0) continue;
+      const s = String(v);
+      if (seen.has(s)) continue;
+      seen.add(s);
+      values.push(s);
+      if (values.length >= 4) break;
+    }
+    if (values.length === 0) return `{{${varName}}}`;
+    const more = recipients.length > values.length
+      ? ` (+${recipients.length - values.length} more)`
+      : "";
+    return `{{${varName}}} → ${values.join(" · ")}${more}`;
+  }
+
   // Greedy split: walk the body, take the first occurrence of any replacement.
   const out: React.ReactNode[] = [];
   let rest = body;
@@ -90,8 +118,9 @@ function PreviewBody({
             color: "var(--hz-primary)",
             fontSize: "0.92em",
             border: "1px solid var(--hz-line)",
+            cursor: "help",
           }}
-          title={`{{${bestRep.name}}}`}
+          title={tooltipFor(bestRep.name)}
         >
           {bestRep.value}
         </span>,
@@ -139,12 +168,19 @@ export function MessageComposer({
     | null
   >(null);
   const [pending, startTransition] = useTransition();
+  // Set to true to short-circuit the in-flight send loop. Use a ref so the
+  // loop body can observe the latest value without re-creating closures.
+  const abortedRef = useRef(false);
+  // Updated synchronously as rows progress so the footer can show "X of N".
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
   // Reset state when panel opens with a fresh recipient set.
   useEffect(() => {
     if (!open) return;
     setRowState(new Map());
     setSendResult(null);
+    setProgress(null);
+    abortedRef.current = false;
     setLocale(majorityLocale(recipients));
   }, [open, recipients]);
 
@@ -182,6 +218,8 @@ export function MessageComposer({
     if (recipients.length === 0) return;
     if (!waOn && !emailOn) return;
     setSendResult(null);
+    abortedRef.current = false;
+    setProgress({ done: 0, total: recipients.length });
     startTransition(async () => {
       const next = new Map<string, RowState>();
       for (const r of recipients) next.set(r.studentId, "sending");
@@ -193,9 +231,23 @@ export function MessageComposer({
       if (waOn) channels.push("WA_ME");
       if (emailOn) channels.push("EMAIL");
 
+      // Throttle: ~700ms between iterations gives browsers a moment to
+      // process popup blocker checks AND lets the UI repaint progress.
+      // Skip the delay before the first recipient.
+      const STEP_MS = 700;
+      let first = true;
+
       for (const r of recipients) {
+        if (abortedRef.current) break;
+        if (!first) {
+          await new Promise((res) => setTimeout(res, STEP_MS));
+          if (abortedRef.current) break;
+        }
+        first = false;
+
         if (!selectedTemplate) {
           failCount += 1;
+          setProgress((p) => (p ? { ...p, done: p.done + 1 } : p));
           continue;
         }
         const perLocale = r.locale ?? locale;
@@ -248,11 +300,26 @@ export function MessageComposer({
           });
           failCount += 1;
         }
+        setProgress((p) => (p ? { ...p, done: p.done + 1 } : p));
+      }
+
+      // Mark any rows still in 'sending' state (aborted before reaching them) as idle.
+      if (abortedRef.current) {
+        setRowState((prev) => {
+          const m = new Map(prev);
+          for (const [id, st] of m) if (st === "sending") m.set(id, "idle");
+          return m;
+        });
       }
 
       setSendResult({ ok: okCount, failed: failCount, channels });
+      setProgress(null);
       router.refresh();
     });
+  }
+
+  function cancelSend() {
+    abortedRef.current = true;
   }
 
   if (!open) return null;
@@ -444,7 +511,7 @@ export function MessageComposer({
               className="p-3 rounded-md text-sm leading-relaxed"
               style={{ background: "var(--hz-surface-2)", border: "1px solid var(--hz-line)" }}
             >
-              <PreviewBody body={previewBody} vars={previewRecipient.vars} />
+              <PreviewBody body={previewBody} vars={previewRecipient.vars} recipients={recipients} />
             </div>
             <a
               href="/admin/messages/templates"
@@ -555,22 +622,58 @@ export function MessageComposer({
       ) : null}
 
       {/* Footer */}
-      <footer className="hair-t px-4 py-3 flex items-center justify-between gap-3">
-        <span className="hz-mono text-xs" style={{ color: "var(--hz-ink-3)" }}>
-          {channelLabel}
-        </span>
-        <button
-          type="button"
-          onClick={send}
-          disabled={pending || recipients.length === 0 || (!waOn && !emailOn)}
-          className="btn-primary"
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 2 11 13" />
-            <path d="M22 2 15 22 11 13 2 9z" />
-          </svg>
-          {pending ? "Sending…" : `Send to ${recipients.length}`}
-        </button>
+      <footer className="hair-t px-4 py-3 flex flex-col gap-2">
+        {progress ? (
+          <div className="flex items-center gap-2">
+            <div
+              className="flex-1 rounded-full overflow-hidden"
+              style={{ height: 4, background: "var(--hz-line)" }}
+            >
+              <span
+                style={{
+                  display: "block",
+                  height: "100%",
+                  width: `${Math.round((progress.done / Math.max(1, progress.total)) * 100)}%`,
+                  background: "var(--hz-primary)",
+                  transition: "width 200ms ease",
+                }}
+              />
+            </div>
+            <span className="hz-mono text-xs" style={{ color: "var(--hz-ink-2)" }}>
+              {progress.done} / {progress.total}
+            </span>
+          </div>
+        ) : null}
+        <div className="flex items-center justify-between gap-3">
+          <span className="hz-mono text-xs" style={{ color: "var(--hz-ink-3)" }}>
+            {pending
+              ? "Throttled to one every 0.7s · browsers may still block popups"
+              : channelLabel}
+          </span>
+          {pending ? (
+            <button
+              type="button"
+              onClick={cancelSend}
+              className="btn-ghost"
+              disabled={abortedRef.current}
+            >
+              {abortedRef.current ? "Cancelling…" : "Cancel"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={send}
+              disabled={recipients.length === 0 || (!waOn && !emailOn)}
+              className="btn-primary"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 2 11 13" />
+                <path d="M22 2 15 22 11 13 2 9z" />
+              </svg>
+              {`Send to ${recipients.length}`}
+            </button>
+          )}
+        </div>
       </footer>
       </aside>
     </>
