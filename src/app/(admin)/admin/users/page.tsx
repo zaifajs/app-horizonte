@@ -58,8 +58,7 @@ export default async function UsersPage() {
       </section>
 
       {/* Table */}
-      <div className="hz-card overflow-hidden">
-        <table className="stbl">
+      <div className="hz-card overflow-x-auto">        <table className="stbl">
           <thead>
             <tr>
               <th>Name</th>

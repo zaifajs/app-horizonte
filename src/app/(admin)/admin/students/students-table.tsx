@@ -162,8 +162,7 @@ function TableInner({
         visibleCount={visibleIds.length}
         onSendWhatsApp={openComposerForSelection}
       />
-      <div className="hz-card overflow-hidden">
-          <table className="stbl">
+      <div className="hz-card overflow-x-auto">          <table className="stbl">
             <thead>
               <tr>
                 <th style={{ width: 36, paddingRight: 0 }}>

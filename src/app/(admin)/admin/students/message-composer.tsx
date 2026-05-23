@@ -272,17 +272,17 @@ export function MessageComposer({
         }}
       />
       <aside
-        className="hair-l flex flex-col print:hidden"
+        className="hair-l flex flex-col print:hidden w-full sm:w-[520px]"
         style={{
           position: "fixed",
           top: 0,
           right: 0,
           bottom: 0,
-          width: 520,
           background: "var(--hz-surface)",
           zIndex: 40,
           boxShadow: "-16px 0 40px -16px rgba(0,0,0,0.6)",
           textAlign: "left",
+          paddingBottom: "env(safe-area-inset-bottom)",
         }}
       >
       {/* Header */}

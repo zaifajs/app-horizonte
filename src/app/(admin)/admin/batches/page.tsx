@@ -190,8 +190,7 @@ export default async function BatchesPage({
           )}
         </div>
       ) : (
-        <div className="hz-card overflow-hidden">
-          <table className="stbl">
+        <div className="hz-card overflow-x-auto">          <table className="stbl">
             <thead>
               <tr>
                 <th style={{ width: 100 }}>Code</th>
