@@ -43,6 +43,19 @@ export default async function TeacherHome() {
     moduleName: string;
   };
   const todaysSessions: TodaySession[] = [];
+  // For the empty-state ("no session today") we surface the soonest future
+  // scheduled session so the teacher has orientation instead of a blank space.
+  let nextSession:
+    | {
+        batchCode: string;
+        batchId: string;
+        sessionId: string;
+        date: Date;
+        startTime: string | null;
+        moduleNumber: number;
+        moduleName: string;
+      }
+    | null = null;
   for (const b of batches) {
     for (const s of b.sessions) {
       if (isSameDay(s.scheduledDate, today)) {
@@ -56,6 +69,20 @@ export default async function TeacherHome() {
           moduleNumber: s.module.number,
           moduleName: s.module.name,
         });
+      } else if (
+        s.scheduledDate > today &&
+        s.status === "SCHEDULED" &&
+        (!nextSession || s.scheduledDate < nextSession.date)
+      ) {
+        nextSession = {
+          batchCode: b.code,
+          batchId: b.id,
+          sessionId: s.id,
+          date: s.scheduledDate,
+          startTime: s.startTime,
+          moduleNumber: s.module.number,
+          moduleName: s.module.name,
+        };
       }
     }
   }
@@ -90,6 +117,61 @@ export default async function TeacherHome() {
           {active.length} active · {upcoming.length} upcoming · {finished.length} finished
         </p>
       </section>
+
+      {/* Today's sessions OR next-up fallback */}
+      {todaysSessions.length === 0 && nextSession ? (
+        <section className="space-y-2">
+          <h2 className="section-title">Up next</h2>
+          <Link
+            href={`/teacher/sessions/${nextSession.sessionId}`}
+            className="hz-card overflow-hidden block"
+          >
+            <div className="flex items-stretch">
+              <div
+                className="flex flex-col items-center justify-center px-5"
+                style={{
+                  background: "var(--hz-surface-2)",
+                  color: "var(--hz-ink-2)",
+                  minWidth: 110,
+                  borderRight: "1px solid var(--hz-line)",
+                }}
+              >
+                <span className="text-xs hz-mono uppercase tracking-[.16em]">
+                  {format(nextSession.date, "MMM")}
+                </span>
+                <span className="font-display text-3xl font-medium leading-none mt-1">
+                  {format(nextSession.date, "dd")}
+                </span>
+                <span className="text-xs hz-mono uppercase">
+                  {format(nextSession.date, "EEE")}
+                </span>
+              </div>
+              <div className="flex-1 p-4 flex items-center gap-4 flex-wrap">
+                <div className="min-w-0">
+                  <div
+                    className="text-xs hz-mono uppercase tracking-[.16em]"
+                    style={{ color: "var(--hz-ink-3)" }}
+                  >
+                    Next session ·{" "}
+                    {(() => {
+                      const d = differenceInCalendarDays(nextSession.date, today);
+                      return d === 1 ? "tomorrow" : `in ${d} days`;
+                    })()}
+                  </div>
+                  <div className="mt-1 font-display text-lg font-medium">
+                    Batch {nextSession.batchCode} · M{nextSession.moduleNumber} · {nextSession.moduleName}
+                  </div>
+                  {nextSession.startTime ? (
+                    <div className="mt-0.5 text-sm hz-mono" style={{ color: "var(--hz-ink-2)" }}>
+                      starts {nextSession.startTime}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </Link>
+        </section>
+      ) : null}
 
       {/* Today's sessions */}
       {todaysSessions.length > 0 ? (

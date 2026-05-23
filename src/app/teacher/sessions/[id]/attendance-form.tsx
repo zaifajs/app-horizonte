@@ -90,12 +90,26 @@ export function AttendanceForm({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border bg-card p-3 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-2">
-        <span className="text-xs uppercase tracking-wide text-muted-foreground sm:mr-1 block sm:inline">
-          Mark all
-        </span>
+      {/* "Mark all present" is the 90% workflow — promote it to the
+          primary affordance. The other states are still one-tap-away but
+          visually demoted so the teacher's eye lands on the common case. */}
+      <div className="rounded-lg border bg-card p-3 flex flex-col sm:flex-row sm:items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setAllTo("PRESENT")}
+          className="btn-primary"
+          style={{ height: 40 }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          Mark all present
+        </button>
         <div className="flex flex-wrap items-center gap-2">
-          {OPTIONS.map((o) => (
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">
+            or all:
+          </span>
+          {OPTIONS.filter((o) => o.key !== "PRESENT").map((o) => (
             <button
               key={o.key}
               type="button"
@@ -106,7 +120,7 @@ export function AttendanceForm({
             </button>
           ))}
         </div>
-        <span className="block sm:ml-auto text-xs text-muted-foreground tabular-nums">
+        <span className="sm:ml-auto text-xs text-muted-foreground tabular-nums">
           {counts.PRESENT} present · {counts.LATE + counts.LEFT_EARLY} partial ·{" "}
           {counts.EXCUSED_ABSENCE + counts.UNEXCUSED_ABSENCE} absent
           {unmarked > 0 ? (
