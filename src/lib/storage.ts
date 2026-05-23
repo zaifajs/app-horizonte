@@ -77,3 +77,39 @@ export async function deleteStudentDoc(storagePath: string) {
     throw new Error(`Delete failed: ${error.message}`);
   }
 }
+
+// =========================================================================
+// Teacher profile uploads — photo + CV. Same bucket as student docs but
+// prefixed under `teachers/<userId>/` so future bucket-level ACL changes
+// can split them cleanly. Old uploads aren't auto-deleted on replace —
+// callers should pass the prior storagePath to deleteStudentDoc.
+// =========================================================================
+
+export type TeacherFileKind = "photo" | "cv";
+
+export async function uploadTeacherFile({
+  userId,
+  kind,
+  filename,
+  file,
+}: {
+  userId: string;
+  kind: TeacherFileKind;
+  filename: string;
+  file: File | Blob;
+}): Promise<{ storagePath: string }> {
+  const supabase = getAdminClient();
+  const safe = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const storagePath = `teachers/${userId}/${kind}-${Date.now()}-${safe}`;
+
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(storagePath, file, {
+      contentType: file instanceof File ? file.type : undefined,
+      upsert: false,
+    });
+  if (error) {
+    throw new Error(`Upload failed (${kind}): ${error.message}`);
+  }
+  return { storagePath };
+}

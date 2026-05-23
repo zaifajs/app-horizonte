@@ -1,6 +1,16 @@
 import Link from "next/link";
 import { format, startOfToday, differenceInCalendarDays, isBefore } from "date-fns";
 import { loadStudentContext } from "@/lib/student/me";
+import { getSignedDocUrl } from "@/lib/storage";
+import { Avatar } from "@/components/ui/avatar";
+
+const LOCALE_LABEL: Record<string, string> = {
+  pt: "Português",
+  en: "English",
+  bn: "বাংলা",
+  ur: "اردو",
+  hi: "हिन्दी",
+};
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +25,15 @@ export default async function StudentHome() {
 
   const today = startOfToday();
   const batch = currentEnrollment.batch;
+  // Sign the teacher photo URL server-side so the client gets a working
+  // <img src=…> without ever seeing the storage internals.
+  const teacherPhotoUrl = batch.trainer?.teacherProfile?.photoStoragePath
+    ? await getSignedDocUrl(batch.trainer.teacherProfile.photoStoragePath, 1800)
+    : null;
+  const teacherLangs = (batch.trainer?.teacherProfile?.languages ?? "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
   const classroom = batch.sessions
     .filter((s) => s.kind === "CLASSROOM")
     .sort((a, b) => a.scheduledDate.getTime() - b.scheduledDate.getTime());
@@ -131,6 +150,52 @@ export default async function StudentHome() {
           </p>
         )}
       </section>
+
+      {batch.trainer ? (
+        <section className="hz-card p-4">
+          <h2 className="section-title mb-3">Your teacher</h2>
+          <div className="flex items-start gap-3 flex-wrap">
+            {teacherPhotoUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={teacherPhotoUrl}
+                alt={`Photo of ${batch.trainer.name}`}
+                className="rounded-md object-cover shrink-0"
+                style={{
+                  width: 64,
+                  height: 64,
+                  border: "1px solid var(--hz-line)",
+                  background: "var(--hz-surface-2)",
+                }}
+              />
+            ) : (
+              <Avatar name={batch.trainer.name} size={64} fontSize="1.1rem" />
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="font-display text-lg font-medium">
+                {batch.trainer.name}
+              </div>
+              {batch.trainer.teacherProfile?.bio ? (
+                <p
+                  className="text-sm mt-1.5 leading-relaxed"
+                  style={{ color: "var(--hz-ink-2)" }}
+                >
+                  {batch.trainer.teacherProfile.bio}
+                </p>
+              ) : null}
+              {teacherLangs.length > 0 ? (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {teacherLangs.map((l) => (
+                    <span key={l} className="chip chip-outline">
+                      {LOCALE_LABEL[l] ?? l}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Kpi

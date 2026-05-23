@@ -48,20 +48,21 @@ export default async function TeacherLayout({
             </div>
           </Link>
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
-            <div className="hidden sm:flex items-center gap-2">
+            <Link
+              href="/teacher/profile"
+              className="flex items-center gap-2"
+              title="My profile"
+            >
               <Avatar name={user.name} size={28} />
-              <div className="leading-tight">
+              <div className="leading-tight hidden sm:block">
                 <div className="hz-mono text-sm font-semibold truncate max-w-[140px]" style={{ color: "var(--hz-ink)" }}>
                   {user.name}
                 </div>
                 <div className="hz-mono text-xs" style={{ color: "var(--hz-ink-3)" }}>
-                  teacher
+                  teacher · profile
                 </div>
               </div>
-            </div>
-            <div className="sm:hidden">
-              <Avatar name={user.name} size={28} />
-            </div>
+            </Link>
             <Link href="/logout" prefetch={false} className="btn-ghost text-sm">
               <span className="hidden sm:inline">Sign out</span>
               <svg className="sm:hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">

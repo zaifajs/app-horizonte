@@ -15,7 +15,23 @@ export async function loadStudentContext() {
           batch: {
             include: {
               course: true,
-              trainer: { select: { name: true } },
+              // Pull the trainer's TeacherProfile so the student home page
+              // can render a "Your teacher" card with photo + bio +
+              // languages. The Supabase storage paths are signed on demand
+              // in the page itself, never sent to the client raw.
+              trainer: {
+                select: {
+                  id: true,
+                  name: true,
+                  teacherProfile: {
+                    select: {
+                      bio: true,
+                      languages: true,
+                      photoStoragePath: true,
+                    },
+                  },
+                },
+              },
               sessions: {
                 orderBy: [{ scheduledDate: "asc" }, { kind: "asc" }],
                 include: { module: { select: { id: true, number: true, name: true } } },

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { format } from "date-fns";
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
@@ -75,7 +76,19 @@ export default async function UsersPage() {
                 <td>
                   <div className="flex items-center gap-2.5">
                     <Avatar name={u.name} />
-                    <span className="font-semibold">{u.name}</span>
+                    {/* TEACHER rows link into their profile detail.
+                        ADMIN/STAFF don't have a profile surface yet — leave
+                        as plain text so the link isn't a dead-end. */}
+                    {u.role === "TEACHER" ? (
+                      <Link
+                        href={`/admin/users/${u.id}`}
+                        className="font-semibold hover:underline"
+                      >
+                        {u.name}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold">{u.name}</span>
+                    )}
                     {u.id === actor.id ? (
                       <span className="chip chip-muted">YOU</span>
                     ) : null}
