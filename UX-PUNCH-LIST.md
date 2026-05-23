@@ -43,15 +43,15 @@ Update as items complete. One-line note on what changed + commit hash if landed.
 
 ## P3 — Bigger projects
 
-- [ ] **#14 Add/Edit student drawer scaffolding** — section anchors / progress / sticky save CTA.
-- [ ] **#30 Public /register multi-step wizard** — currently one long page; biggest conversion flow.
-- [ ] **#31 Public /register GDPR consent** — promote out of "tiny checkbox at bottom" anti-pattern.
-- [ ] **#28 Teacher landing fallback** — show "Next session in N days" when nothing today.
-- [ ] **#29 Teacher attendance — "Mark all present" more prominent** (90% workflow).
-- [ ] **#6 Login — add "Forgot password" link.**
-- [ ] **#7 Overdue table action icons** — add aria-label + title tooltip.
-- [ ] **#8 Dashboard activity feed missing student name** (says who logged it, not who paid).
-- [ ] **#32 First-time login** — empty-state hand-holding or one-time tour.
+- [x] **#14 Add/Edit student drawer scaffolding.** Both `new-student-form.tsx` and `edit-student-form.tsx` — sticky `SectionNav` at top with numbered jump chips; `Section` accepts `id` and `scroll-mt`; sticky Save bar at the bottom of the form's scroll container with hair-t border.
+- [x] **#30 Public /register multi-step wizard.** `register-form.tsx` + 5 locale files — 4-step wizard with numbered progress, per-step validation gate, back/next + final submit. Save-and-resume across reloads still pending (track separately).
+- [x] **#31 Public /register GDPR promoted.** `register-form.tsx` — dedicated card on the final step with title + body text + lime-on-consent state; replaces the tiny bottom-of-page checkbox.
+- [x] **#28 Teacher landing "Up next" fallback.** `teacher/page.tsx` — when no session today, surfaces the soonest future scheduled session with date / module / start time / "in N days" or "tomorrow".
+- [x] **#29 "Mark all present" promoted.** `attendance-form.tsx` — primary button at the head of the toolbar; the other 4 states demoted to smaller secondary chips. Matches the 90% workflow.
+- [x] **#6 Forgot password.** `login-form.tsx` — link toggles the form into a Reset mode that calls `supabase.auth.resetPasswordForEmail(email, { redirectTo })`. Success state shows confirmation.
+- [x] **#7 Overdue table action icons.** `today/page.tsx` — added `aria-label` + name-bearing `title` to WhatsApp and record-payment buttons.
+- [x] **#8 Dashboard activity feed shows student name.** `today/page.tsx` — `student` relation joined on AuditLog query; `describeAudit` renders "for <Student> · added by <Actor>" + added MessageLog/Messaging/Template cases.
+- [ ] **#32 First-time login** — empty-state hand-holding or one-time tour. Bigger work, deferred.
 
 ## P4 — Nice-to-haves
 
