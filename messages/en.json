@@ -58,6 +58,14 @@
     },
     "submit": "Submit registration",
     "submitting": "Submitting…",
+    "wizard": {
+      "stepLabel": "Step {n} of {total}",
+      "next": "Next",
+      "back": "Back",
+      "incomplete": "Please fill the required fields on this step.",
+      "gdprTitle": "Privacy and consent",
+      "gdprBody": "Before submitting, please confirm you understand how your data is used. We use it only to manage your enrolment and contact you about classes and payments. You can ask for your data to be deleted at any time."
+    },
     "success": {
       "title": "Registration received!",
       "body": "Thank you. We have received your registration and will contact you on WhatsApp with payment instructions and next steps.",

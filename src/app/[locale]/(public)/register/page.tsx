@@ -64,6 +64,14 @@ export default async function RegisterPage() {
           },
           submit: t("submit"),
           submitting: t("submitting"),
+          wizard: {
+            stepLabel: t("wizard.stepLabel"),
+            next: t("wizard.next"),
+            back: t("wizard.back"),
+            incomplete: t("wizard.incomplete"),
+            gdprTitle: t("wizard.gdprTitle"),
+            gdprBody: t("wizard.gdprBody"),
+          },
           success: {
             title: t("success.title"),
             body: t("success.body"),
