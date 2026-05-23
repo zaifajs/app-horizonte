@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,15 +64,20 @@ export function TakeExamForm({
   }
 
   // Timer: counts down from durationMinutes * 60 seconds. Starts on mount,
-  // persists across re-renders via ref. When it hits 0, we don't auto-submit
+  // persists across re-renders. When it hits 0, we don't auto-submit
   // (avoid the surprise lose-your-work case); we just paint it red.
-  const startedAt = useRef<number>(Date.now());
-  const [now, setNow] = useState<number>(Date.now());
+  // Date.now() lives inside useEffect — React 19's purity rules forbid
+  // calling impure functions during render.
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [now, setNow] = useState<number>(0);
   useEffect(() => {
+    const start = Date.now();
+    setStartedAt(start);
+    setNow(start);
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
-  const elapsedSec = Math.floor((now - startedAt.current) / 1000);
+  const elapsedSec = startedAt ? Math.floor((now - startedAt) / 1000) : 0;
   const remainingSec = Math.max(0, durationMinutes * 60 - elapsedSec);
   const mm = Math.floor(remainingSec / 60);
   const ss = remainingSec % 60;
