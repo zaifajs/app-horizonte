@@ -289,10 +289,10 @@ function Section({
   );
 }
 
-// Sticky-top section jump nav. Clicking an item smooth-scrolls to that
-// section so the user can skip ahead on this long form. Kept simple — no
-// IntersectionObserver-based active highlight; the chip count + scroll
-// position already gives enough orientation.
+// Sticky-top section jump nav. Clicking a chip smooth-scrolls to that
+// section so the user can skip around a long single-page form. NOT a
+// wizard — every section is visible below; the chips are anchors. (The
+// numbered-step UI lives on the public /register flow.)
 function SectionNav({
   sections,
 }: {
@@ -300,14 +300,20 @@ function SectionNav({
 }) {
   return (
     <nav
-      aria-label="Form sections"
+      aria-label="Jump to section"
       className="sticky top-0 -mx-6 px-6 py-2 flex items-center gap-1.5 overflow-x-auto hair-b"
       style={{
         background: "var(--hz-surface)",
         zIndex: 1,
       }}
     >
-      {sections.map((s, i) => (
+      <span
+        className="hz-mono text-[10px] uppercase tracking-[.14em] shrink-0 mr-1"
+        style={{ color: "var(--hz-ink-3)" }}
+      >
+        Jump to
+      </span>
+      {sections.map((s) => (
         <a
           key={s.id}
           href={`#${s.id}`}
@@ -317,9 +323,6 @@ function SectionNav({
             document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth", block: "start" });
           }}
         >
-          <span className="hz-mono" style={{ color: "var(--hz-ink-3)" }}>
-            {i + 1}.
-          </span>{" "}
           {s.title}
         </a>
       ))}

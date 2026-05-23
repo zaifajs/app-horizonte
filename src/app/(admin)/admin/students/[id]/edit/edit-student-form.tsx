@@ -270,11 +270,17 @@ function SectionNav({
 }) {
   return (
     <nav
-      aria-label="Form sections"
+      aria-label="Jump to section"
       className="sticky top-0 -mx-6 px-6 py-2 flex items-center gap-1.5 overflow-x-auto hair-b"
       style={{ background: "var(--hz-surface)", zIndex: 1 }}
     >
-      {sections.map((s, i) => (
+      <span
+        className="hz-mono text-[10px] uppercase tracking-[.14em] shrink-0 mr-1"
+        style={{ color: "var(--hz-ink-3)" }}
+      >
+        Jump to
+      </span>
+      {sections.map((s) => (
         <a
           key={s.id}
           href={`#${s.id}`}
@@ -284,9 +290,6 @@ function SectionNav({
             document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth", block: "start" });
           }}
         >
-          <span className="hz-mono" style={{ color: "var(--hz-ink-3)" }}>
-            {i + 1}.
-          </span>{" "}
           {s.title}
         </a>
       ))}
