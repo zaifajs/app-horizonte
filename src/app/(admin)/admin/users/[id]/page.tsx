@@ -115,6 +115,7 @@ export default async function UserDetailPage({
       <TeacherProfileForm
         forUserId={user.id}
         initial={{
+          name: user.name,
           bio: user.teacherProfile?.bio ?? "",
           phone: user.teacherProfile?.phone ?? "",
           languages: user.teacherProfile?.languages ?? "",

@@ -27,6 +27,7 @@ export function TeacherProfileForm({
   forUserId,
 }: {
   initial: {
+    name: string;
     bio: string;
     phone: string;
     languages: string; // comma-separated locale codes
@@ -41,6 +42,7 @@ export function TeacherProfileForm({
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
 
+  const [name, setName] = useState(initial.name);
   const [bio, setBio] = useState(initial.bio);
   const [phone, setPhone] = useState(initial.phone);
   const [languages, setLanguages] = useState<Set<TeacherLocale>>(() => {
@@ -69,6 +71,7 @@ export function TeacherProfileForm({
     startTransition(async () => {
       const result = await saveTeacherProfileAction({
         userId: forUserId,
+        name,
         bio,
         phone,
         languages: Array.from(languages),
@@ -100,6 +103,20 @@ export function TeacherProfileForm({
           existingUrl={initial.photoUrl}
           forUserId={forUserId}
         />
+
+        <Field
+          label="Name"
+          htmlFor="name"
+          hint="Shown across the app — to admin, to students in your batch, on attendance and exam records."
+        >
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={100}
+            required
+          />
+        </Field>
 
         <Field
           label="Bio"

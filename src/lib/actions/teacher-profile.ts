@@ -63,12 +63,36 @@ export async function saveTeacherProfileAction(
   if (!target.ok) return target;
 
   // Normalise empty strings to null so the DB doesn't carry "" sentinels.
+  const name = parsed.data.name;
   const bio = parsed.data.bio?.trim() || null;
   const phone = parsed.data.phone?.trim() || null;
   const languages = parsed.data.languages ?? null;
 
   try {
     await prisma.$transaction(async (tx) => {
+      // Snapshot current name so the audit row carries the diff. Skip the
+      // User update + audit entry entirely when the name hasn't changed.
+      const existing = await tx.user.findUnique({
+        where: { id: target.userId },
+        select: { name: true },
+      });
+      if (existing && existing.name !== name) {
+        await tx.user.update({
+          where: { id: target.userId },
+          data: { name },
+        });
+        await logChange({
+          tx,
+          action: "UPDATE",
+          entityType: "User",
+          entityId: target.userId,
+          actorUserId: actor.id,
+          changes: {
+            name: { from: existing.name, to: name },
+          } as Prisma.InputJsonValue,
+        });
+      }
+
       const profile = await tx.teacherProfile.upsert({
         where: { userId: target.userId },
         create: { userId: target.userId, bio, phone, languages },
@@ -85,6 +109,7 @@ export async function saveTeacherProfileAction(
     });
     revalidatePath("/teacher/profile");
     revalidatePath(`/admin/users/${target.userId}`);
+    revalidatePath("/admin/users");
     return { ok: true, userId: target.userId };
   } catch (err) {
     console.error("saveTeacherProfileAction failed:", err);

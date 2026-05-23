@@ -71,6 +71,7 @@ export default async function TeacherProfilePage() {
 
       <TeacherProfileForm
         initial={{
+          name: user.name,
           bio: profile?.bio ?? "",
           phone: profile?.phone ?? "",
           languages: profile?.languages ?? "",

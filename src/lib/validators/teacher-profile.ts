@@ -13,6 +13,14 @@ export const teacherProfileSaveSchema = z.object({
   // For self-service /teacher/profile, the action ignores it and uses the
   // authed user's id.
   userId: z.string().uuid().optional(),
+  // Display name lives on User.name (shared with every other surface), not
+  // on TeacherProfile. The save action writes it across both rows in one
+  // transaction.
+  name: z
+    .string()
+    .trim()
+    .min(1, "Name is required.")
+    .max(100, "Name is too long."),
   bio: z.string().max(2000).optional().nullable(),
   phone: z.string().max(40).optional().nullable(),
   languages: z
