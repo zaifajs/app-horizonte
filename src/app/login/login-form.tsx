@@ -34,8 +34,15 @@ export function LoginForm() {
       return;
     }
     // Use the role stored in user metadata to pick the right home page.
+    // Keeps STUDENT → /student so it doesn't fall through to /admin/today
+    // and bounce off the admin-only role gate to /forbidden.
     const role = data.user?.user_metadata?.role as string | undefined;
-    const dest = role === "TEACHER" ? "/teacher" : "/admin/today";
+    const dest =
+      role === "STUDENT"
+        ? "/student"
+        : role === "TEACHER"
+          ? "/teacher"
+          : "/admin/today";
     router.refresh();
     router.push(dest);
   }

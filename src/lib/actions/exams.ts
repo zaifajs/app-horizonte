@@ -43,7 +43,10 @@ export async function getOrCreateExamForModule(moduleId: string) {
     data: {
       courseId: mod.courseId,
       moduleId: mod.id,
-      title: `Module ${mod.number} — ${mod.name}`,
+      // Short "M<n> — <name>" matches the seed script's convention and the
+      // rest of the app's batch-code shorthand. The longer "Module N" form
+      // diverged from the seed and showed up in the tour as an inconsistency.
+      title: `M${mod.number} — ${mod.name}`,
       passingScore: 60,
       durationMinutes: 45,
     },
