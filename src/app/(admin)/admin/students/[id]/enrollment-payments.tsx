@@ -27,6 +27,7 @@ export function EnrollmentPayments({
   studentEmail,
   batchCode,
   urgencyTone,
+  onMutate,
 }: {
   enrollmentId: string;
   feeCents: number;
@@ -36,6 +37,11 @@ export function EnrollmentPayments({
   studentEmail?: string;
   batchCode?: string;
   urgencyTone?: "danger" | "warning" | "due" | "neutral";
+  /** Called after a successful add/delete payment. Used by client-side
+   *  parents (e.g. StudentDrawer) that hold their own snapshot of payments
+   *  and need to re-fetch — router.refresh() alone only revalidates server
+   *  components, not local useState. */
+  onMutate?: () => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -58,6 +64,7 @@ export function EnrollmentPayments({
       if (!result.ok && result.error) setError(result.error);
       setConfirmDelete(null);
       router.refresh();
+      if (result.ok) onMutate?.();
     });
   }
 
@@ -163,6 +170,7 @@ export function EnrollmentPayments({
           studentEmail={studentEmail}
           batchCode={batchCode}
           urgencyTone={urgencyTone}
+          onSaved={onMutate}
           trigger={(open) => (
             <button
               type="button"

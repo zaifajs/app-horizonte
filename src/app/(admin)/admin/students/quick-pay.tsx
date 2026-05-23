@@ -19,6 +19,7 @@ export function QuickPay({
   batchCode,
   urgencyTone,
   trigger,
+  onSaved,
 }: {
   enrollmentId: string;
   studentId: string;
@@ -33,6 +34,10 @@ export function QuickPay({
   // Receives an onClick that opens the modal — let callers wire it to any
   // shape of button they want (text button, full-width pill, etc.).
   trigger?: (open: (e?: React.MouseEvent) => void) => React.ReactNode;
+  /** Called after a successful save (in addition to router.refresh). Lets
+   *  client-side parents like StudentDrawer re-fetch their own state, since
+   *  router.refresh only revalidates server components. */
+  onSaved?: () => void;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -122,6 +127,7 @@ export function QuickPay({
       }
       setOpen(false);
       router.refresh();
+      onSaved?.();
     });
   }
 

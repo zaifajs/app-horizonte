@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { format } from "date-fns";
 import {
   Sheet,
@@ -26,16 +26,25 @@ export function StudentDrawer({
   const [data, setData] = useState<DrawerData | null>(null);
   const [, startTransition] = useTransition();
 
-  useEffect(() => {
-    if (!studentId) {
-      startTransition(() => { setData(null); });
-      return;
-    }
+  // Refetch on demand. Used by EnrollmentPayments after add/delete so the
+  // drawer's snapshot of payments matches what just hit the server —
+  // router.refresh() alone only revalidates server components, not the
+  // useState in this client component.
+  const refetch = useCallback(() => {
+    if (!studentId) return;
     startTransition(async () => {
       const result = await getStudentForDrawer(studentId);
       setData(result);
     });
   }, [studentId]);
+
+  useEffect(() => {
+    if (!studentId) {
+      startTransition(() => { setData(null); });
+      return;
+    }
+    refetch();
+  }, [studentId, refetch]);
 
   return (
     <Sheet open={!!studentId} onOpenChange={(open) => { if (!open) onClose(); }}>
@@ -53,14 +62,14 @@ export function StudentDrawer({
             <p className="text-sm text-muted-foreground">Loading…</p>
           </div>
         ) : (
-          <DrawerContent data={data} />
+          <DrawerContent data={data} onMutate={refetch} />
         )}
       </SheetContent>
     </Sheet>
   );
 }
 
-function DrawerContent({ data }: { data: DrawerData }) {
+function DrawerContent({ data, onMutate }: { data: DrawerData; onMutate: () => void }) {
   const enr = data.enrollments[0] ?? null;
   const statusTone: Record<string, { color: string; label: string }> = {
     PENDING: { color: "var(--hz-warning)", label: "Pending" },
@@ -156,6 +165,7 @@ function DrawerContent({ data }: { data: DrawerData }) {
               studentName={data.fullName}
               studentEmail={data.email}
               batchCode={enr.batchCode}
+              onMutate={onMutate}
               payments={enr.payments.map((p) => ({
                 id: p.id,
                 amountCents: p.amountCents,
