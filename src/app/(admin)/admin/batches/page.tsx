@@ -239,10 +239,14 @@ export default async function BatchesPage({
                         className="font-medium"
                         style={isFinished ? { color: "var(--hz-ink-2)" } : undefined}
                       >
-                        {b.course.code}
+                        {b.course.code} <span className="hz-mono text-xs" style={{ color: "var(--hz-ink-3)" }}>· {b.course.level}</span>
                       </div>
-                      <div className="text-xs hz-mono" style={{ color: "var(--hz-ink-3)" }}>
-                        {b.course.name} · {b.course.level}
+                      <div
+                        className="text-xs hz-mono truncate"
+                        style={{ color: "var(--hz-ink-3)", maxWidth: 220 }}
+                        title={b.course.name}
+                      >
+                        {b.course.name}
                       </div>
                     </td>
                     <td>

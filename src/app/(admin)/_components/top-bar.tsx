@@ -1,8 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Breadcrumbs } from "./breadcrumbs";
+
+// The top-bar "+ new" button changes target based on the current section so
+// it doesn't always mean "new student" no matter where you are.
+function newButtonFor(pathname: string): { href: string; label: string } | null {
+  if (pathname.startsWith("/admin/batches")) return { href: "/admin/batches/new", label: "batch" };
+  if (pathname.startsWith("/admin/students") || pathname === "/admin/today")
+    return { href: "/admin/students/new", label: "student" };
+  // Templates + Users pages already expose their own "New …" / "Invite user"
+  // affordance; an extra ambiguous "+ new" here just adds noise.
+  return null;
+}
 
 function format(now: Date): string {
   const wd = now.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase();
@@ -16,6 +28,8 @@ function format(now: Date): string {
 
 export function TopBar() {
   const [stamp, setStamp] = useState<string | null>(null);
+  const pathname = usePathname() ?? "";
+  const newBtn = newButtonFor(pathname);
 
   useEffect(() => {
     setStamp(format(new Date()));
@@ -67,13 +81,15 @@ export function TopBar() {
               }}
             />
           </button>
-          <Link href="/admin/students/new" className="btn-ghost">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14" />
-              <path d="M12 5v14" />
-            </svg>
-            new
-          </Link>
+          {newBtn ? (
+            <Link href={newBtn.href} className="btn-ghost" title={`New ${newBtn.label}`}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14" />
+                <path d="M12 5v14" />
+              </svg>
+              {newBtn.label}
+            </Link>
+          ) : null}
         </div>
       </div>
     </header>
