@@ -1,9 +1,9 @@
 import { test } from "@playwright/test";
-import { teacherCreds, login, snap } from "./helpers";
+import { ensureLoggedIn, snap } from "./helpers";
 
 test.describe("Teacher tour @teacher", () => {
   test("desktop walkthrough", async ({ page }) => {
-    await login(page, teacherCreds(), "/teacher");
+    await ensureLoggedIn(page, "teacher", "/teacher");
     await snap(page, "teacher-01-landing");
 
     // Open the first assigned batch

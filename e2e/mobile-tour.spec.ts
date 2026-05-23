@@ -1,9 +1,9 @@
 import { test } from "@playwright/test";
-import { adminCreds, teacherCreds, login, snap } from "./helpers";
+import { ensureLoggedIn, snap } from "./helpers";
 
 test.describe("Mobile tour @mobile", () => {
   test("admin on phone", async ({ page }) => {
-    await login(page, adminCreds(), "/admin/today");
+    await ensureLoggedIn(page, "admin", "/admin/today");
     await snap(page, "mobile-admin-01-today");
 
     await page.goto("/admin/students");
@@ -18,7 +18,7 @@ test.describe("Mobile tour @mobile", () => {
   });
 
   test("teacher on phone", async ({ page }) => {
-    await login(page, teacherCreds(), "/teacher");
+    await ensureLoggedIn(page, "teacher", "/teacher");
     await snap(page, "mobile-teacher-01-landing");
 
     const firstBatch = page.locator('a[href^="/teacher/batches/"]').first();

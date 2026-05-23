@@ -1,5 +1,5 @@
 import { test } from "@playwright/test";
-import { adminCreds, login, snap } from "./helpers";
+import { ensureLoggedIn, snap } from "./helpers";
 
 // Walks the admin through every major screen and screenshots each, so the
 // resulting e2e/screenshots/ folder is a flip-book of the live UX. No
@@ -7,7 +7,7 @@ import { adminCreds, login, snap } from "./helpers";
 
 test.describe("Admin tour @admin", () => {
   test("desktop walkthrough", async ({ page }) => {
-    await login(page, adminCreds(), "/admin/today");
+    await ensureLoggedIn(page, "admin", "/admin/today");
     await snap(page, "admin-01-today");
 
     await page.goto("/admin/students");

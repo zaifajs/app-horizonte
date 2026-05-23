@@ -1,5 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 import * as fs from "node:fs";
+import * as path from "node:path";
 
 // Load .env.local manually if present — keeps E2E credentials out of git.
 const envPath = ".env.local";
@@ -16,9 +17,14 @@ if (fs.existsSync(envPath)) {
 
 const BASE_URL = process.env.E2E_BASE_URL ?? "https://stage.nhorizonte.pt";
 
+const adminAuth = path.join("e2e", ".auth", "admin.json");
+const teacherAuth = path.join("e2e", ".auth", "teacher.json");
+const hasAdminAuth = fs.existsSync(adminAuth);
+const hasTeacherAuth = fs.existsSync(teacherAuth);
+
 export default defineConfig({
   testDir: "./e2e",
-  fullyParallel: false, // Sequential — we hit a shared staging DB.
+  fullyParallel: false,
   retries: 0,
   workers: 1,
   reporter: [["list"], ["html", { open: "never" }]],
@@ -31,17 +37,27 @@ export default defineConfig({
   projects: [
     {
       name: "admin",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        ...(hasAdminAuth ? { storageState: adminAuth } : {}),
+      },
       grep: /@admin/,
     },
     {
       name: "teacher",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        ...(hasTeacherAuth ? { storageState: teacherAuth } : {}),
+      },
       grep: /@teacher/,
     },
     {
       name: "mobile",
-      use: { ...devices["iPhone 14"] },
+      use: {
+        ...devices["iPhone 14"],
+        // Mobile tour piggy-backs on whichever auth state exists.
+        ...(hasAdminAuth ? { storageState: adminAuth } : {}),
+      },
       grep: /@mobile/,
     },
   ],

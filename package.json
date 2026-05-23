@@ -16,6 +16,8 @@
     "e2e:mobile": "playwright test --project=mobile",
     "e2e:headed": "playwright test --headed",
     "e2e:report": "playwright show-report",
+    "e2e:auth:admin": "node e2e/capture-auth.mjs admin",
+    "e2e:auth:teacher": "node e2e/capture-auth.mjs teacher",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
