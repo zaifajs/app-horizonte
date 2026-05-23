@@ -14,6 +14,7 @@ import { ScheduleCalendar } from "./schedule-calendar";
 import { TrainerAssign } from "./trainer-assign";
 import { ModuleSection } from "./module-section";
 import { EditBatchTrigger } from "./edit-batch-trigger";
+import { ExamSchedule, type ExamScheduleRow } from "./exam-schedule";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,23 @@ export default async function BatchDetailPage({
     prisma.batch.findUnique({
       where: { id },
       include: {
-        course: { include: { modules: { orderBy: { number: "asc" } } } },
+        course: {
+          include: {
+            modules: {
+              orderBy: { number: "asc" },
+              include: {
+                exams: {
+                  select: {
+                    id: true,
+                    title: true,
+                    durationMinutes: true,
+                    _count: { select: { questions: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
         trainer: { select: { id: true, name: true } },
         sessions: {
           orderBy: [{ scheduledDate: "asc" }, { kind: "asc" }],
@@ -145,6 +162,36 @@ export default async function BatchDetailPage({
   const todaysModuleNumber = sessionToday?.module.number ?? null;
   const inProgressModuleNumber =
     byModule.find((m) => m.status === "IN_PROGRESS")?.mod.number ?? null;
+
+  // Per-module exam scheduling rows for the ExamSchedule section. Pairs each
+  // course module with its Exam definition (if authored) and any scheduled
+  // EXAM-kind session on this batch.
+  const examRows: ExamScheduleRow[] = batch.course.modules.map((mod) => {
+    const exam = mod.exams[0] ?? null;
+    const examSession = batch.sessions.find(
+      (s) => s.kind === "EXAM" && s.moduleId === mod.id,
+    );
+    return {
+      moduleId: mod.id,
+      moduleNumber: mod.number,
+      moduleName: mod.name,
+      exam: exam
+        ? {
+            id: exam.id,
+            title: exam.title,
+            questionCount: exam._count.questions,
+            durationMinutes: exam.durationMinutes,
+          }
+        : null,
+      scheduled: examSession
+        ? {
+            sessionId: examSession.id,
+            scheduledDate: examSession.scheduledDate.toISOString().slice(0, 10),
+            startTime: examSession.startTime,
+          }
+        : null,
+    };
+  });
 
   return (
     <div className="space-y-6">
@@ -345,6 +392,8 @@ export default async function BatchDetailPage({
           ))}
         </div>
       </section>
+
+      <ExamSchedule batchId={batch.id} rows={examRows} canSchedule />
     </div>
   );
 }
