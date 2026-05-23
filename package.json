@@ -10,6 +10,12 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "e2e": "playwright test",
+    "e2e:admin": "playwright test --project=admin",
+    "e2e:teacher": "playwright test --project=teacher",
+    "e2e:mobile": "playwright test --project=mobile",
+    "e2e:headed": "playwright test --headed",
+    "e2e:report": "playwright show-report",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
@@ -46,6 +52,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",
