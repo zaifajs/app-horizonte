@@ -232,7 +232,10 @@ export default async function FinancePage({
                   <tr key={r.id}>
                     <td>
                       <div className="flex items-center gap-2.5">
-                        <Avatar name={r.code} tone="primary" />
+                        {/* No tone override — let the Avatar hash the batch
+                            code into the deterministic palette so two
+                            batches don't share a colour by accident. */}
+                        <Avatar name={r.code} />
                         <div className="min-w-0">
                           <Link
                             href={`/admin/batches/${r.id}`}

@@ -72,7 +72,10 @@ export function Avatar({
   style?: CSSProperties;
 }) {
   const initials = getInitials(name);
-  const colors = tone ? TONES[tone] : avatarPalette(name);
+  // Fall back to the deterministic palette if `tone` is unknown — TypeScript
+  // catches typos at the call site, but stripping the safety net at runtime
+  // means an unknown tone (or a future renamed enum) crashes the whole page.
+  const colors = (tone && TONES[tone]) || avatarPalette(name);
   return (
     <span
       className={`avi ${className ?? ""}`}
