@@ -36,7 +36,7 @@ type Props = {
     endTime: string | null;
     hours: number;
     status: Status;
-    kind: "CLASSROOM" | "AUTONOMOUS";
+    kind: "CLASSROOM" | "AUTONOMOUS" | "EXAM";
     notes: string | null;
   };
   isToday: boolean;

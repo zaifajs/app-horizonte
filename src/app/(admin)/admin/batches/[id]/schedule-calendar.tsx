@@ -18,7 +18,7 @@ type Session = {
   startTime: string | null;
   endTime: string | null;
   hours: number;
-  kind: "CLASSROOM" | "AUTONOMOUS";
+  kind: "CLASSROOM" | "AUTONOMOUS" | "EXAM";
   sequenceInModule: number;
   module: { id: string; number: number; name: string };
 };
