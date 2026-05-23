@@ -46,6 +46,9 @@ export function QuickPay({
   const [proof, setProof] = useState<File | null>(null);
   const [notes, setNotes] = useState("");
   const [emailReceipt, setEmailReceipt] = useState(true);
+  // Bumped each time a quick-amount chip is clicked — drives a CSS flash on
+  // the amount input so the user sees that their tap actually did something.
+  const [chipFlash, setChipFlash] = useState(0);
 
   // Reset when opening so the modal reflects current state if the user
   // opened it on a different row earlier in the session.
@@ -297,7 +300,15 @@ export function QuickPay({
                 <label className="field-label">
                   Amount <span className="req">*</span>
                 </label>
-                <label className="pay-amount">
+                <label
+                  key={chipFlash}
+                  className="pay-amount"
+                  style={
+                    chipFlash > 0
+                      ? { animation: "hzAmountFlash 600ms ease-out" }
+                      : undefined
+                  }
+                >
                   <span className="cur">€</span>
                   <input
                     type="text"
@@ -313,7 +324,10 @@ export function QuickPay({
                       <button
                         key={p.label}
                         type="button"
-                        onClick={() => setAmount(p.value.toFixed(2))}
+                        onClick={() => {
+                          setAmount(p.value.toFixed(2));
+                          setChipFlash((n) => n + 1);
+                        }}
                         className={`quick-amt ${
                           Math.abs(Number.parseFloat(amount) - p.value) < 0.005 ? "on" : ""
                         }`}
@@ -361,8 +375,10 @@ export function QuickPay({
                 </div>
               </div>
 
-              {/* Date + Reference */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Date + Proof. items-end keeps the two .inp inputs on the
+                  same baseline even when the "Proof" label has a longer
+                  hint span than "Paid on". */}
+              <div className="grid grid-cols-2 gap-3 items-end">
                 <div>
                   <label className="field-label">
                     Paid on <span className="req">*</span>

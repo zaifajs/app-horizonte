@@ -657,3 +657,11 @@
   50% { opacity: 0.4; }
 }
 .hz-pulse { animation: hz-pulse 2s infinite; }
+
+/* Brief flash on the QuickPay amount field after a quick-amount chip click
+   so the user sees their tap landed. */
+@keyframes hzAmountFlash {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--hz-primary) 60%, transparent); border-color: var(--hz-primary); }
+  60% { box-shadow: 0 0 0 6px color-mix(in oklab, var(--hz-primary) 0%, transparent); border-color: var(--hz-primary); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
