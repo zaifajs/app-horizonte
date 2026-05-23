@@ -154,7 +154,7 @@ export function BulkWhatsAppQueue({
             </p>
           </header>
 
-          <div className="inline-flex rounded-lg border bg-white p-0.5">
+          <div className="inline-flex rounded-lg border bg-card p-0.5">
             {(["WA_ME", "EMAIL"] as Channel[]).map((c) => {
               const active = channel === c;
               return (
@@ -166,7 +166,7 @@ export function BulkWhatsAppQueue({
                     reset();
                   }}
                   className={`text-sm px-3 py-1.5 rounded-md transition ${
-                    active ? "bg-zinc-900 text-white" : "text-zinc-700 hover:bg-zinc-100"
+                    active ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted"
                   }`}
                 >
                   {c === "WA_ME" ? "WhatsApp" : "Email"}
@@ -196,12 +196,12 @@ export function BulkWhatsAppQueue({
           </div>
 
           {channel === "WA_ME" ? (
-            <div className="rounded-lg border bg-zinc-50 px-3 py-2 text-xs text-muted-foreground">
+            <div className="rounded-lg border bg-muted px-3 py-2 text-xs text-muted-foreground">
               wa.me only opens one chat at a time — go through the list,
               clicking each line. Each click is logged to the activity stream.
             </div>
           ) : (
-            <div className="flex items-center justify-between rounded-lg border bg-zinc-50 px-3 py-2 text-xs">
+            <div className="flex items-center justify-between rounded-lg border bg-muted px-3 py-2 text-xs">
               <span className="text-muted-foreground">
                 Sends sequentially via Resend.
                 {" "}
@@ -225,8 +225,8 @@ export function BulkWhatsAppQueue({
               return (
                 <li
                   key={r.studentId}
-                  className={`rounded-lg border bg-white p-3 transition-colors ${
-                    isSent ? "border-emerald-300 bg-emerald-50" : ""
+                  className={`rounded-lg border bg-card p-3 transition-colors ${
+                    isSent ? "chip chip-success" : ""
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -254,7 +254,7 @@ export function BulkWhatsAppQueue({
                       ) : null}
                     </div>
                     {isSent ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-900 px-2 py-1 text-xs font-medium">
+                      <span className="inline-flex items-center gap-1 rounded-full chip chip-success px-2 py-1 text-xs font-medium">
                         <Check className="h-3 w-3" />
                         Sent
                       </span>

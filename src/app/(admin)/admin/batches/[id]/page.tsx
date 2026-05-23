@@ -501,15 +501,15 @@ function ModuleDetail({
         </span>
         <h3 className="text-base font-semibold tracking-tight">{name}</h3>
       </div>
-      <div className="rounded-lg border bg-white overflow-hidden">
+      <div className="hz-card overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-muted-foreground">
+          <thead style={{ background: "var(--hz-surface-2)" }}>
             <tr>
-              <th className="text-left px-3 py-2 w-12">#</th>
-              <th className="text-left px-3 py-2">Date</th>
-              <th className="text-left px-3 py-2">Time</th>
-              <th className="text-left px-3 py-2">Hours</th>
-              <th className="text-left px-3 py-2">Status</th>
+              <th className="text-left px-3 py-2 w-12 hz-mono uppercase tracking-[.14em]" style={{ color: "var(--hz-ink-3)", fontSize: "0.75rem" }}>#</th>
+              <th className="text-left px-3 py-2 hz-mono uppercase tracking-[.14em]" style={{ color: "var(--hz-ink-3)", fontSize: "0.75rem" }}>Date</th>
+              <th className="text-left px-3 py-2 hz-mono uppercase tracking-[.14em]" style={{ color: "var(--hz-ink-3)", fontSize: "0.75rem" }}>Time</th>
+              <th className="text-left px-3 py-2 hz-mono uppercase tracking-[.14em]" style={{ color: "var(--hz-ink-3)", fontSize: "0.75rem" }}>Hours</th>
+              <th className="text-left px-3 py-2 hz-mono uppercase tracking-[.14em]" style={{ color: "var(--hz-ink-3)", fontSize: "0.75rem" }}>Status</th>
               <th className="text-right px-3 py-2 w-20"></th>
             </tr>
           </thead>

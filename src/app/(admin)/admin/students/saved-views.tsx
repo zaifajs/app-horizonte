@@ -44,8 +44,8 @@ export function SavedViews() {
             href={`/admin/students${v.query}`}
             className={`text-xs rounded-full border px-2.5 py-1 ${
               isActive
-                ? "bg-zinc-900 text-white border-zinc-900"
-                : "bg-white text-zinc-700 hover:bg-zinc-50"
+                ? "bg-foreground text-background border-zinc-900"
+                : "bg-card text-muted-foreground hover:bg-muted"
             }`}
           >
             {v.label}

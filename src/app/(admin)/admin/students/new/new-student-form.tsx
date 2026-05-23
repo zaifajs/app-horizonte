@@ -91,7 +91,7 @@ export function NewStudentForm({
   return (
     <form
       onSubmit={onSubmit}
-      className="space-y-5 rounded-xl border bg-white p-6"
+      className="space-y-5 rounded-xl border bg-card p-6"
       encType="multipart/form-data"
     >
       <Section title="Identity">
@@ -204,7 +204,7 @@ export function NewStudentForm({
         </Field>
       </Section>
 
-      <div className="rounded-lg bg-zinc-50 border px-4 py-3 flex items-start gap-3">
+      <div className="rounded-lg bg-muted border px-4 py-3 flex items-start gap-3">
         <input
           id="gdpr"
           type="checkbox"

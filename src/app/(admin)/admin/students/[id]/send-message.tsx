@@ -114,7 +114,7 @@ export function SendMessage({
   }
 
   return (
-    <div className="rounded-lg border bg-white p-4 space-y-3 text-sm">
+    <div className="rounded-lg border bg-card p-4 space-y-3 text-sm">
       <div className="flex items-baseline justify-between gap-2">
         <div>
           <div className="font-medium">Send WhatsApp to {studentName}</div>
@@ -181,13 +181,13 @@ export function SendMessage({
       </div>
 
       {templateKey === "cronograma" && !vars.scheduleUrl ? (
-        <p className="text-xs text-amber-700">
+        <p className="text-xs text-[var(--hz-warning)]">
           No batch enrolment found — the schedule link will be empty. Enrol the
           student first.
         </p>
       ) : null}
 
-      <div className="rounded-md border bg-zinc-50 px-3 py-2 text-xs">
+      <div className="rounded-md border bg-muted px-3 py-2 text-xs">
         <div className="text-muted-foreground uppercase tracking-wide">
           Email subject preview
         </div>
@@ -217,7 +217,7 @@ export function SendMessage({
         <p
           className={
             emailFeedback.kind === "ok"
-              ? "text-xs text-emerald-700"
+              ? "text-xs text-[var(--hz-success)]"
               : "text-xs text-destructive"
           }
         >

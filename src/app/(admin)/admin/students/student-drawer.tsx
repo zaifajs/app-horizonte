@@ -77,9 +77,9 @@ function DrawerContent({ data }: { data: DrawerData }) {
                 variant="outline"
                 className={
                   e.status === "PENDING"
-                    ? "bg-amber-100 text-amber-900 border-amber-300"
+                    ? "chip chip-warning"
                     : e.status === "ACTIVE"
-                      ? "bg-emerald-100 text-emerald-900 border-emerald-300"
+                      ? "chip chip-success"
                       : ""
                 }
               >
@@ -100,7 +100,7 @@ function DrawerContent({ data }: { data: DrawerData }) {
 
       <section className="space-y-3">
         <h3 className="text-base font-semibold tracking-tight">Personal</h3>
-        <div className="rounded-lg border bg-white p-4 text-sm space-y-1">
+        <div className="rounded-lg border bg-card p-4 text-sm space-y-1">
           <RowKV k="Date of birth" v={format(new Date(data.dob), "dd MMM yyyy")} />
           <RowKV k="Nationality" v={data.nationality} />
           <RowKV k="Address" v={`${data.address}, ${data.city}`} />
@@ -117,7 +117,7 @@ function DrawerContent({ data }: { data: DrawerData }) {
       {enr ? (
         <section className="space-y-3">
           <h3 className="text-base font-semibold tracking-tight">Payments</h3>
-          <div className="rounded-lg border bg-white p-4">
+          <div className="rounded-lg border bg-card p-4">
             <EnrollmentPayments
               enrollmentId={enr.id}
               feeCents={enr.feeCents}
@@ -136,7 +136,7 @@ function DrawerContent({ data }: { data: DrawerData }) {
 
       <section className="space-y-3">
         <h3 className="text-base font-semibold tracking-tight">Send message</h3>
-        <div className="rounded-lg border bg-white p-4">
+        <div className="rounded-lg border bg-card p-4">
           <SendMessage
             studentId={data.id}
             studentName={data.fullName}

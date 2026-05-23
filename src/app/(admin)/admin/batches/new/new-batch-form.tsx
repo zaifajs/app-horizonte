@@ -69,7 +69,7 @@ export function NewBatchForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-5 rounded-xl border bg-white p-6">
+    <form onSubmit={onSubmit} className="space-y-5 rounded-xl border bg-card p-6">
       <Field
         label="Course"
         htmlFor="courseId"

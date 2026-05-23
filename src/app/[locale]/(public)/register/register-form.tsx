@@ -110,11 +110,11 @@ export function RegisterForm({
 
   if (done) {
     return (
-      <div className="rounded-xl border bg-emerald-50 border-emerald-200 p-6 space-y-3">
-        <h2 className="text-lg font-semibold text-emerald-900">
+      <div className="rounded-xl border chip chip-success p-6 space-y-3">
+        <h2 className="text-lg font-semibold text-[var(--hz-success)]">
           {t.success.title}
         </h2>
-        <p className="text-sm text-emerald-900/80">{t.success.body}</p>
+        <p className="text-sm text-[var(--hz-success)]/80">{t.success.body}</p>
         <Button onClick={reset} variant="outline">
           {t.success.again}
         </Button>
@@ -125,7 +125,7 @@ export function RegisterForm({
   return (
     <form
       onSubmit={onSubmit}
-      className="space-y-5 rounded-xl border bg-white p-6"
+      className="space-y-5 rounded-xl border bg-card p-6"
       encType="multipart/form-data"
     >
       <Section title={t.sections.identity}>
@@ -239,7 +239,7 @@ export function RegisterForm({
         </Field>
       </Section>
 
-      <div className="rounded-lg bg-zinc-50 border px-4 py-3 flex items-start gap-3">
+      <div className="rounded-lg bg-muted border px-4 py-3 flex items-start gap-3">
         <input
           id="gdpr"
           type="checkbox"

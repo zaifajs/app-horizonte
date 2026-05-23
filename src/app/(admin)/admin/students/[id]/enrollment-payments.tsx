@@ -101,7 +101,7 @@ export function EnrollmentPayments({
   return (
     <div className="space-y-3">
       {/* Progress bar / summary */}
-      <div className="rounded-lg border bg-white p-3 space-y-2">
+      <div className="rounded-lg border bg-card p-3 space-y-2">
         <div className="flex items-baseline justify-between text-sm">
           <div>
             <span className="font-medium">€{paidEur.toFixed(2)}</span>
@@ -109,19 +109,19 @@ export function EnrollmentPayments({
           </div>
           <div className="text-xs">
             {fullyPaid ? (
-              <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-900 px-2 py-0.5 font-medium">
+              <span className="inline-flex items-center rounded-full chip chip-success px-2 py-0.5 font-medium">
                 Fully paid
               </span>
             ) : (
-              <span className="text-amber-700">
+              <span className="text-[var(--hz-warning)]">
                 €{leftEur.toFixed(2)} left to pay
               </span>
             )}
           </div>
         </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
           <div
-            className={`h-full ${fullyPaid ? "bg-emerald-500" : "bg-amber-400"}`}
+            className={`h-full ${fullyPaid ? "bg-[var(--hz-success)]" : "bg-[var(--hz-warning)]"}`}
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -133,7 +133,7 @@ export function EnrollmentPayments({
           {payments.map((p) => (
             <li
               key={p.id}
-              className="flex items-center justify-between gap-2 rounded border bg-white px-3 py-2 text-sm"
+              className="flex items-center justify-between gap-2 rounded border bg-card px-3 py-2 text-sm"
             >
               <div>
                 <div>
@@ -153,7 +153,7 @@ export function EnrollmentPayments({
                     href={`/api/payments/${p.id}/proof`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="underline text-zinc-700 hover:text-foreground"
+                    className="underline text-muted-foreground hover:text-foreground"
                   >
                     View proof
                   </a>
@@ -246,7 +246,7 @@ export function EnrollmentPayments({
                   placeholder="Bank reference, payment context, etc."
                 />
               </div>
-              <label className="flex items-start gap-2 rounded-lg border bg-zinc-50 px-3 py-2 text-sm">
+              <label className="flex items-start gap-2 rounded-lg border bg-muted px-3 py-2 text-sm">
                 <input
                   type="checkbox"
                   className="mt-0.5"
@@ -293,7 +293,7 @@ function MethodPills({
     { key: "CASH", label: "Cash" },
   ];
   return (
-    <div className="inline-flex rounded-lg border bg-white p-0.5" role="radiogroup">
+    <div className="inline-flex rounded-lg border bg-card p-0.5" role="radiogroup">
       {opts.map((o) => {
         const active = value === o.key;
         return (
@@ -308,7 +308,7 @@ function MethodPills({
               onChange(o.key);
             }}
             className={`text-sm px-3 py-1.5 rounded-md transition ${
-              active ? "bg-zinc-900 text-white" : "text-zinc-700 hover:bg-zinc-100"
+              active ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted"
             }`}
           >
             {o.label}

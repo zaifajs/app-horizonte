@@ -56,7 +56,7 @@ export function TrainerAssign({
   }
 
   return (
-    <div className="rounded-lg border bg-white p-3">
+    <div className="rounded-lg border bg-card p-3">
       <div className="text-xs text-muted-foreground">Trainer</div>
       <div className="mt-1 flex items-center gap-2">
         <Select value={selected} onValueChange={(v) => v && setSelected(v)}>

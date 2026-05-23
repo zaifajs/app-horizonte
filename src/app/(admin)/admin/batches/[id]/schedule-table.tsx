@@ -5,10 +5,10 @@ import { weekdayHolidaysBetween } from "@/lib/cronograma/holidays";
 
 // Tailwind palette cycled per month-of-batch (first month → palette[0], etc.).
 const MONTH_PALETTE = [
-  { bg: "bg-sky-100",     text: "text-sky-900" },
-  { bg: "bg-emerald-100", text: "text-emerald-900" },
-  { bg: "bg-amber-100",   text: "text-amber-900" },
-  { bg: "bg-violet-100",  text: "text-violet-900" },
+  { bg: "bg-sky-100",     text: "text-[var(--hz-info)]" },
+  { bg: "bg-emerald-100", text: "text-[var(--hz-success)]" },
+  { bg: "bg-amber-100",   text: "text-[var(--hz-warning)]" },
+  { bg: "bg-violet-100",  text: "text-[var(--hz-accent)]" },
   { bg: "bg-rose-100",    text: "text-rose-900" },
   { bg: "bg-cyan-100",    text: "text-cyan-900" },
 ];
@@ -111,7 +111,7 @@ export function ScheduleTable({
       : "";
 
   return (
-    <div className={isPrint ? "p-0 bg-white text-zinc-900" : "space-y-4"}>
+    <div className={isPrint ? "p-0 bg-card text-foreground" : "space-y-4"}>
       {!isPrint ? (
         <div className="flex items-center justify-between print:hidden">
           <h1 className="text-lg font-semibold">Schedule — {batch.code}</h1>
@@ -129,7 +129,7 @@ export function ScheduleTable({
         </div>
       ) : null}
 
-      <article className="cronograma-sheet mx-auto bg-white">
+      <article className="cronograma-sheet mx-auto bg-card">
         {/* Title */}
         <header className="text-center mb-3 print:mb-2">
           <div className="text-sm font-semibold leading-tight">
@@ -155,7 +155,7 @@ export function ScheduleTable({
             return (
               <section
                 key={g.module.id}
-                className="rounded-md border border-zinc-300 px-3 py-1.5 print:rounded-none print:border-zinc-400"
+                className="rounded-md border border-border px-3 py-1.5 print:rounded-none print:border-border"
               >
                 <div className="flex items-baseline justify-between gap-2">
                   <div className="text-xs leading-tight">
@@ -195,7 +195,7 @@ export function ScheduleTable({
                   </div>
                 </div>
                 {skipped.length > 0 ? (
-                  <div className="mt-1 text-xs text-red-700">
+                  <div className="mt-1 text-xs text-[var(--hz-danger)]">
                     <span className="font-semibold mr-1">
                       Skipped holiday{skipped.length > 1 ? "s" : ""}:
                     </span>

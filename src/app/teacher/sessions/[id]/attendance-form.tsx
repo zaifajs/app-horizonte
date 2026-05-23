@@ -9,11 +9,11 @@ import { markAttendanceAction } from "@/lib/actions/attendance";
 type State = "PRESENT" | "LATE" | "LEFT_EARLY" | "EXCUSED_ABSENCE" | "UNEXCUSED_ABSENCE";
 
 const OPTIONS: Array<{ key: State; label: string; cls: string }> = [
-  { key: "PRESENT",            label: "Present",  cls: "bg-emerald-100 text-emerald-900 border-emerald-300" },
-  { key: "LATE",               label: "Late",     cls: "bg-amber-100 text-amber-900 border-amber-300" },
-  { key: "LEFT_EARLY",         label: "Left early", cls: "bg-orange-100 text-orange-900 border-orange-300" },
-  { key: "EXCUSED_ABSENCE",    label: "Excused",  cls: "bg-blue-100 text-blue-900 border-blue-300" },
-  { key: "UNEXCUSED_ABSENCE",  label: "Absent",   cls: "bg-red-100 text-red-900 border-red-300" },
+  { key: "PRESENT",            label: "Present",  cls: "chip chip-success" },
+  { key: "LATE",               label: "Late",     cls: "chip chip-warning" },
+  { key: "LEFT_EARLY",         label: "Left early", cls: "chip chip-accent" },
+  { key: "EXCUSED_ABSENCE",    label: "Excused",  cls: "chip chip-info" },
+  { key: "UNEXCUSED_ABSENCE",  label: "Absent",   cls: "chip chip-danger" },
 ];
 
 type Row = {
@@ -90,7 +90,7 @@ export function AttendanceForm({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-white p-3">
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card p-3">
         <span className="text-xs uppercase tracking-wide text-muted-foreground mr-1">
           Mark all
         </span>
@@ -108,7 +108,7 @@ export function AttendanceForm({
           {counts.PRESENT} present · {counts.LATE + counts.LEFT_EARLY} partial ·{" "}
           {counts.EXCUSED_ABSENCE + counts.UNEXCUSED_ABSENCE} absent
           {unmarked > 0 ? (
-            <span className="ml-1 font-medium text-amber-700">
+            <span className="ml-1 font-medium text-[var(--hz-warning)]">
               · {unmarked} unmarked
             </span>
           ) : null}
@@ -166,8 +166,8 @@ function AttendanceCard({
     <div
       className={`rounded-lg border p-2.5 space-y-1.5 ${
         unmarked
-          ? "border-dashed border-amber-300 bg-amber-50/40"
-          : "bg-white"
+          ? "border-dashed border-[var(--hz-warning)] bg-[var(--hz-warning-50)]"
+          : "bg-card"
       }`}
     >
       <div className="flex items-center justify-between gap-2">
@@ -177,8 +177,8 @@ function AttendanceCard({
           onClick={() => setNoteOpen((v) => !v)}
           className={`text-[11px] px-1.5 py-0.5 rounded border transition shrink-0 ${
             row.notes.length > 0
-              ? "bg-zinc-900 text-white border-zinc-900"
-              : "text-muted-foreground hover:bg-zinc-50"
+              ? "bg-foreground text-background border-foreground"
+              : "text-muted-foreground hover:bg-muted"
           }`}
           aria-label={noteOpen ? "Hide note" : "Add note"}
         >
@@ -196,7 +196,7 @@ function AttendanceCard({
               className={`text-xs px-2 py-1 rounded-md border transition ${
                 active
                   ? o.cls + " font-medium"
-                  : "bg-white text-muted-foreground hover:bg-zinc-50"
+                  : "bg-card text-muted-foreground hover:bg-muted"
               }`}
             >
               {o.label}
@@ -211,7 +211,7 @@ function AttendanceCard({
           onChange={(e) => onNote(e.target.value)}
           placeholder="Optional note…"
           autoFocus={row.notes.length === 0}
-          className="w-full text-xs rounded-md border bg-zinc-50/40 px-2 py-1.5 placeholder:text-muted-foreground"
+          className="w-full text-xs rounded-md border bg-muted px-2 py-1.5 placeholder:text-muted-foreground"
         />
       ) : null}
     </div>

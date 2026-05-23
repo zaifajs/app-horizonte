@@ -76,9 +76,9 @@ export function InviteUserDialog() {
           <DialogTitle>Invite a new user</DialogTitle>
         </DialogHeader>
         {sent ? (
-          <div className="rounded-lg border bg-emerald-50 border-emerald-200 p-4 text-sm space-y-2">
-            <p className="font-medium text-emerald-900">Invite sent.</p>
-            <p className="text-emerald-900/80">
+          <div className="rounded-lg border chip chip-success p-4 text-sm space-y-2">
+            <p className="font-medium text-[var(--hz-success)]">Invite sent.</p>
+            <p className="text-[var(--hz-success)]/80">
               They&apos;ll receive an email with a link to set their password and
               sign in.
             </p>

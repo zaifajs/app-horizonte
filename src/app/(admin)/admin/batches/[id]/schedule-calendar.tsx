@@ -35,10 +35,10 @@ type Batch = {
 
 // Tailwind palette per module so cells are scannable. Cycles for >6 modules.
 const MODULE_COLORS = [
-  { bg: "bg-sky-100",    text: "text-sky-900",    ring: "ring-sky-300" },
-  { bg: "bg-emerald-100", text: "text-emerald-900", ring: "ring-emerald-300" },
-  { bg: "bg-amber-100",   text: "text-amber-900",   ring: "ring-amber-300" },
-  { bg: "bg-violet-100",  text: "text-violet-900",  ring: "ring-violet-300" },
+  { bg: "bg-sky-100",    text: "text-[var(--hz-info)]",    ring: "ring-sky-300" },
+  { bg: "bg-emerald-100", text: "text-[var(--hz-success)]", ring: "ring-emerald-300" },
+  { bg: "bg-amber-100",   text: "text-[var(--hz-warning)]",   ring: "ring-amber-300" },
+  { bg: "bg-violet-100",  text: "text-[var(--hz-accent)]",  ring: "ring-violet-300" },
   { bg: "bg-rose-100",    text: "text-rose-900",    ring: "ring-rose-300" },
   { bg: "bg-cyan-100",    text: "text-cyan-900",    ring: "ring-cyan-300" },
 ];
@@ -100,7 +100,7 @@ export function ScheduleCalendar({
       : "";
 
   return (
-    <div className={isPrint ? "p-0 bg-white text-zinc-900" : "space-y-4"}>
+    <div className={isPrint ? "p-0 bg-card text-foreground" : "space-y-4"}>
       {!isPrint ? (
         <div className="flex items-center justify-between print:hidden">
           <h1 className="text-lg font-semibold">Calendar — {batch.code}</h1>
@@ -118,7 +118,7 @@ export function ScheduleCalendar({
         </div>
       ) : null}
 
-      <article className="cal-sheet mx-auto bg-white">
+      <article className="cal-sheet mx-auto bg-card">
         <header className="text-center mb-3 print:mb-2">
           <div className="text-sm font-semibold leading-tight">
             Cronograma — {batch.course.name}
@@ -190,7 +190,7 @@ function MonthGrid({
 
   return (
     <section>
-      <div className="text-center text-xs font-semibold uppercase tracking-wide text-zinc-700 mb-1">
+      <div className="text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
         {format(month, "MMMM yyyy")}
       </div>
       <div className="grid grid-cols-7 text-[9px] uppercase text-zinc-500 mb-0.5">
@@ -200,7 +200,7 @@ function MonthGrid({
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-px bg-zinc-200 border border-zinc-200 print:border-zinc-400">
+      <div className="grid grid-cols-7 gap-px bg-muted border border-border print:border-border">
         {days.map((d) => {
           const iso = d.toISOString().slice(0, 10);
           const session = byIso.get(iso);
@@ -215,7 +215,7 @@ function MonthGrid({
                 className={`min-h-[60px] p-1 ${c.bg} ${c.text} flex flex-col justify-between`}
               >
                 <div className="flex items-baseline justify-between leading-none">
-                  <span className="text-xs font-medium text-zinc-700">
+                  <span className="text-xs font-medium text-muted-foreground">
                     {format(d, "d")}
                   </span>
                   <span className="text-[9px] font-semibold opacity-80">
@@ -234,7 +234,7 @@ function MonthGrid({
             return (
               <div
                 key={iso}
-                className="min-h-[60px] p-1 bg-red-50 text-red-800 flex flex-col justify-between border border-red-200/60 print:border-red-300"
+                className="min-h-[60px] p-1 chip chip-danger flex flex-col justify-between border border-red-200/60 print:border-red-300"
                 title={hol.name}
               >
                 <div className="flex items-baseline justify-between leading-none">
@@ -253,12 +253,12 @@ function MonthGrid({
             <div
               key={iso}
               className={`min-h-[60px] p-1 ${
-                inMonth ? "bg-white" : "bg-zinc-50"
-              } ${weekend && inMonth ? "bg-zinc-50/80" : ""}`}
+                inMonth ? "bg-card" : "bg-muted"
+              } ${weekend && inMonth ? "bg-muted" : ""}`}
             >
               <span
                 className={`text-xs ${
-                  inMonth ? "text-zinc-700" : "text-zinc-300"
+                  inMonth ? "text-muted-foreground" : "text-muted-foreground"
                 }`}
               >
                 {format(d, "d")}

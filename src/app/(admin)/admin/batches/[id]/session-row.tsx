@@ -79,9 +79,9 @@ export function SessionRow({ session, isToday }: Props) {
   }
 
   const rowClass = isAutonomous
-    ? "bg-zinc-50/60"
+    ? "bg-muted"
     : isToday
-      ? "bg-amber-50"
+      ? "bg-[var(--hz-warning-50)]"
       : "";
 
   return (
@@ -223,11 +223,11 @@ function SessionStatusBadge({ status }: { status: Status }) {
     SCHEDULED: { label: "Scheduled", cls: "text-muted-foreground" },
     HELD: {
       label: "Held",
-      cls: "bg-emerald-50 border-emerald-200 text-emerald-700",
+      cls: "chip chip-success",
     },
     CANCELLED: {
       label: "Cancelled",
-      cls: "bg-red-50 border-red-200 text-red-700",
+      cls: "chip chip-danger",
     },
     RESCHEDULED: {
       label: "Rescheduled",

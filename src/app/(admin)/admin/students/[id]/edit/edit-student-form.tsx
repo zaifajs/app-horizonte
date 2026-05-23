@@ -98,7 +98,7 @@ export function EditStudentForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-5 rounded-xl border bg-white p-6">
+    <form onSubmit={onSubmit} className="space-y-5 rounded-xl border bg-card p-6">
       <Section title="Identity">
         <Field label="Full name" htmlFor="fullName" error={fieldErrors.fullName}>
           <Input id="fullName" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
