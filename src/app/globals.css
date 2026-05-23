@@ -704,22 +704,38 @@
     0 4px 12px -4px rgba(0, 0, 0, 0.35);
 }
 
+/* Border-on-highlight pattern (GitHub-style "new" dropdown). The hovered or
+   keyboard-focused row gets a 1.5px primary border instead of a fill — feels
+   more deliberate than a flat colour swap. A faint primary-50 background
+   tint underneath keeps the row legible without competing with the border. */
 .hz-select-item {
   color: var(--hz-ink-2);
-  transition: background 100ms ease, color 100ms ease;
+  border: 1.5px solid transparent;
+  transition: background 100ms ease, color 100ms ease, border-color 100ms ease;
 }
 .hz-select-item:hover:not([data-disabled]),
 .hz-select-item[data-highlighted] {
-  background: color-mix(in oklab, var(--hz-surface-2) 50%, var(--hz-primary-50) 50%);
+  background: color-mix(in oklab, transparent 70%, var(--hz-primary-50) 30%);
+  border-color: var(--hz-primary);
   color: var(--hz-ink);
 }
 .hz-select-item[data-selected] {
   color: var(--hz-ink);
   font-weight: 500;
 }
-.hz-select-item[data-selected]:hover,
-.hz-select-item[data-selected][data-highlighted] {
-  background: color-mix(in oklab, var(--hz-primary-50) 90%, var(--hz-primary) 10%);
+/* Optional: items can render a small leading icon — give it a consistent
+   colour and align it with the indicator dot. Consumers just include an
+   <svg> or icon as part of children; this rule keeps it visually anchored. */
+.hz-select-item svg {
+  color: var(--hz-ink-3);
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+.hz-select-item[data-highlighted] svg,
+.hz-select-item:hover:not([data-disabled]) svg,
+.hz-select-item[data-selected] svg {
+  color: var(--hz-ink-2);
 }
 
 /* The left-side state dot: hollow ring when unselected, filled lime pill
