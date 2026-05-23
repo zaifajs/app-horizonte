@@ -250,93 +250,37 @@ export default async function TodayPage() {
         </div>
       </section>
 
-      {/* ============ STATS GRID ============ */}
+      {/* ============ STATS STRIP ============
+          Compact one-line summary — the headline above already names the
+          critical numbers, so this strip is a secondary glance only. Keeps
+          the overdue table above the fold at 1440x900. */}
       <section className="hz-card overflow-hidden">
         <div className="grid grid-cols-2 md:grid-cols-4 grid-cells">
-          <div>
-            <div className="text-sm hz-mono uppercase tracking-[.16em]" style={{ color: "var(--hz-ink-3)" }}>
-              Active students
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="stat-num text-5xl" style={{ color: "var(--hz-ink)" }}>
-                {activeStudentCount}
-              </span>
-              {newActiveLastWeek > 0 ? (
-                <span className="chip chip-success">↑ +{newActiveLastWeek} this week</span>
-              ) : null}
-            </div>
-            <div className="mt-1 text-sm hz-mono" style={{ color: "var(--hz-ink-3)" }}>
-              across {activeBatches.length} {activeBatches.length === 1 ? "batch" : "batches"}
-            </div>
-          </div>
-          <div>
-            <div className="text-sm hz-mono uppercase tracking-[.16em]" style={{ color: "var(--hz-ink-3)" }}>
-              Active batches
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="stat-num text-5xl" style={{ color: "var(--hz-ink)" }}>
-                {activeBatches.length}
-              </span>
-              {totalBatches > 0 ? (
-                <span className="hz-mono text-sm" style={{ color: "var(--hz-ink-3)" }}>
-                  of {totalBatches} total
-                </span>
-              ) : null}
-            </div>
-            <div className="mt-1 flex items-center gap-1 text-sm hz-mono flex-wrap">
-              {activeBatches.slice(0, 4).map((b) => (
-                <span key={b.id} className="px-1.5 py-0.5 rounded-sm chip-success">
-                  {b.code}
-                </span>
-              ))}
-              {upcomingBatches.slice(0, 4).map((b) => (
-                <span key={b.id} className="px-1.5 py-0.5 rounded-sm chip-warning">
-                  {b.code}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div>
-            <div className="text-sm hz-mono uppercase tracking-[.16em]" style={{ color: "var(--hz-ink-3)" }}>
-              Pending payments
-            </div>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="hz-mono text-xl" style={{ color: "var(--hz-ink-3)" }}>
-                €
-              </span>
-              <span className="stat-num text-5xl" style={{ color: "var(--hz-ink)" }}>
-                {(pendingPaymentsCents / 100).toLocaleString("en-US", {
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                })}
-              </span>
-            </div>
-            <div className="mt-1 text-sm hz-mono" style={{ color: "var(--hz-ink-3)" }}>
-              {pendingPaymentsStudentCount} {pendingPaymentsStudentCount === 1 ? "student owes" : "students owe"}
-            </div>
-          </div>
-          <div style={overdue.length > 0 ? { background: "var(--hz-danger-50)" } : undefined}>
-            <div
-              className="text-sm hz-mono uppercase tracking-[.16em]"
-              style={{ color: overdue.length > 0 ? "var(--hz-danger)" : "var(--hz-ink-3)" }}
-            >
-              Overdue
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span
-                className="stat-num text-5xl"
-                style={{ color: overdue.length > 0 ? "var(--hz-danger)" : "var(--hz-ink)" }}
-              >
-                {overdue.length}
-              </span>
-              {overdue.length > 0 ? <span className="chip chip-danger">!</span> : null}
-            </div>
-            <div className="mt-1 text-sm hz-mono" style={{ color: "var(--hz-ink-2)" }}>
-              {oldestOverdueDays > 0
-                ? `Oldest ${oldestOverdueDays} ${oldestOverdueDays === 1 ? "day" : "days"}`
-                : "All paid"}
-            </div>
-          </div>
+          <StatStrip
+            label="Active students"
+            value={activeStudentCount}
+            sub={`across ${activeBatches.length} ${activeBatches.length === 1 ? "batch" : "batches"}`}
+            delta={newActiveLastWeek > 0 ? `↑ +${newActiveLastWeek} this week` : null}
+            deltaClass="chip chip-success"
+          />
+          <StatStrip
+            label="Active batches"
+            value={activeBatches.length}
+            sub={totalBatches > 0 ? `of ${totalBatches} total` : undefined}
+          />
+          <StatStrip
+            label="Pending payments"
+            value={`€${(pendingPaymentsCents / 100).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
+            sub={`${pendingPaymentsStudentCount} ${pendingPaymentsStudentCount === 1 ? "student owes" : "students owe"}`}
+          />
+          <StatStrip
+            label="Overdue"
+            value={overdue.length}
+            sub={oldestOverdueDays > 0
+              ? `Oldest ${oldestOverdueDays} ${oldestOverdueDays === 1 ? "day" : "days"}`
+              : "All paid"}
+            tone={overdue.length > 0 ? "danger" : undefined}
+          />
         </div>
       </section>
 
@@ -631,6 +575,48 @@ export default async function TodayPage() {
           ) : null}
         </div>
       </div>
+    </div>
+  );
+}
+
+function StatStrip({
+  label,
+  value,
+  sub,
+  delta,
+  deltaClass,
+  tone,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  delta?: string | null;
+  deltaClass?: string;
+  tone?: "danger";
+}) {
+  const isDanger = tone === "danger";
+  return (
+    <div style={isDanger ? { background: "var(--hz-danger-50)" } : undefined}>
+      <div
+        className="text-xs hz-mono uppercase tracking-[.16em]"
+        style={{ color: isDanger ? "var(--hz-danger)" : "var(--hz-ink-3)" }}
+      >
+        {label}
+      </div>
+      <div className="mt-1 flex items-baseline gap-2 flex-wrap">
+        <span
+          className="stat-num text-3xl"
+          style={{ color: isDanger ? "var(--hz-danger)" : "var(--hz-ink)" }}
+        >
+          {value}
+        </span>
+        {delta ? <span className={deltaClass ?? ""}>{delta}</span> : null}
+      </div>
+      {sub ? (
+        <div className="mt-0.5 hz-mono text-xs" style={{ color: "var(--hz-ink-3)" }}>
+          {sub}
+        </div>
+      ) : null}
     </div>
   );
 }
