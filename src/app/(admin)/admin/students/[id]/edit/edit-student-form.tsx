@@ -105,6 +105,42 @@ export function EditStudentForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-5 rounded-xl border bg-card p-6">
+      {/* Batch first — it's the single most common edit (fix wrong batch).
+          Avoids scrolling past 12 other fields. */}
+      <Section title="Batch">
+        <Field
+          label="Move to batch"
+          htmlFor="batchId"
+          error={fieldErrors.batchId}
+        >
+          <Select value={batchId} onValueChange={(v) => v && setBatchId(v)}>
+            <SelectTrigger id="batchId">
+              <SelectValue placeholder="No batch">
+                {(v: string) => {
+                  if (v === KEEP_BATCH)
+                    return currentBatchCode ? `Keep current — ${currentBatchCode}` : "No batch";
+                  const b = batches.find((x) => x.id === v);
+                  return b ? b.label : "No batch";
+                }}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={KEEP_BATCH}>
+                {currentBatchCode ? `Keep current — ${currentBatchCode}` : "No batch"}
+              </SelectItem>
+              {batches.map((b) => (
+                <SelectItem key={b.id} value={b.id}>
+                  {b.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Selecting a different batch moves the student there. Existing payments stay attached.
+          </p>
+        </Field>
+      </Section>
+
       <Section title="Identity">
         <Field label="Full name" htmlFor="fullName" error={fieldErrors.fullName}>
           <Input id="fullName" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
@@ -132,7 +168,17 @@ export function EditStudentForm({
           <Field label="Type" htmlFor="docType" error={fieldErrors.docType}>
             <Select value={docType} onValueChange={(v) => v && setDocType(v as DocType)}>
               <SelectTrigger id="docType">
-                <SelectValue />
+                <SelectValue>
+                  {(v: string) =>
+                    v === "PASSPORT"
+                      ? "Passport"
+                      : v === "RESIDENCE_PERMIT"
+                      ? "Residence permit"
+                      : v === "ID_CARD"
+                      ? "ID card"
+                      : "Select document type"
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="PASSPORT">Passport</SelectItem>
@@ -164,33 +210,6 @@ export function EditStudentForm({
         </Field>
         <Field label="City / town" htmlFor="city" error={fieldErrors.city}>
           <Input id="city" required value={city} onChange={(e) => setCity(e.target.value)} />
-        </Field>
-      </Section>
-
-      <Section title="Batch">
-        <Field
-          label="Move to batch"
-          htmlFor="batchId"
-          error={fieldErrors.batchId}
-        >
-          <Select value={batchId} onValueChange={(v) => v && setBatchId(v)}>
-            <SelectTrigger id="batchId">
-              <SelectValue placeholder="No batch" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={KEEP_BATCH}>
-                {currentBatchCode ? `Keep current — ${currentBatchCode}` : "No batch"}
-              </SelectItem>
-              {batches.map((b) => (
-                <SelectItem key={b.id} value={b.id}>
-                  {b.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-muted-foreground">
-            Selecting a different batch moves the student there. Existing payments stay attached.
-          </p>
         </Field>
       </Section>
 

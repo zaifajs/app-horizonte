@@ -94,7 +94,31 @@ function DrawerContent({ data }: { data: DrawerData }) {
             <span className="mx-1.5" style={{ color: "var(--hz-ink-3)" }}>·</span>
             {data.city}
           </p>
-          <div className="flex gap-2 pt-2">
+          <div className="flex gap-2 pt-2 flex-wrap">
+            <a
+              href={`/admin/students/${data.id}/edit`}
+              className="btn-primary text-sm"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+              Edit
+            </a>
+            <button
+              type="button"
+              onClick={() => {
+                document
+                  .getElementById("drawer-send-message")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+              className="btn-ghost text-sm"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+              </svg>
+              Message
+            </button>
             <a
               href={`/admin/students/${data.id}`}
               className="btn-ghost text-sm"
@@ -145,7 +169,7 @@ function DrawerContent({ data }: { data: DrawerData }) {
         </section>
       ) : null}
 
-      <section className="space-y-2">
+      <section className="space-y-2" id="drawer-send-message">
         <h3 className="section-title">Send message</h3>
         <div className="hz-card p-4">
           <SendMessage

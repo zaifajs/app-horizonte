@@ -226,13 +226,26 @@ function StudentRowEl({
   const router = useRouter();
   const { isSelected } = useSelection();
   const selected = isSelected(row.id);
-  const tintClass = ROW_TINT_CLASS[row.urgency] ?? "";
   const pill = PAYMENT_PILL[row.urgency];
-  const railColor = RAIL_COLOR[row.urgency];
-  const railOpacity = row.urgency === "paid" ? 0.6 : 1;
   const cleanPhone = row.phone.replace(/\D+/g, "");
   const ago = row.latestEnrollment ? daysAgo(row.latestEnrollment.enrolledAt, now) : null;
   const days = row.daysToDeadline ?? null;
+  // Soft-rail policy: reserve red for *strongly* actionable rows so the
+  // colour retains signal when most students happen to be overdue.
+  // Overdue ≤ 7d demotes to amber; ≥ 8d stays red.
+  const isStronglyOverdue =
+    row.urgency === "overdue" && days != null && Math.abs(days) >= 8;
+  const railColor = isStronglyOverdue
+    ? RAIL_COLOR.overdue
+    : row.urgency === "overdue"
+      ? RAIL_COLOR.partial
+      : RAIL_COLOR[row.urgency];
+  const tintClass = isStronglyOverdue
+    ? ROW_TINT_CLASS.overdue
+    : row.urgency === "overdue"
+      ? ROW_TINT_CLASS.partial
+      : ROW_TINT_CLASS[row.urgency] ?? "";
+  const railOpacity = row.urgency === "paid" ? 0.6 : 0.85;
 
   function onRowClick(e: React.MouseEvent) {
     const target = e.target as HTMLElement;
