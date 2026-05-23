@@ -19,6 +19,7 @@ import { loadBatchSequence } from "@/lib/students/batch-seq";
 import { localeForNationality } from "@/lib/messaging/locale-for-nationality";
 import { listAllTemplates } from "@/lib/messaging/template-store";
 import { StudentsTable } from "./students-table";
+import { StudentFormTrigger } from "./student-form-trigger";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,7 @@ export default async function StudentsPage({
   const filters = parseFilters(sp);
   const where = buildStudentWhere(filters);
 
-  const [studentsRaw, batches, batchSeq, templates] = await Promise.all([
+  const [studentsRaw, batches, batchSeq, templates, formBatchesRaw] = await Promise.all([
     prisma.student.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -58,7 +59,16 @@ export default async function StudentsPage({
     prisma.batch.findMany({ orderBy: { startDate: "desc" }, select: { code: true } }),
     loadBatchSequence(),
     listAllTemplates(),
+    prisma.batch.findMany({
+      where: { status: { in: ["UPCOMING", "ACTIVE"] } },
+      orderBy: { startDate: "desc" },
+      select: { id: true, code: true, startDate: true, status: true },
+    }),
   ]);
+  const formBatches = formBatchesRaw.map((b) => ({
+    id: b.id,
+    label: `${b.code} · starts ${b.startDate.toISOString().slice(0, 10)} · ${b.status.toLowerCase()}`,
+  }));
 
   // Build rows + compute paid/due/lastPaid + urgency.
   const today = new Date();
@@ -197,15 +207,7 @@ export default async function StudentsPage({
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <ExportDialog />
-          <Link href="/admin/students/new" className="btn-primary">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <line x1="19" y1="8" x2="19" y2="14" />
-              <line x1="22" y1="11" x2="16" y2="11" />
-            </svg>
-            New student
-          </Link>
+          <StudentFormTrigger mode="create" batches={formBatches} />
         </div>
       </section>
 

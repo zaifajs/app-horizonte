@@ -41,10 +41,12 @@ export function EditStudentForm({
   initial,
   batches,
   currentBatchCode,
+  onSuccess,
 }: {
   initial: Initial;
   batches: Array<{ id: string; label: string }>;
   currentBatchCode: string | null;
+  onSuccess?: () => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -93,7 +95,11 @@ export function EditStudentForm({
         setFieldErrors(result.fieldErrors ?? {});
         return;
       }
-      router.push(`/admin/students/${initial.id}`);
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push(`/admin/students/${initial.id}`);
+      }
     });
   }
 

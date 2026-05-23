@@ -20,8 +20,10 @@ type DocType = "PASSPORT" | "RESIDENCE_PERMIT" | "ID_CARD";
 
 export function NewStudentForm({
   batches,
+  onSuccess,
 }: {
   batches: Array<{ id: string; label: string }>;
+  onSuccess?: (id: string) => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -84,7 +86,11 @@ export function NewStudentForm({
         setFieldErrors(result.fieldErrors ?? {});
         return;
       }
-      router.push(`/admin/students/${result.id}`);
+      if (onSuccess) {
+        onSuccess(result.id);
+      } else {
+        router.push(`/admin/students/${result.id}`);
+      }
     });
   }
 

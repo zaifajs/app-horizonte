@@ -9,6 +9,7 @@ import { SendMessage } from "./send-message";
 import { loadBatchSequence } from "@/lib/students/batch-seq";
 import { localeForNationality } from "@/lib/messaging/locale-for-nationality";
 import { Avatar } from "@/components/ui/avatar";
+import { StudentFormTrigger } from "../student-form-trigger";
 
 const ENROLLMENT_STATUS: Record<string, { color: string; label: string }> = {
   PENDING: { color: "var(--hz-warning)", label: "Pending" },
@@ -25,28 +26,58 @@ export default async function StudentDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const batchSeq = await loadBatchSequence();
-  const student = await prisma.student.findUnique({
-    where: { id },
-    include: {
-      documents: { orderBy: { uploadedAt: "desc" } },
-      enrollments: {
-        include: {
-          batch: {
-            select: {
-              id: true,
-              code: true,
-              startDate: true,
-              course: { select: { feeCents: true } },
+  const [batchSeq, student, formBatchesRaw] = await Promise.all([
+    loadBatchSequence(),
+    prisma.student.findUnique({
+      where: { id },
+      include: {
+        documents: { orderBy: { uploadedAt: "desc" } },
+        enrollments: {
+          include: {
+            batch: {
+              select: {
+                id: true,
+                code: true,
+                startDate: true,
+                course: { select: { feeCents: true } },
+              },
             },
+            payments: { orderBy: { paidAt: "asc" } },
           },
-          payments: { orderBy: { paidAt: "asc" } },
+          orderBy: { enrolledAt: "desc" },
         },
-        orderBy: { enrolledAt: "desc" },
       },
-    },
-  });
+    }),
+    prisma.batch.findMany({
+      where: { status: { in: ["UPCOMING", "ACTIVE"] } },
+      orderBy: { startDate: "desc" },
+      select: { id: true, code: true, startDate: true, status: true },
+    }),
+  ]);
   if (!student) notFound();
+
+  const formBatches = formBatchesRaw.map((b) => ({
+    id: b.id,
+    label: `${b.code} · starts ${b.startDate.toISOString().slice(0, 10)} · ${b.status.toLowerCase()}`,
+  }));
+  const currentEnrollment = student.enrollments[0] ?? null;
+  const editInitial = {
+    id: student.id,
+    fullName: student.fullName,
+    email: student.email,
+    phone: student.phone,
+    docType: student.docType as "PASSPORT" | "RESIDENCE_PERMIT" | "ID_CARD",
+    docNumber: student.docNumber,
+    dob: student.dob.toISOString().slice(0, 10),
+    docExpiry: student.docExpiry.toISOString().slice(0, 10),
+    nationality: student.nationality,
+    nif: student.nif,
+    niss: student.niss ?? "",
+    address: student.address,
+    city: student.city,
+    notes: student.notes ?? "",
+    batchId: currentEnrollment?.batch.id ?? "",
+  };
 
   return (
     <div className="space-y-6">
@@ -91,12 +122,12 @@ export default async function StudentDetailPage({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Hard navigation so browser-back from the edit page is also a full
-              reload, preventing the @drawer intercepting route from firing. */}
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-          <a href={`/admin/students/${student.id}/edit`} className="btn-ghost">
-            Edit
-          </a>
+          <StudentFormTrigger
+            mode="edit"
+            batches={formBatches}
+            initial={editInitial}
+            currentBatchCode={currentEnrollment?.batch.code ?? null}
+          />
           <Link href="/admin/students" className="btn-ghost">
             Back
           </Link>
