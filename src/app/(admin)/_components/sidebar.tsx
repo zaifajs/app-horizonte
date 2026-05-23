@@ -237,6 +237,19 @@ export function Sidebar({
           }
         />
         <NavItem
+          href="/admin/finance"
+          collapsed={collapsed}
+          icon={
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="6" width="20" height="12" rx="2" />
+              <path d="M2 10h20" />
+              <path d="M6 14h4" />
+              <path d="M18 14h.01" />
+            </svg>
+          }
+          label="Finance"
+        />
+        <NavItem
           href="/admin/messages/templates"
           collapsed={collapsed}
           icon={
