@@ -90,21 +90,23 @@ export function AttendanceForm({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card p-3">
-        <span className="text-xs uppercase tracking-wide text-muted-foreground mr-1">
+      <div className="rounded-lg border bg-card p-3 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-2">
+        <span className="text-xs uppercase tracking-wide text-muted-foreground sm:mr-1 block sm:inline">
           Mark all
         </span>
-        {OPTIONS.map((o) => (
-          <button
-            key={o.key}
-            type="button"
-            onClick={() => setAllTo(o.key)}
-            className={`text-xs px-2 py-1 rounded-full border ${o.cls}`}
-          >
-            {o.label}
-          </button>
-        ))}
-        <span className="ml-auto text-xs text-muted-foreground tabular-nums">
+        <div className="flex flex-wrap items-center gap-2">
+          {OPTIONS.map((o) => (
+            <button
+              key={o.key}
+              type="button"
+              onClick={() => setAllTo(o.key)}
+              className={`text-xs px-2 py-1 rounded-full border ${o.cls}`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+        <span className="block sm:ml-auto text-xs text-muted-foreground tabular-nums">
           {counts.PRESENT} present · {counts.LATE + counts.LEFT_EARLY} partial ·{" "}
           {counts.EXCUSED_ABSENCE + counts.UNEXCUSED_ABSENCE} absent
           {unmarked > 0 ? (
@@ -139,13 +141,35 @@ export function AttendanceForm({
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">
-          {savedAt ? `Saved at ${savedAt.toLocaleTimeString()}` : null}
-        </p>
-        <Button onClick={save} disabled={pending || unmarked > 0}>
-          {pending ? "Saving…" : "Save attendance"}
-        </Button>
+
+      {/* Save bar — sticky on mobile so the CTA stays reachable while
+          marking a long roster. */}
+      <div
+        className="sm:static sticky bottom-0 -mx-4 sm:mx-0 px-4 sm:px-0 py-3 sm:py-0 hair-t sm:border-t-0"
+        style={{
+          background: "rgba(11,14,20,0.92)",
+          backdropFilter: "saturate(140%) blur(8px)",
+          paddingBottom: `calc(0.75rem + env(safe-area-inset-bottom))`,
+        }}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">
+            {savedAt
+              ? `Saved at ${savedAt.toLocaleTimeString()}`
+              : unmarked > 0
+                ? `${unmarked} student${unmarked === 1 ? "" : "s"} still unmarked`
+                : null}
+          </p>
+          <button
+            type="button"
+            onClick={save}
+            disabled={pending || unmarked > 0}
+            className="btn-primary"
+            style={{ minHeight: 44 }}
+          >
+            {pending ? "Saving…" : "Save attendance"}
+          </button>
+        </div>
       </div>
     </div>
   );
