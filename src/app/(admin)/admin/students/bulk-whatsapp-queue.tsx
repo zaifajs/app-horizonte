@@ -179,7 +179,11 @@ export function BulkWhatsAppQueue({
             <Label htmlFor="bulk-tpl">Template</Label>
             <Select value={templateKey} onValueChange={(v) => v && (setTemplateKey(v as TemplateKey), reset())}>
               <SelectTrigger id="bulk-tpl">
-                <SelectValue />
+                <SelectValue>
+                  {(v: string) =>
+                    TEMPLATE_META[v as TemplateKey]?.label ?? "Select a template"
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {(Object.keys(TEMPLATE_META) as TemplateKey[]).map((k) => (

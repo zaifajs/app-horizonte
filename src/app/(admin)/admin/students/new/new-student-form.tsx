@@ -127,7 +127,17 @@ export function NewStudentForm({
           <Field label="Type" error={fieldErrors.docType} htmlFor="docType">
             <Select value={docType} onValueChange={(v) => v && setDocType(v as DocType)}>
               <SelectTrigger id="docType">
-                <SelectValue />
+                <SelectValue>
+                  {(v: string) =>
+                    v === "PASSPORT"
+                      ? "Passport"
+                      : v === "RESIDENCE_PERMIT"
+                      ? "Residence permit"
+                      : v === "ID_CARD"
+                      ? "ID card"
+                      : "Select document type"
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="PASSPORT">Passport</SelectItem>
@@ -193,7 +203,13 @@ export function NewStudentForm({
         >
           <Select value={batchId} onValueChange={(v) => v && setBatchId(v)}>
             <SelectTrigger id="batchId">
-              <SelectValue placeholder="No batch yet" />
+              <SelectValue placeholder="No batch yet">
+                {(v: string) => {
+                  if (v === UNASSIGNED) return "No batch yet";
+                  const b = batches.find((x) => x.id === v);
+                  return b ? b.label : "No batch yet";
+                }}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={UNASSIGNED}>No batch yet</SelectItem>

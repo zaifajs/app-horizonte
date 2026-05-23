@@ -155,7 +155,17 @@ export function RegisterForm({
           <Field label={t.fields.docType} htmlFor="docType" error={fieldErrors.docType}>
             <Select value={docType} onValueChange={(v) => v && setDocType(v as DocType)}>
               <SelectTrigger id="docType">
-                <SelectValue />
+                <SelectValue>
+                  {(v: string) =>
+                    v === "PASSPORT"
+                      ? t.docTypes.PASSPORT
+                      : v === "RESIDENCE_PERMIT"
+                      ? t.docTypes.RESIDENCE_PERMIT
+                      : v === "ID_CARD"
+                      ? t.docTypes.ID_CARD
+                      : ""
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="PASSPORT">{t.docTypes.PASSPORT}</SelectItem>
@@ -217,7 +227,13 @@ export function RegisterForm({
         >
           <Select value={batchId} onValueChange={(v) => v && setBatchId(v)}>
             <SelectTrigger id="batchId">
-              <SelectValue />
+              <SelectValue>
+                {(v: string) => {
+                  if (!v || v === UNASSIGNED) return "—";
+                  const b = batches.find((x) => x.id === v);
+                  return b ? b.label : "—";
+                }}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {batches.length === 0 ? (

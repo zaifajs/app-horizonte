@@ -83,7 +83,12 @@ export function NewBatchForm({
       >
         <Select value={courseId} onValueChange={(v) => v && setCourseId(v)}>
           <SelectTrigger id="courseId">
-            <SelectValue />
+            <SelectValue>
+              {(v: string) => {
+                const c = courses.find((x) => x.id === v);
+                return c ? `${c.code} — ${c.name}` : "Select a course";
+              }}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {courses.map((c) => (
@@ -187,7 +192,13 @@ export function NewBatchForm({
       >
         <Select value={trainerId} onValueChange={(v) => v && setTrainerId(v)}>
           <SelectTrigger id="trainerId">
-            <SelectValue placeholder="Unassigned" />
+            <SelectValue placeholder="Unassigned">
+              {(v: string) => {
+                if (v === UNASSIGNED) return "Unassigned";
+                const t = trainers.find((x) => x.id === v);
+                return t ? t.name : "Unassigned";
+              }}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={UNASSIGNED}>Unassigned</SelectItem>

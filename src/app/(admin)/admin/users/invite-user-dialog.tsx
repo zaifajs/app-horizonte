@@ -113,7 +113,17 @@ export function InviteUserDialog() {
               <Label htmlFor="invite-role">Role</Label>
               <Select value={role} onValueChange={(v) => v && setRole(v as Role)}>
                 <SelectTrigger id="invite-role">
-                  <SelectValue />
+                  <SelectValue>
+                    {(v: string) =>
+                      v === "ADMIN"
+                        ? "Admin — full access"
+                        : v === "STAFF"
+                        ? "Staff — everything except user management"
+                        : v === "TEACHER"
+                        ? "Teacher — own batches only"
+                        : ""
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ADMIN">Admin — full access</SelectItem>

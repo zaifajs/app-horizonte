@@ -61,7 +61,13 @@ export function TrainerAssign({
       <div className="mt-1 flex items-center gap-2">
         <Select value={selected} onValueChange={(v) => v && setSelected(v)}>
           <SelectTrigger className="h-8 text-sm">
-            <SelectValue placeholder="Unassigned" />
+            <SelectValue placeholder="Unassigned">
+              {(v: string) => {
+                if (v === UNASSIGNED) return "Unassigned";
+                const t = renderedTrainers.find((x) => x.id === v);
+                return t ? t.name : "Unassigned";
+              }}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={UNASSIGNED}>Unassigned</SelectItem>

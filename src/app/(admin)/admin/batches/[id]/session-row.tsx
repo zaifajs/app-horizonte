@@ -159,7 +159,15 @@ export function SessionRow({ session, isToday }: Props) {
                   onValueChange={(v) => v && setStatus(v as Status)}
                 >
                   <SelectTrigger id={`status-${session.id}`}>
-                    <SelectValue />
+                    <SelectValue>
+                      {(v: string) => {
+                        if (v === "SCHEDULED") return "Scheduled";
+                        if (v === "HELD") return isAutonomous ? "Completed" : "Held";
+                        if (v === "CANCELLED") return "Cancelled";
+                        if (v === "RESCHEDULED") return "Rescheduled";
+                        return "";
+                      }}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="SCHEDULED">Scheduled</SelectItem>
