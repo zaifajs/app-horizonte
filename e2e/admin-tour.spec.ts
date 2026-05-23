@@ -91,5 +91,43 @@ test.describe("Admin tour @admin", () => {
 
     await page.goto("/admin/users");
     await snap(page, "admin-13-users");
+
+    // ============ NEW SURFACES landed since the last tour ============
+
+    await page.goto("/admin/finance");
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await snap(page, "admin-14-finance");
+
+    await page.goto("/admin/exams");
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await snap(page, "admin-15-exams-index");
+
+    // Click into the first module exam (M1) to see the editor.
+    const firstExamLink = page
+      .locator('a[href^="/admin/exams/"]')
+      .first();
+    if (await firstExamLink.isVisible().catch(() => false)) {
+      const href = await firstExamLink.getAttribute("href");
+      if (href && href !== "/admin/exams") {
+        await page.goto(href);
+        await page.waitForLoadState("networkidle").catch(() => {});
+        await snap(page, "admin-16-exam-editor");
+      }
+    }
+
+    // Teacher detail — click into the first TEACHER row from /admin/users.
+    await page.goto("/admin/users");
+    await page.waitForLoadState("networkidle").catch(() => {});
+    const teacherLink = page
+      .locator('a[href^="/admin/users/"]')
+      .first();
+    if (await teacherLink.isVisible().catch(() => false)) {
+      const href = await teacherLink.getAttribute("href");
+      if (href) {
+        await page.goto(href);
+        await page.waitForLoadState("networkidle").catch(() => {});
+        await snap(page, "admin-17-teacher-detail");
+      }
+    }
   });
 });

@@ -63,6 +63,15 @@ export default defineConfig({
       },
       grep: /@mobile/,
     },
+    {
+      name: "student",
+      use: {
+        ...devices["Desktop Chrome"],
+        // No saved storageState — student tour logs in via the form using
+        // E2E_STUDENT_EMAIL / E2E_STUDENT_PASSWORD env vars each run.
+      },
+      grep: /@student/,
+    },
   ],
   outputDir: "test-results/",
 });
