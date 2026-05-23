@@ -176,15 +176,28 @@ function ExamRow({
           >
             Author exam
           </Link>
-        ) : canSchedule && !isEditing ? (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onStartEdit}
-          >
-            {row.scheduled ? "Reschedule" : "Schedule"}
-          </Button>
-        ) : null}
+        ) : (
+          <>
+            {row.scheduled ? (
+              <Link
+                href={`/teacher/exams/${row.scheduled.sessionId}/grade`}
+                className="btn-ghost text-xs"
+                title="Open the grading queue for this exam session"
+              >
+                Grade
+              </Link>
+            ) : null}
+            {canSchedule && !isEditing ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onStartEdit}
+              >
+                {row.scheduled ? "Reschedule" : "Schedule"}
+              </Button>
+            ) : null}
+          </>
+        )}
       </div>
 
       {isEditing ? (
