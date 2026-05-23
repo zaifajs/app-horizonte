@@ -83,3 +83,18 @@ export const gradeExamSubmissionSchema = z.object({
   ),
 });
 export type GradeExamSubmissionInput = z.input<typeof gradeExamSubmissionSchema>;
+
+// Used by P4 — student submits exam answers in one shot.
+export const submitExamAnswersSchema = z.object({
+  batchSessionId: z.string().uuid(),
+  answers: z.array(
+    z.object({
+      questionId: z.string().uuid(),
+      // For MC: chosen index. Null = blank.
+      answerIndex: z.number().int().nullable().optional(),
+      // For FILL / OPEN: typed string. Trimmed server-side.
+      answerText: z.string().max(5000).nullable().optional(),
+    }),
+  ),
+});
+export type SubmitExamAnswersInput = z.input<typeof submitExamAnswersSchema>;

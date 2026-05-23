@@ -9,9 +9,11 @@ import {
   examSaveSchema,
   scheduleExamSessionSchema,
   gradeExamSubmissionSchema,
+  submitExamAnswersSchema,
   type ExamSaveInput,
   type ScheduleExamSessionInput,
   type GradeExamSubmissionInput,
+  type SubmitExamAnswersInput,
 } from "@/lib/validators/exam";
 
 export type SaveExamResult =
@@ -391,5 +393,205 @@ export async function gradeExamSubmissionAction(
   } catch (err) {
     console.error("gradeExamSubmissionAction failed:", err);
     return { ok: false, error: "Something went wrong. Please try again." };
+  }
+}
+
+// =========================================================================
+// P4 — student submits their exam answers. Auto-grades MC + FILL in the
+// same transaction; OPEN answers are stored with pointsAwarded=null for the
+// teacher grading queue. One submission per (student, batchSession) — the
+// unique key on ExamSubmission prevents accidental duplicates if the form
+// is double-submitted.
+// =========================================================================
+
+export type SubmitExamAnswersResult =
+  | {
+      ok: true;
+      submissionId: string;
+      autoScore: number;
+      totalPoints: number;
+      pendingTeacherReview: boolean;
+    }
+  | { ok: false; error: string };
+
+export async function submitExamAnswersAction(
+  raw: SubmitExamAnswersInput,
+): Promise<SubmitExamAnswersResult> {
+  const user = await requireRole(["STUDENT"]);
+
+  const parsed = submitExamAnswersSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+  const input = parsed.data;
+
+  // Resolve the student record for the authed user — the take page also
+  // does this so a stale form posted from another account just bounces.
+  const student = await prisma.student.findUnique({
+    where: { userId: user.id },
+    select: { id: true },
+  });
+  if (!student) return { ok: false, error: "No student profile linked to this account." };
+
+  const session = await prisma.batchSession.findUnique({
+    where: { id: input.batchSessionId },
+    select: {
+      id: true,
+      kind: true,
+      examId: true,
+      batchId: true,
+      exam: {
+        select: {
+          id: true,
+          questions: {
+            orderBy: { position: "asc" },
+            select: {
+              id: true,
+              type: true,
+              points: true,
+              choices: true,
+              correctIndex: true,
+              acceptedAnswers: true,
+            },
+          },
+        },
+      },
+    },
+  });
+  if (!session || session.kind !== "EXAM" || !session.exam) {
+    return { ok: false, error: "Exam session not found." };
+  }
+
+  // Student must be enrolled in the batch this session belongs to.
+  const enrollment = await prisma.enrollment.findUnique({
+    where: {
+      studentId_batchId: { studentId: student.id, batchId: session.batchId },
+    },
+    select: { id: true, status: true },
+  });
+  if (!enrollment || (enrollment.status !== "ACTIVE" && enrollment.status !== "PENDING")) {
+    return { ok: false, error: "You're not enrolled in this batch." };
+  }
+
+  // Build a quick lookup from the incoming payload by questionId.
+  const incomingByQ = new Map(input.answers.map((a) => [a.questionId, a]));
+
+  // Auto-grade each MC + FILL question, accumulate the score. OPEN answers
+  // store pointsAwarded=null so the teacher grading queue picks them up.
+  let autoScore = 0;
+  let totalPoints = 0;
+  let hasOpen = false;
+
+  const answerRows: {
+    questionId: string;
+    answerIndex: number | null;
+    answerText: string | null;
+    pointsAwarded: number | null;
+  }[] = [];
+
+  for (const q of session.exam.questions) {
+    totalPoints += q.points;
+    const incoming = incomingByQ.get(q.id);
+    let answerIndex: number | null = null;
+    let answerText: string | null = null;
+    let pointsAwarded: number | null = null;
+
+    if (q.type === "MC") {
+      answerIndex = typeof incoming?.answerIndex === "number" ? incoming.answerIndex : null;
+      if (answerIndex !== null && answerIndex === q.correctIndex) {
+        pointsAwarded = q.points;
+        autoScore += q.points;
+      } else {
+        pointsAwarded = 0;
+      }
+    } else if (q.type === "FILL") {
+      answerText = (incoming?.answerText ?? "").trim();
+      const accepted = (q.acceptedAnswers as string[]) ?? [];
+      const norm = answerText.toLowerCase();
+      const matched =
+        norm.length > 0 && accepted.some((a) => a.toLowerCase() === norm);
+      if (matched) {
+        pointsAwarded = q.points;
+        autoScore += q.points;
+      } else {
+        pointsAwarded = 0;
+      }
+    } else {
+      // OPEN — stored verbatim, pointsAwarded stays null until teacher grades.
+      answerText = (incoming?.answerText ?? "").trim();
+      hasOpen = true;
+    }
+
+    answerRows.push({
+      questionId: q.id,
+      answerIndex,
+      answerText,
+      pointsAwarded,
+    });
+  }
+
+  try {
+    const submissionId = await prisma.$transaction(async (tx) => {
+      // Upsert submission by the (studentId, batchSessionId) unique key.
+      const sub = await tx.examSubmission.upsert({
+        where: {
+          studentId_batchSessionId: {
+            studentId: student.id,
+            batchSessionId: session.id,
+          },
+        },
+        create: {
+          studentId: student.id,
+          batchSessionId: session.id,
+          autoScore,
+          status: "SUBMITTED",
+          submittedAt: new Date(),
+        },
+        update: {
+          autoScore,
+          status: "SUBMITTED",
+          submittedAt: new Date(),
+          // Reset teacherScore on re-submit — admin can re-open if needed.
+          teacherScore: null,
+        },
+        select: { id: true },
+      });
+
+      // Replace existing answers. Cleaner than per-row upsert for v1; if
+      // students re-take we want a fresh slate.
+      await tx.examAnswer.deleteMany({ where: { submissionId: sub.id } });
+      await tx.examAnswer.createMany({
+        data: answerRows.map((a) => ({ submissionId: sub.id, ...a })),
+      });
+
+      await logChange({
+        tx,
+        action: "CREATE",
+        entityType: "ExamSubmission",
+        entityId: sub.id,
+        actorUserId: user.id,
+        studentId: student.id,
+        changes: {
+          autoScore,
+          totalPoints,
+          hasOpen,
+        } as Prisma.InputJsonValue,
+      });
+
+      return sub.id;
+    });
+
+    revalidatePath(`/student/exams/${session.id}/take`);
+    revalidatePath(`/student/exams/${session.id}/result`);
+    return {
+      ok: true,
+      submissionId,
+      autoScore,
+      totalPoints,
+      pendingTeacherReview: hasOpen,
+    };
+  } catch (err) {
+    console.error("submitExamAnswersAction failed:", err);
+    return { ok: false, error: "Couldn't save your submission. Please try again." };
   }
 }

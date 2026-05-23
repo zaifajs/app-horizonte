@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { format, startOfISOWeek, isSameDay, isBefore, startOfToday } from "date-fns";
+import { prisma } from "@/lib/db";
 import { loadStudentContext } from "@/lib/student/me";
 
 export const dynamic = "force-dynamic";
@@ -44,12 +46,32 @@ export default async function StudentSchedulePage() {
 
   const today = startOfToday();
   const batch = currentEnrollment.batch;
+  // Include EXAM kind alongside CLASSROOM. AUTONOMOUS (homework) blocks
+  // intentionally stay hidden — they're not "be somewhere at a time" events.
   const sessions = batch.sessions
-    .filter((s) => s.kind === "CLASSROOM")
+    .filter((s) => s.kind === "CLASSROOM" || s.kind === "EXAM")
     .sort((a, b) => a.scheduledDate.getTime() - b.scheduledDate.getTime());
 
   const attendanceById = new Map(
     currentEnrollment.attendances.map((a) => [a.sessionId, a.state] as const),
+  );
+
+  // Look up the student's exam submissions for the EXAM-kind sessions in
+  // this batch so each row can show "Take exam" vs "View result" vs nothing.
+  const examSessionIds = sessions
+    .filter((s) => s.kind === "EXAM")
+    .map((s) => s.id);
+  const submissions = examSessionIds.length
+    ? await prisma.examSubmission.findMany({
+        where: {
+          studentId: student.id,
+          batchSessionId: { in: examSessionIds },
+        },
+        select: { batchSessionId: true, status: true },
+      })
+    : [];
+  const submissionStatusBySession = new Map(
+    submissions.map((s) => [s.batchSessionId, s.status] as const),
   );
 
   // Group by ISO week.
@@ -130,12 +152,50 @@ export default async function StudentSchedulePage() {
                         M{s.module.number}
                       </span>
                       <span className="ml-2">{s.module.name}</span>
+                      {s.kind === "EXAM" ? (
+                        <span
+                          className="chip chip-primary ml-2"
+                          style={{ fontSize: "10px" }}
+                        >
+                          EXAM
+                        </span>
+                      ) : null}
                     </div>
                   </div>
 
                   <span className={`chip ${statusMeta.className}`}>{statusMeta.label}</span>
 
-                  {attMeta ? (
+                  {s.kind === "EXAM" ? (
+                    (() => {
+                      const subStatus = submissionStatusBySession.get(s.id);
+                      // SUBMITTED / GRADED → "View result". Available
+                      // (today or past) and not yet submitted → "Take exam".
+                      // Future-dated → no CTA (the date label already says
+                      // when).
+                      if (subStatus === "SUBMITTED" || subStatus === "GRADED") {
+                        return (
+                          <Link
+                            href={`/student/exams/${s.id}/result`}
+                            className="btn-ghost text-xs"
+                          >
+                            View result
+                          </Link>
+                        );
+                      }
+                      const isAvailable = !isBefore(today, s.scheduledDate);
+                      if (isAvailable) {
+                        return (
+                          <Link
+                            href={`/student/exams/${s.id}/take`}
+                            className="btn-primary text-xs"
+                          >
+                            Take exam
+                          </Link>
+                        );
+                      }
+                      return null;
+                    })()
+                  ) : attMeta ? (
                     <span className={`chip ${attMeta.className}`}>{attMeta.label}</span>
                   ) : showAttPlaceholder ? (
                     <span className="chip chip-outline">—</span>
