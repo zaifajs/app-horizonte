@@ -52,8 +52,12 @@ export function LoginForm() {
     const supabase = createSupabaseBrowserClient();
     // Supabase emails the user a link that lands here; after they click it
     // they're authenticated and can change their password.
+    // redirectTo: /auth/set-password lets the user pick a new password.
+    // It already handles both implicit (hash tokens) and PKCE (code query)
+    // flows for the existing invite path, so recovery reuses it. /login
+    // would redirect authed users away before they could set a new password.
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/login`,
+      redirectTo: `${window.location.origin}/auth/set-password?mode=recovery`,
     });
     setPending(false);
     if (error) {

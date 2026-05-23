@@ -4,7 +4,17 @@ export const metadata = {
   title: "Set your password · Horizonte CRM",
 };
 
-export default function SetPasswordPage() {
+// Used for both first-time invite-set-password AND password recovery. The
+// `?mode=recovery` query param (set by /login's "Forgot password?" flow)
+// flips the heading copy so it reads correctly in either case.
+
+export default async function SetPasswordPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mode?: string }>;
+}) {
+  const { mode } = await searchParams;
+  const isRecovery = mode === "recovery";
   return (
     <main
       className="min-h-screen flex items-center justify-center px-4"
@@ -43,11 +53,15 @@ export default function SetPasswordPage() {
               className="text-xs hz-mono uppercase tracking-[.18em]"
               style={{ color: "var(--hz-ink-3)" }}
             >
-              First-time setup
+              {isRecovery ? "Recovery" : "First-time setup"}
             </div>
-            <h1 className="font-display text-2xl font-medium mt-1">Set your password</h1>
+            <h1 className="font-display text-2xl font-medium mt-1">
+              {isRecovery ? "Set a new password" : "Set your password"}
+            </h1>
             <p className="mt-1.5 hz-mono text-xs" style={{ color: "var(--hz-ink-3)" }}>
-              Pick a password to finish setting up your account.
+              {isRecovery
+                ? "Choose a new password for your account."
+                : "Pick a password to finish setting up your account."}
             </p>
           </div>
           <SetPasswordForm />
