@@ -11,8 +11,9 @@ import {
 import { prisma } from "@/lib/db";
 import { ScheduleTable } from "./schedule-table";
 import { ScheduleCalendar } from "./schedule-calendar";
-import { SessionRow } from "./session-row";
 import { TrainerAssign } from "./trainer-assign";
+import { ModuleSection } from "./module-section";
+import { EditBatchTrigger } from "./edit-batch-trigger";
 
 export const dynamic = "force-dynamic";
 
@@ -95,33 +96,27 @@ export default async function BatchDetailPage({
   const totalHoursLogged = classroomSessions
     .filter((s) => s.status === "HELD")
     .reduce((a, s) => a + s.hours, 0);
-  const autonomousBlocks = batch.sessions.filter((s) => s.kind === "AUTONOMOUS");
-  const autonomousDone = autonomousBlocks.filter((s) => s.status === "HELD").length;
   const enrolledPct = Math.min(
     100,
     Math.round((batch._count.enrollments / Math.max(1, batch.capacity)) * 100),
   );
-  const heldPct = Math.min(
+  const sessionsPct = Math.min(
     100,
     Math.round((heldClassroom / Math.max(1, classroomSessions.length)) * 100),
-  );
-  const autoPct = Math.min(
-    100,
-    Math.round((autonomousDone / Math.max(1, autonomousBlocks.length)) * 100),
   );
   const startedDays = differenceInCalendarDays(today, batch.startDate);
   const startsSubtitle =
     startedDays === 0
-      ? "today"
+      ? "starts today"
       : startedDays > 0
-        ? `${startedDays} ${startedDays === 1 ? "day" : "days"} ago`
-        : `in ${Math.abs(startedDays)} days`;
+        ? `started ${startedDays} ${startedDays === 1 ? "day" : "days"} ago`
+        : `starts in ${Math.abs(startedDays)} days`;
   const endsSubtitle = lastClassroomDate
     ? (() => {
         const d = differenceInCalendarDays(lastClassroomDate, today);
-        return d === 0 ? "today" : d > 0 ? `in ${d} days` : `${Math.abs(d)} days ago`;
+        return d === 0 ? "ends today" : d > 0 ? `ends in ${d} days` : `ended ${Math.abs(d)} days ago`;
       })()
-    : "—";
+    : "no end date yet";
 
   const runtimeStatus: "ACTIVE" | "UPCOMING" | "FINISHED" =
     batch.status === "FINISHED" || batch.status === "CANCELLED"
@@ -134,6 +129,22 @@ export default async function BatchDetailPage({
     UPCOMING: { color: "var(--hz-warning)", label: "Upcoming" },
     FINISHED: { color: "var(--hz-ink-3)", label: "Finished" },
   }[runtimeStatus];
+
+  const editInitial = {
+    id: batch.id,
+    code: batch.code,
+    startDate: batch.startDate.toISOString().slice(0, 10),
+    startTime: batch.startTime,
+    durationHours: batch.durationHours,
+    capacity: batch.capacity,
+    status: batch.status,
+  };
+
+  // Auto-expand the in-progress module + today's module (if different) so the
+  // common case is no clicks. Anything else stays collapsed.
+  const todaysModuleNumber = sessionToday?.module.number ?? null;
+  const inProgressModuleNumber =
+    byModule.find((m) => m.status === "IN_PROGRESS")?.mod.number ?? null;
 
   return (
     <div className="space-y-6">
@@ -165,31 +176,28 @@ export default async function BatchDetailPage({
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
-          <Link
-            href={`/api/students/export?batch=${encodeURIComponent(batch.code)}&status=ACTIVE&sort=name&dir=asc`}
-            className="btn-ghost"
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Export roster
-          </Link>
+          <EditBatchTrigger initial={editInitial} />
           <Link
             href={`/admin/students?batch=${encodeURIComponent(batch.code)}`}
             className="btn-ghost"
+            title="Open the roster filtered to this batch"
           >
             Roster
           </Link>
           <Link href={`/admin/batches/${batch.id}/attendance`} className="btn-ghost">
             Attendance
           </Link>
-          <Link href={`/admin/batches/${batch.id}?view=calendar`} className="btn-ghost">
-            Calendar
-          </Link>
-          <Link href={`/admin/batches/${batch.id}?view=table`} className="btn-ghost">
-            Compact
+          <Link
+            href={`/api/students/export?batch=${encodeURIComponent(batch.code)}&status=ACTIVE&sort=name&dir=asc`}
+            className="btn-ghost"
+            title="Export the active roster as CSV"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Export
           </Link>
         </div>
       </section>
@@ -257,169 +265,85 @@ export default async function BatchDetailPage({
         </section>
       ) : null}
 
-      {/* Stats grid */}
+      {/* Stats grid — trimmed to 4 tiles. Trainer pulled out into its own
+          row below so the grid is purely informational. */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatTile label="Starts" value={format(batch.startDate, "yyyy-MM-dd")} sub={startsSubtitle} />
         <StatTile
-          label="Ends (est.)"
-          value={lastClassroomDate ? format(lastClassroomDate, "yyyy-MM-dd") : "—"}
-          sub={endsSubtitle}
+          label="Schedule"
+          value={`${format(batch.startDate, "MMM dd")}${lastClassroomDate ? ` – ${format(lastClassroomDate, "MMM dd")}` : ""}`}
+          sub={`${startsSubtitle} · ${endsSubtitle}`}
         />
         <StatTile
           label="Time"
           value={`${batch.startTime} – ${addHours(batch.startTime, batch.durationHours)}`}
           sub={`${batch.durationHours}h / day`}
         />
-        <div className="hz-card p-3">
-          <div
-            className="text-xs hz-mono uppercase tracking-[.16em]"
-            style={{ color: "var(--hz-ink-3)" }}
-          >
-            Trainer
+        <StatTile
+          label="Enrolment"
+          value={`${batch._count.enrollments} / ${batch.capacity}`}
+          sub={`${enrolledPct}% full`}
+          progress={{ pct: enrolledPct, color: "var(--hz-primary)" }}
+        />
+        <StatTile
+          label="Progress"
+          value={`${heldClassroom} / ${classroomSessions.length}`}
+          sub={`${totalHoursLogged} / ${totalHoursPlanned}h held`}
+          progress={{ pct: sessionsPct, color: "var(--hz-success)" }}
+        />
+      </section>
+
+      {/* Trainer — pulled out of the stats grid so the dropdown sits on
+          its own row instead of breaking the "tile = facts" pattern. */}
+      <section className="hz-card p-3 flex items-center gap-3 flex-wrap">
+        <span
+          className="text-xs hz-mono uppercase tracking-[.16em]"
+          style={{ color: "var(--hz-ink-3)" }}
+        >
+          Trainer
+        </span>
+        <TrainerAssign
+          batchId={batch.id}
+          currentTrainerId={batch.trainer?.id ?? null}
+          trainers={
+            batch.trainer && !trainers.some((t) => t.id === batch.trainer!.id)
+              ? [{ id: batch.trainer.id, name: `${batch.trainer.name} (inactive)` }, ...trainers]
+              : trainers
+          }
+        />
+      </section>
+
+      {/* Cronograma — view switcher + collapsible modules */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <h2 className="section-title">Cronograma · {batch.course.modules.length} modules</h2>
+          <div className="seg">
+            <ViewLink batchId={batch.id} view="journey" active>Journey</ViewLink>
+            <ViewLink batchId={batch.id} view="calendar">Calendar</ViewLink>
+            <ViewLink batchId={batch.id} view="table">Compact</ViewLink>
           </div>
-          <div className="mt-2">
-            <TrainerAssign
-              batchId={batch.id}
-              currentTrainerId={batch.trainer?.id ?? null}
-              trainers={
-                batch.trainer && !trainers.some((t) => t.id === batch.trainer!.id)
-                  ? [{ id: batch.trainer.id, name: `${batch.trainer.name} (inactive)` }, ...trainers]
-                  : trainers
+        </div>
+
+        <div className="space-y-3">
+          {byModule.map((m) => (
+            <ModuleSection
+              key={m.mod.id}
+              number={m.mod.number}
+              name={m.mod.name}
+              status={m.status}
+              first={m.first}
+              last={m.last}
+              hoursLogged={m.hoursLogged}
+              hoursPlanned={m.hoursPlanned}
+              classroom={m.classroom}
+              autonomous={m.autonomous[0] ?? null}
+              today={today}
+              defaultOpen={
+                m.mod.number === inProgressModuleNumber ||
+                m.mod.number === todaysModuleNumber
               }
             />
-          </div>
+          ))}
         </div>
-
-        <StatTile label="Capacity" value={String(batch.capacity)} sub="seats configured" />
-        <div
-          className="hz-card p-3"
-          style={{
-            borderColor: "rgba(182,255,60,0.25)",
-            background: "var(--hz-primary-50)",
-          }}
-        >
-          <div
-            className="text-xs hz-mono uppercase tracking-[.16em]"
-            style={{ color: "var(--hz-primary)" }}
-          >
-            Enrolled
-          </div>
-          <div className="flex items-baseline gap-1.5 mt-1">
-            <span className="stat-num text-3xl" style={{ color: "var(--hz-ink)" }}>
-              {batch._count.enrollments}
-            </span>
-            <span className="hz-mono text-sm" style={{ color: "var(--hz-ink-3)" }}>
-              / {batch.capacity}
-            </span>
-          </div>
-          <div className="pbar mt-2">
-            <span style={{ width: `${enrolledPct}%`, background: "var(--hz-primary)" }} />
-          </div>
-        </div>
-        <StatTile
-          label="Classroom sessions"
-          value={String(heldClassroom)}
-          sub={`/ ${classroomSessions.length} held · ${totalHoursLogged}/${totalHoursPlanned}h`}
-          progress={{ pct: heldPct, color: "var(--hz-success)" }}
-        />
-        <StatTile
-          label="Autonomous blocks"
-          value={String(autonomousDone)}
-          sub={`/ ${autonomousBlocks.length} done`}
-          progress={{ pct: autoPct, color: "var(--hz-info)" }}
-        />
-      </section>
-
-      {/* Modules timeline */}
-      <section className="space-y-3">
-        <div className="flex items-baseline gap-3">
-          <h2 className="section-title">Cronograma · {batch.course.modules.length} modules</h2>
-          <div style={{ flex: 1, height: 1, background: "var(--hz-line)" }} />
-          <span className="hz-mono text-xs" style={{ color: "var(--hz-ink-3)" }}>
-            {totalHoursLogged} / {totalHoursPlanned} hours logged
-          </span>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {byModule.map((m) => {
-            const tone =
-              m.status === "DONE"
-                ? "var(--hz-success)"
-                : m.status === "IN_PROGRESS"
-                  ? "var(--hz-primary)"
-                  : "var(--hz-ink-3)";
-            const pct =
-              m.hoursPlanned > 0
-                ? Math.round((m.hoursLogged / m.hoursPlanned) * 100)
-                : 0;
-            return (
-              <a
-                key={m.mod.id}
-                href={`#module-${m.mod.number}`}
-                className="hz-card p-3 flex flex-col gap-2 transition"
-                style={{
-                  borderColor:
-                    m.status === "IN_PROGRESS" ? "var(--hz-primary)" : "var(--hz-line)",
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <span
-                    className="hz-mono text-xs font-semibold"
-                    style={{ color: tone, letterSpacing: "0.16em" }}
-                  >
-                    MODULE {m.mod.number}
-                  </span>
-                  <span className="status-pill" style={{ color: tone, fontSize: "0.6875rem" }}>
-                    {m.status === "DONE"
-                      ? "Done"
-                      : m.status === "IN_PROGRESS"
-                        ? "Active"
-                        : "Upcoming"}
-                  </span>
-                </div>
-                <div
-                  className="font-medium text-sm leading-snug"
-                  style={{
-                    color: m.status === "UPCOMING" ? "var(--hz-ink-2)" : "var(--hz-ink)",
-                  }}
-                >
-                  {m.mod.name}
-                </div>
-                <div className="text-xs hz-mono" style={{ color: "var(--hz-ink-3)" }}>
-                  {m.first && m.last
-                    ? `${format(m.first, "MMM dd")} – ${format(m.last, "MMM dd")}`
-                    : "Dates pending"}
-                </div>
-                <div className="pbar mt-auto">
-                  <span style={{ width: `${pct}%`, background: tone }} />
-                </div>
-                <div
-                  className="flex items-center justify-between text-xs hz-mono"
-                  style={{ color: "var(--hz-ink-3)" }}
-                >
-                  <span>
-                    {m.hoursLogged} / {m.hoursPlanned} h
-                  </span>
-                  <span style={{ color: tone }}>{pct > 0 ? `${pct}%` : "—"}</span>
-                </div>
-              </a>
-            );
-          })}
-        </div>
-      </section>
-
-      <div style={{ height: 1, background: "var(--hz-line)" }} />
-
-      <section className="space-y-8">
-        {byModule.map((m) => (
-          <ModuleDetail
-            key={m.mod.id}
-            number={m.mod.number}
-            name={m.mod.name}
-            classroom={m.classroom}
-            autonomous={m.autonomous[0] ?? null}
-            today={today}
-          />
-        ))}
       </section>
     </div>
   );
@@ -448,9 +372,12 @@ function StatTile({
         className="mt-1 stat-num"
         style={{
           color: "var(--hz-ink)",
-          fontSize: value.length > 10 ? "1.125rem" : "1.875rem",
+          // Long string values (date ranges, time spans) get a smaller mono
+          // font so they fit; short labels stay big-display.
+          fontSize: value.length > 12 ? "0.95rem" : "1.5rem",
           fontFamily:
-            value.length > 10 ? "var(--font-mono)" : "var(--font-display)",
+            value.length > 12 ? "var(--font-mono)" : "var(--font-display)",
+          lineHeight: 1.15,
         }}
       >
         {value}
@@ -469,68 +396,25 @@ function StatTile({
   );
 }
 
-type SessionForRow = {
-  id: string;
-  scheduledDate: Date;
-  startTime: string | null;
-  endTime: string | null;
-  sequenceInModule: number;
-  status: "SCHEDULED" | "HELD" | "CANCELLED" | "RESCHEDULED";
-  hours: number;
-  notes: string | null;
-};
-
-function ModuleDetail({
-  number,
-  name,
-  classroom,
-  autonomous,
-  today,
+function ViewLink({
+  batchId,
+  view,
+  active,
+  children,
 }: {
-  number: number;
-  name: string;
-  classroom: SessionForRow[];
-  autonomous: SessionForRow | null;
-  today: Date;
+  batchId: string;
+  view: "journey" | "calendar" | "table";
+  active?: boolean;
+  children: React.ReactNode;
 }) {
+  const href =
+    view === "journey"
+      ? `/admin/batches/${batchId}`
+      : `/admin/batches/${batchId}?view=${view}`;
   return (
-    <div id={`module-${number}`} className="scroll-mt-20 space-y-3">
-      <div className="flex items-center gap-3">
-        <span className="text-xs font-semibold text-muted-foreground">
-          MODULE {number}
-        </span>
-        <h3 className="text-base font-semibold tracking-tight">{name}</h3>
-      </div>
-      <div className="hz-card overflow-hidden">
-        <table className="w-full text-sm">
-          <thead style={{ background: "var(--hz-surface-2)" }}>
-            <tr>
-              <th className="text-left px-3 py-2 w-12 hz-mono uppercase tracking-[.14em]" style={{ color: "var(--hz-ink-3)", fontSize: "0.75rem" }}>#</th>
-              <th className="text-left px-3 py-2 hz-mono uppercase tracking-[.14em]" style={{ color: "var(--hz-ink-3)", fontSize: "0.75rem" }}>Date</th>
-              <th className="text-left px-3 py-2 hz-mono uppercase tracking-[.14em]" style={{ color: "var(--hz-ink-3)", fontSize: "0.75rem" }}>Time</th>
-              <th className="text-left px-3 py-2 hz-mono uppercase tracking-[.14em]" style={{ color: "var(--hz-ink-3)", fontSize: "0.75rem" }}>Hours</th>
-              <th className="text-left px-3 py-2 hz-mono uppercase tracking-[.14em]" style={{ color: "var(--hz-ink-3)", fontSize: "0.75rem" }}>Status</th>
-              <th className="text-right px-3 py-2 w-20"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {classroom.map((s) => (
-              <SessionRow
-                key={s.id}
-                session={{ ...s, kind: "CLASSROOM" }}
-                isToday={isSameDay(s.scheduledDate, today)}
-              />
-            ))}
-            {autonomous ? (
-              <SessionRow
-                session={{ ...autonomous, kind: "AUTONOMOUS" }}
-                isToday={isSameDay(autonomous.scheduledDate, today)}
-              />
-            ) : null}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <Link href={href} className={active ? "on" : ""}>
+      {children}
+    </Link>
   );
 }
 

@@ -6,7 +6,12 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 import { logChange } from "@/lib/audit";
-import { batchCreateSchema, type BatchCreateInput } from "@/lib/validators/batch";
+import {
+  batchCreateSchema,
+  batchUpdateSchema,
+  type BatchCreateInput,
+  type BatchUpdateInput,
+} from "@/lib/validators/batch";
 import { generateSessions } from "@/lib/cronograma/generate";
 
 export type CreateBatchResult =
@@ -195,6 +200,100 @@ export async function assignBatchTrainerAction(
     return { ok: true, trainerId };
   } catch (err) {
     console.error("assignBatchTrainerAction failed:", err);
+    return { ok: false, error: "Something went wrong. Please try again." };
+  }
+}
+
+export type UpdateBatchResult =
+  | { ok: true; id: string }
+  | { ok: false; error: string; fieldErrors?: Record<string, string> };
+
+// Edit existing batch metadata. Schedule date/time changes DO NOT cascade to
+// already-generated sessions — those are mutable per-session via the
+// teacher/admin attendance flow. Reflecting that here keeps the action
+// scope narrow and avoids surprise mass-edits.
+export async function updateBatchAction(
+  raw: BatchUpdateInput,
+): Promise<UpdateBatchResult> {
+  const user = await requireRole(["ADMIN", "STAFF"]);
+
+  const parsed = batchUpdateSchema.safeParse(raw);
+  if (!parsed.success) {
+    const fieldErrors: Record<string, string> = {};
+    for (const issue of parsed.error.issues) {
+      const key = issue.path.join(".");
+      fieldErrors[key] ||= issue.message;
+    }
+    return { ok: false, error: "Please fix the highlighted fields.", fieldErrors };
+  }
+  const input = parsed.data;
+
+  const existing = await prisma.batch.findUnique({
+    where: { id: input.id },
+    select: {
+      code: true,
+      startDate: true,
+      startTime: true,
+      durationHours: true,
+      capacity: true,
+      status: true,
+    },
+  });
+  if (!existing) return { ok: false, error: "Batch not found." };
+
+  const nextStartDate = new Date(`${input.startDate}T00:00:00.000Z`);
+  const changes: Record<string, { from: unknown; to: unknown }> = {};
+  if (existing.code !== input.code) changes.code = { from: existing.code, to: input.code };
+  if (existing.startDate.toISOString().slice(0, 10) !== input.startDate)
+    changes.startDate = { from: existing.startDate.toISOString().slice(0, 10), to: input.startDate };
+  if (existing.startTime !== input.startTime)
+    changes.startTime = { from: existing.startTime, to: input.startTime };
+  if (existing.durationHours !== input.durationHours)
+    changes.durationHours = { from: existing.durationHours, to: input.durationHours };
+  if (existing.capacity !== input.capacity)
+    changes.capacity = { from: existing.capacity, to: input.capacity };
+  if (existing.status !== input.status)
+    changes.status = { from: existing.status, to: input.status };
+
+  if (Object.keys(changes).length === 0) {
+    return { ok: true, id: input.id };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.batch.update({
+        where: { id: input.id },
+        data: {
+          code: input.code,
+          startDate: nextStartDate,
+          startTime: input.startTime,
+          durationHours: input.durationHours,
+          capacity: input.capacity,
+          status: input.status,
+        },
+      });
+      await logChange({
+        tx,
+        action: "UPDATE",
+        entityType: "Batch",
+        entityId: input.id,
+        actorUserId: user.id,
+        changes: changes as Prisma.InputJsonValue,
+      });
+    });
+
+    revalidatePath(`/admin/batches/${input.id}`);
+    revalidatePath("/admin/batches");
+    return { ok: true, id: input.id };
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return {
+        ok: false,
+        error: "A batch with that code already exists.",
+        fieldErrors: { code: "Already in use." },
+      };
+    }
+    console.error("updateBatchAction failed:", err);
     return { ok: false, error: "Something went wrong. Please try again." };
   }
 }
