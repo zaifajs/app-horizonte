@@ -64,18 +64,18 @@ export const EMAIL_SUBJECTS: Record<TemplateKey, Bodies> = {
 
 export const TEMPLATES: Record<TemplateKey, Bodies> = {
   welcome: {
-    en: "Hello {{name}}, welcome to Novo Horizonte! Your registration for batch {{batch}} is confirmed. First class: {{startDate}} at 14:00. Reply here if you have any question.",
-    pt: "Olá {{name}}, bem-vindo à Novo Horizonte! A sua inscrição para a turma {{batch}} foi confirmada. Primeira aula: {{startDate}} às 14:00. Responda aqui se tiver alguma dúvida.",
-    bn: "হ্যালো {{name}}, Novo Horizonte-এ স্বাগতম! {{batch}} ব্যাচের জন্য আপনার নিবন্ধন নিশ্চিত হয়েছে। প্রথম ক্লাস: {{startDate}} বিকাল ২টায়। কোনো প্রশ্ন থাকলে এখানেই উত্তর দিন।",
-    ur: "ہیلو {{name}}، Novo Horizonte میں خوش آمدید! {{batch}} بیچ کے لیے آپ کا اندراج کنفرم ہو گیا ہے۔ پہلی کلاس: {{startDate}} دوپہر ۲ بجے۔ کوئی سوال ہو تو یہاں جواب دیں۔",
-    hi: "नमस्ते {{name}}, Novo Horizonte में आपका स्वागत है! {{batch}} बैच के लिए आपका पंजीकरण पुष्ट हो गया है। पहली कक्षा: {{startDate}} दोपहर 2 बजे। कोई प्रश्न हो तो यहीं उत्तर दें।",
+    en: "Hello {{name}},\n\nWelcome to Novo Horizonte! Your registration for batch {{batch}} is confirmed. First class: {{startDate}} at 14:00.\n\nReply here if you have any question.\n\n— Novo Horizonte",
+    pt: "Olá {{name}},\n\nBem-vindo à Novo Horizonte! A sua inscrição para a turma {{batch}} foi confirmada. Primeira aula: {{startDate}} às 14:00.\n\nResponda aqui se tiver alguma dúvida.\n\n— Novo Horizonte",
+    bn: "হ্যালো {{name}},\n\nNovo Horizonte-এ স্বাগতম! {{batch}} ব্যাচের জন্য আপনার নিবন্ধন নিশ্চিত হয়েছে। প্রথম ক্লাস: {{startDate}} বিকাল ২টায়।\n\nকোনো প্রশ্ন থাকলে এখানেই উত্তর দিন।\n\n— Novo Horizonte",
+    ur: "ہیلو {{name}}،\n\nNovo Horizonte میں خوش آمدید! {{batch}} بیچ کے لیے آپ کا اندراج کنفرم ہو گیا ہے۔ پہلی کلاس: {{startDate}} دوپہر ۲ بجے۔\n\nکوئی سوال ہو تو یہاں جواب دیں۔\n\n— Novo Horizonte",
+    hi: "नमस्ते {{name}},\n\nNovo Horizonte में आपका स्वागत है! {{batch}} बैच के लिए आपका पंजीकरण पुष्ट हो गया है। पहली कक्षा: {{startDate}} दोपहर 2 बजे।\n\nकोई प्रश्न हो तो यहीं उत्तर दें।\n\n— Novo Horizonte",
   },
   payment_reminder: {
-    en: "Hello {{name}}, friendly reminder that {{dueAmount}} is still due for batch {{batch}}. Please complete the payment to keep your enrolment active. Thank you.",
-    pt: "Olá {{name}}, um lembrete de que ainda há {{dueAmount}} em dívida para a turma {{batch}}. Por favor conclua o pagamento para manter a sua inscrição ativa. Obrigado.",
-    bn: "হ্যালো {{name}}, {{batch}} ব্যাচের জন্য {{dueAmount}} এখনও বাকি আছে। আপনার নিবন্ধন সক্রিয় রাখতে অনুগ্রহ করে পেমেন্ট সম্পূর্ণ করুন। ধন্যবাদ।",
-    ur: "ہیلو {{name}}، {{batch}} بیچ کے لیے ابھی بھی {{dueAmount}} باقی ہے۔ اپنے اندراج کو فعال رکھنے کے لیے براہ کرم ادائیگی مکمل کریں۔ شکریہ۔",
-    hi: "नमस्ते {{name}}, {{batch}} बैच के लिए अभी भी {{dueAmount}} बकाया है। अपना नामांकन सक्रिय रखने के लिए कृपया भुगतान पूरा करें। धन्यवाद।",
+    en: "Hello {{name}},\n\nFriendly reminder that {{dueAmount}} is still due for batch {{batch}}. Please complete the payment to keep your enrolment active.\n\nThank you,\nNovo Horizonte",
+    pt: "Olá {{name}},\n\nUm lembrete de que ainda há {{dueAmount}} em dívida para a turma {{batch}}. Por favor conclua o pagamento para manter a sua inscrição ativa.\n\nObrigado,\nNovo Horizonte",
+    bn: "হ্যালো {{name}},\n\n{{batch}} ব্যাচের জন্য {{dueAmount}} এখনও বাকি আছে। আপনার নিবন্ধন সক্রিয় রাখতে অনুগ্রহ করে পেমেন্ট সম্পূর্ণ করুন।\n\nধন্যবাদ,\nNovo Horizonte",
+    ur: "ہیلو {{name}}،\n\n{{batch}} بیچ کے لیے ابھی بھی {{dueAmount}} باقی ہے۔ اپنے اندراج کو فعال رکھنے کے لیے براہ کرم ادائیگی مکمل کریں۔\n\nشکریہ،\nNovo Horizonte",
+    hi: "नमस्ते {{name}},\n\n{{batch}} बैच के लिए अभी भी {{dueAmount}} बकाया है। अपना नामांकन सक्रिय रखने के लिए कृपया भुगतान पूरा करें।\n\nधन्यवाद,\nNovo Horizonte",
   },
   class_reminder: {
     en: "Hello {{name}}, quick reminder: next class is {{nextSessionDate}} at 14:00, batch {{batch}}. See you there!",

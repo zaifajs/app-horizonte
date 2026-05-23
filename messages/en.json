@@ -71,5 +71,8 @@
       "body": "Thank you. We have received your registration and will contact you on WhatsApp with payment instructions and next steps.",
       "again": "Register another student"
     }
+  },
+  "turma": {
+    "downloadPdf": "Print / Save as PDF"
   }
 }

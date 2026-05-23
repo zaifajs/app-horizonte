@@ -83,7 +83,8 @@ export function Sidebar({
         type="button"
         onClick={() => setCollapsed((c) => !c)}
         aria-label="Toggle sidebar"
-        title="Toggle sidebar"
+        title="Toggle sidebar (press [ or ])"
+        aria-keyshortcuts="["
         className="hz-sb-toggle"
         style={{
           position: "absolute",

@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { ScheduleTable } from "@/app/(admin)/admin/batches/[id]/schedule-table";
+import { PrintButton } from "./print-button";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +14,7 @@ export default async function PublicBatchSchedulePage({
 }: {
   params: Promise<{ locale: string; id: string }>;
 }) {
-  const { id } = await params;
+  const { id, locale } = await params;
   const batch = await prisma.batch.findUnique({
     where: { id },
     include: {
@@ -26,8 +28,13 @@ export default async function PublicBatchSchedulePage({
   });
   if (!batch) notFound();
 
+  const t = await getTranslations({ locale, namespace: "turma" });
+
   return (
-    <section className="mx-auto max-w-3xl px-4 py-8">
+    <section className="mx-auto max-w-3xl px-4 py-8 print:py-0 print:px-0 print:max-w-none">
+      <div className="flex items-center justify-end mb-3 print:hidden">
+        <PrintButton label={t("downloadPdf")} />
+      </div>
       <ScheduleTable batch={batch} isPrint={false} />
     </section>
   );
