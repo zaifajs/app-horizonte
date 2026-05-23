@@ -211,23 +211,7 @@ export default async function StudentsPage({
         </div>
       </section>
 
-      {/* Status + payment segmented strips */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="seg">
-          <StatusSegLink filters={filters} status="">All <span className="ct">{totalRows}</span></StatusSegLink>
-          <StatusSegLink filters={filters} status="ACTIVE">Active <span className="ct">{statusCounts.ACTIVE}</span></StatusSegLink>
-          <StatusSegLink filters={filters} status="PENDING">Pending <span className="ct">{statusCounts.PENDING}</span></StatusSegLink>
-          <StatusSegLink filters={filters} status="WITHDRAWN">Withdrawn <span className="ct">{statusCounts.WITHDRAWN}</span></StatusSegLink>
-          <StatusSegLink filters={filters} status="COMPLETED">Completed <span className="ct">{statusCounts.COMPLETED}</span></StatusSegLink>
-        </div>
-        <div className="seg ml-auto">
-          <UrgencySegLink filters={filters} urgency="paid" color="var(--hz-success)" label="Paid" count={urgencyCounts.paid} />
-          <UrgencySegLink filters={filters} urgency="partial" color="var(--hz-warning)" label="Partial" count={urgencyCounts.partial} />
-          <UrgencySegLink filters={filters} urgency="due_soon" color="var(--hz-accent)" label="Due soon" count={urgencyCounts.due_soon} />
-          <UrgencySegLink filters={filters} urgency="overdue" color="var(--hz-danger)" label="Overdue" count={urgencyCounts.overdue} />
-        </div>
-      </div>
-
+      {/* Search row comes first — easiest to find immediately on first visit. */}
       <StudentsFilters
         batches={batches}
         initial={{
@@ -239,6 +223,40 @@ export default async function StudentsPage({
           paidTo: filters.paidTo ?? "",
         }}
       />
+
+      {/* Status + payment segmented strips. Two strips intentionally separate:
+          enrollment status (lifecycle) vs payment urgency (do they owe us). */}
+      <div className="flex items-start gap-3 flex-wrap">
+        <div className="flex flex-col gap-1">
+          <span
+            className="hz-mono text-xs uppercase tracking-[.14em]"
+            style={{ color: "var(--hz-ink-3)" }}
+          >
+            Enrolment
+          </span>
+          <div className="seg">
+            <StatusSegLink filters={filters} status="">All <span className="ct">{totalRows}</span></StatusSegLink>
+            <StatusSegLink filters={filters} status="ACTIVE">Active <span className="ct">{statusCounts.ACTIVE}</span></StatusSegLink>
+            <StatusSegLink filters={filters} status="PENDING">Pending <span className="ct">{statusCounts.PENDING}</span></StatusSegLink>
+            <StatusSegLink filters={filters} status="WITHDRAWN">Withdrawn <span className="ct">{statusCounts.WITHDRAWN}</span></StatusSegLink>
+            <StatusSegLink filters={filters} status="COMPLETED">Completed <span className="ct">{statusCounts.COMPLETED}</span></StatusSegLink>
+          </div>
+        </div>
+        <div className="flex flex-col gap-1 ml-auto">
+          <span
+            className="hz-mono text-xs uppercase tracking-[.14em]"
+            style={{ color: "var(--hz-ink-3)" }}
+          >
+            Payment
+          </span>
+          <div className="seg">
+            <UrgencySegLink filters={filters} urgency="paid" color="var(--hz-success)" label="Paid" count={urgencyCounts.paid} />
+            <UrgencySegLink filters={filters} urgency="partial" color="var(--hz-warning)" label="Partial" count={urgencyCounts.partial} />
+            <UrgencySegLink filters={filters} urgency="due_soon" color="var(--hz-accent)" label="Due soon" count={urgencyCounts.due_soon} />
+            <UrgencySegLink filters={filters} urgency="overdue" color="var(--hz-danger)" label="Overdue" count={urgencyCounts.overdue} />
+          </div>
+        </div>
+      </div>
 
       {sorted.length === 0 ? (
         <div
