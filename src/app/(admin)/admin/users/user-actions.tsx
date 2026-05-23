@@ -125,7 +125,17 @@ export function UserActions({
           disabled={isSelf || pending}
         >
           <SelectTrigger className="h-8 text-xs w-[110px]">
-            <SelectValue />
+            <SelectValue>
+              {(v: string) =>
+                v === "ADMIN"
+                  ? "Admin"
+                  : v === "STAFF"
+                  ? "Staff"
+                  : v === "TEACHER"
+                  ? "Teacher"
+                  : ""
+              }
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ADMIN">Admin</SelectItem>
@@ -141,16 +151,21 @@ export function UserActions({
         >
           {user.isActive ? "Deactivate" : "Reactivate"}
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={isSelf || pending}
-          onClick={requestDelete}
-          aria-label="Delete user"
-          className="text-destructive hover:text-destructive"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
+        {/* Delete is only available for deactivated users — collapses the
+            previously confusing "Deactivate AND trash" pair into a
+            progressive disclosure. Forces the safer path first. */}
+        {!user.isActive ? (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isSelf || pending}
+            onClick={requestDelete}
+            aria-label="Delete user"
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        ) : null}
       </div>
       {feedback ? (
         <p className="text-xs text-destructive text-right">{feedback}</p>
