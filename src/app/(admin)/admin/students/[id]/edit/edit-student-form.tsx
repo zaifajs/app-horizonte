@@ -105,9 +105,19 @@ export function EditStudentForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-5 rounded-xl border bg-card p-6">
+      <SectionNav
+        sections={[
+          { id: "sec-batch", title: "Batch" },
+          { id: "sec-identity", title: "Identity" },
+          { id: "sec-document", title: "Document" },
+          { id: "sec-tax", title: "Tax & address" },
+          { id: "sec-notes", title: "Notes" },
+        ]}
+      />
+
       {/* Batch first — it's the single most common edit (fix wrong batch).
           Avoids scrolling past 12 other fields. */}
-      <Section title="Batch">
+      <Section title="Batch" id="sec-batch">
         <Field
           label="Move to batch"
           htmlFor="batchId"
@@ -141,7 +151,7 @@ export function EditStudentForm({
         </Field>
       </Section>
 
-      <Section title="Identity">
+      <Section title="Identity" id="sec-identity">
         <Field label="Full name" htmlFor="fullName" error={fieldErrors.fullName}>
           <Input id="fullName" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
         </Field>
@@ -163,7 +173,7 @@ export function EditStudentForm({
         </div>
       </Section>
 
-      <Section title="Document">
+      <Section title="Document" id="sec-document">
         <div className="grid grid-cols-2 gap-4">
           <Field label="Type" htmlFor="docType" error={fieldErrors.docType}>
             <Select value={docType} onValueChange={(v) => v && setDocType(v as DocType)}>
@@ -196,7 +206,7 @@ export function EditStudentForm({
         </Field>
       </Section>
 
-      <Section title="Tax & address">
+      <Section title="Tax & address" id="sec-tax">
         <div className="grid grid-cols-2 gap-4">
           <Field label="NIF" htmlFor="nif" error={fieldErrors.nif}>
             <Input id="nif" required value={nif} onChange={(e) => setNif(e.target.value)} />
@@ -213,13 +223,19 @@ export function EditStudentForm({
         </Field>
       </Section>
 
-      <Section title="Internal notes">
+      <Section title="Internal notes" id="sec-notes">
         <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Visible to admin/staff only." />
       </Section>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-      <div className="flex justify-end gap-2">
+      <div
+        className="sticky bottom-0 -mx-6 -mb-6 px-6 py-3 flex justify-end gap-2 hair-t"
+        style={{
+          background: "var(--hz-surface)",
+          paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))",
+        }}
+      >
         <Button type="submit" disabled={pending}>
           {pending ? "Saving…" : "Save changes"}
         </Button>
@@ -228,14 +244,53 @@ export function EditStudentForm({
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  id,
+  children,
+}: {
+  title: string;
+  id?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <fieldset className="space-y-4">
+    <fieldset id={id} className="space-y-4 scroll-mt-4">
       <legend className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </legend>
       {children}
     </fieldset>
+  );
+}
+
+function SectionNav({
+  sections,
+}: {
+  sections: { id: string; title: string }[];
+}) {
+  return (
+    <nav
+      aria-label="Form sections"
+      className="sticky top-0 -mx-6 px-6 py-2 flex items-center gap-1.5 overflow-x-auto hair-b"
+      style={{ background: "var(--hz-surface)", zIndex: 1 }}
+    >
+      {sections.map((s, i) => (
+        <a
+          key={s.id}
+          href={`#${s.id}`}
+          className="chip chip-outline text-xs shrink-0"
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
+        >
+          <span className="hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+            {i + 1}.
+          </span>{" "}
+          {s.title}
+        </a>
+      ))}
+    </nav>
   );
 }
 

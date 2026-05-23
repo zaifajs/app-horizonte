@@ -100,7 +100,16 @@ export function NewStudentForm({
       className="space-y-5 rounded-xl border bg-card p-6"
       encType="multipart/form-data"
     >
-      <Section title="Identity">
+      <SectionNav
+        sections={[
+          { id: "sec-identity", title: "Identity" },
+          { id: "sec-document", title: "Document" },
+          { id: "sec-tax", title: "Tax & address" },
+          { id: "sec-enrolment", title: "Enrolment" },
+        ]}
+      />
+
+      <Section title="Identity" id="sec-identity">
         <Field label="Full name" error={fieldErrors.fullName} htmlFor="fullName">
           <Input id="fullName" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
         </Field>
@@ -122,7 +131,7 @@ export function NewStudentForm({
         </div>
       </Section>
 
-      <Section title="Document">
+      <Section title="Document" id="sec-document">
         <div className="grid grid-cols-2 gap-4">
           <Field label="Type" error={fieldErrors.docType} htmlFor="docType">
             <Select value={docType} onValueChange={(v) => v && setDocType(v as DocType)}>
@@ -173,7 +182,7 @@ export function NewStudentForm({
         </div>
       </Section>
 
-      <Section title="Tax & address">
+      <Section title="Tax & address" id="sec-tax">
         <div className="grid grid-cols-2 gap-4">
           <Field label="NIF (tax ID)" error={fieldErrors.nif} htmlFor="nif">
             <Input id="nif" required value={nif} onChange={(e) => setNif(e.target.value)} />
@@ -190,7 +199,7 @@ export function NewStudentForm({
         </Field>
       </Section>
 
-      <Section title="Enrolment">
+      <Section title="Enrolment" id="sec-enrolment">
         <Field
           label="Batch"
           htmlFor="batchId"
@@ -244,7 +253,15 @@ export function NewStudentForm({
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-      <div className="flex justify-end gap-2">
+      {/* Sticky to the bottom of the scroll container so the Save CTA is
+          always within reach on this long form (especially on mobile). */}
+      <div
+        className="sticky bottom-0 -mx-6 -mb-6 px-6 py-3 flex justify-end gap-2 hair-t"
+        style={{
+          background: "var(--hz-surface)",
+          paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))",
+        }}
+      >
         <Button type="submit" disabled={pending}>
           {pending ? "Saving…" : "Add student"}
         </Button>
@@ -253,14 +270,60 @@ export function NewStudentForm({
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  id,
+  children,
+}: {
+  title: string;
+  id?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <fieldset className="space-y-4">
+    <fieldset id={id} className="space-y-4 scroll-mt-4">
       <legend className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </legend>
       {children}
     </fieldset>
+  );
+}
+
+// Sticky-top section jump nav. Clicking an item smooth-scrolls to that
+// section so the user can skip ahead on this long form. Kept simple — no
+// IntersectionObserver-based active highlight; the chip count + scroll
+// position already gives enough orientation.
+function SectionNav({
+  sections,
+}: {
+  sections: { id: string; title: string }[];
+}) {
+  return (
+    <nav
+      aria-label="Form sections"
+      className="sticky top-0 -mx-6 px-6 py-2 flex items-center gap-1.5 overflow-x-auto hair-b"
+      style={{
+        background: "var(--hz-surface)",
+        zIndex: 1,
+      }}
+    >
+      {sections.map((s, i) => (
+        <a
+          key={s.id}
+          href={`#${s.id}`}
+          className="chip chip-outline text-xs shrink-0"
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
+        >
+          <span className="hz-mono" style={{ color: "var(--hz-ink-3)" }}>
+            {i + 1}.
+          </span>{" "}
+          {s.title}
+        </a>
+      ))}
+    </nav>
   );
 }
 
