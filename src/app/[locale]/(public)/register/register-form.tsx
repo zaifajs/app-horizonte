@@ -110,7 +110,7 @@ export function RegisterForm({
 
   if (done) {
     return (
-      <div className="rounded-xl border chip chip-success p-6 space-y-3">
+      <div className="rounded-xl border chip chip-success p-4 sm:p-6 space-y-3">
         <h2 className="text-lg font-semibold text-[var(--hz-success)]">
           {t.success.title}
         </h2>
@@ -125,14 +125,14 @@ export function RegisterForm({
   return (
     <form
       onSubmit={onSubmit}
-      className="space-y-5 rounded-xl border bg-card p-6"
+      className="space-y-5 rounded-xl border bg-card p-4 sm:p-6"
       encType="multipart/form-data"
     >
       <Section title={t.sections.identity}>
         <Field label={t.fields.fullName} htmlFor="fullName" error={fieldErrors.fullName}>
           <Input id="fullName" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
         </Field>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label={t.fields.email} htmlFor="email" error={fieldErrors.email}>
             <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
           </Field>
@@ -140,7 +140,7 @@ export function RegisterForm({
             <Input id="phone" required value={phone} onChange={(e) => setPhone(e.target.value)} />
           </Field>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label={t.fields.dob} htmlFor="dob" error={fieldErrors.dob}>
             <Input id="dob" type="date" required value={dob} onChange={(e) => setDob(e.target.value)} />
           </Field>
@@ -151,7 +151,7 @@ export function RegisterForm({
       </Section>
 
       <Section title={t.sections.document}>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label={t.fields.docType} htmlFor="docType" error={fieldErrors.docType}>
             <Select value={docType} onValueChange={(v) => v && setDocType(v as DocType)}>
               <SelectTrigger id="docType">
@@ -171,7 +171,7 @@ export function RegisterForm({
         <Field label={t.fields.docExpiry} htmlFor="docExpiry" error={fieldErrors.docExpiry}>
           <Input id="docExpiry" type="date" required value={docExpiry} onChange={(e) => setDocExpiry(e.target.value)} />
         </Field>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label={t.fields.docFront} htmlFor="docFront">
             <Input
               id="docFront"
@@ -192,7 +192,7 @@ export function RegisterForm({
       </Section>
 
       <Section title={t.sections.address}>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label={t.fields.nif} htmlFor="nif" error={fieldErrors.nif}>
             <Input id="nif" required value={nif} onChange={(e) => setNif(e.target.value)} />
           </Field>

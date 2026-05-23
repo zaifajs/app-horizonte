@@ -505,7 +505,7 @@ export function QuickPay({
                       After this payment
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-3 text-xs hz-mono">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 text-xs hz-mono">
                     <div>
                       <div
                         className="text-xs uppercase tracking-[.14em]"

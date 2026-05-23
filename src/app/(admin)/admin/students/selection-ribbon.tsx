@@ -14,7 +14,7 @@ export function SelectionRibbon({
 
   return (
     <div
-      className="mb-3 px-4 py-2.5 flex items-center gap-3 rounded-md"
+      className="mb-3 px-3 sm:px-4 py-2.5 flex items-center gap-3 rounded-md flex-wrap"
       style={{
         background: "var(--hz-primary-50)",
         border: "1px solid var(--hz-primary)",
@@ -30,7 +30,7 @@ export function SelectionRibbon({
         </div>
       </div>
 
-      <div className="ml-auto flex items-center gap-1.5">
+      <div className="sm:ml-auto flex items-center gap-1.5 flex-wrap">
         <button
           type="button"
           className="btn-ghost text-xs"
