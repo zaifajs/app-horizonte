@@ -177,9 +177,6 @@ function TableInner({
                 </SortableHeader>
                 <th style={{ width: 200 }}>Payment</th>
                 <th style={{ width: 200 }}>Phone</th>
-                <SortableHeader filters={filters} sort="registered" className="w-[130px]">
-                  Enrolled
-                </SortableHeader>
                 <th style={{ width: 100, textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
@@ -228,7 +225,6 @@ function StudentRowEl({
   const selected = isSelected(row.id);
   const pill = PAYMENT_PILL[row.urgency];
   const cleanPhone = row.phone.replace(/\D+/g, "");
-  const ago = row.latestEnrollment ? daysAgo(row.latestEnrollment.enrolledAt, now) : null;
   const days = row.daysToDeadline ?? null;
   // Soft-rail policy: reserve red for *strongly* actionable rows so the
   // colour retains signal when most students happen to be overdue.
@@ -331,31 +327,16 @@ function StudentRowEl({
                 onSendWhatsApp();
               }}
               className="ibtn"
-              style={{ width: 24, height: 24 }}
+              style={{ width: 36, height: 36 }}
               title="Compose WhatsApp message"
+              aria-label={`Send WhatsApp to ${row.fullName}`}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--hz-success)" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--hz-success)" }}>
                 <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
               </svg>
             </button>
           ) : null}
         </div>
-      </td>
-      <td>
-        {row.latestEnrollment ? (
-          <>
-            <div className="hz-mono text-sm" style={{ color: "var(--hz-ink-2)" }}>
-              {row.latestEnrollment.enrolledAt.toISOString().slice(0, 10)}
-            </div>
-            {ago != null ? (
-              <div className="hz-mono text-xs" style={{ color: "var(--hz-ink-3)" }}>
-                {ago}d ago
-              </div>
-            ) : null}
-          </>
-        ) : (
-          <span style={{ color: "var(--hz-ink-3)" }}>—</span>
-        )}
       </td>
       <td style={{ textAlign: "right" }}>
         {row.latestEnrollment && row.dueCents > 0 ? (
